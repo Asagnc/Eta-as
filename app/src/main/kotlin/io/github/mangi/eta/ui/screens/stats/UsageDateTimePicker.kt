@@ -68,7 +68,7 @@ internal fun UsageDateTimePickerDialog(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 TextButton(
-                    text = stringResource(R.string.action_clear),
+                    text = stringResource(R.string.ui_clear_84fcd7),
                     onClick = {
                         view.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
                         onClear()
