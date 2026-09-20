@@ -385,6 +385,23 @@ class AgentTraceFormatterTest {
         )
         assertEquals("失败 · 执行超时", timedOut)
 
+        // 退出码 > 128 是 128 + 信号号：标出信号名，免得把「被信号终止」当成命令逻辑出错
+        val killed = formatter.summarizeResult(
+            "run_command",
+            AgentModelClient.ToolResult(
+                content = """{"ok":false,"tool":"run_command","exit_code":137,"stdout":""}""",
+            ),
+        )
+        assertTrue(killed.startsWith("失败 · 退出码 137（SIGKILL"))
+
+        val terminated = formatter.summarizeResult(
+            "run_command",
+            AgentModelClient.ToolResult(
+                content = """{"ok":false,"tool":"run_command","exit_code":143,"stdout":""}""",
+            ),
+        )
+        assertTrue(terminated.startsWith("失败 · 退出码 143（SIGTERM）"))
+
         // 协议错误仍保留 code= 标记
         val coded = formatter.summarizeResult(
             "terminal",

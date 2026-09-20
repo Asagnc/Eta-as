@@ -352,7 +352,7 @@ internal class AgentTraceFormatter {
         val status = when {
             timedOut -> "失败 · 执行超时"
             exitCode == 0 -> "执行完成"
-            else -> "失败 · 退出码 $exitCode"
+            else -> "失败 · 退出码 $exitCode${exitCode.signalLabel()}"
         }
         val output = if (exitCode == 0) {
             json.optString("stdout")
@@ -363,6 +363,18 @@ internal class AgentTraceFormatter {
             json.optBoolean("stderr_truncated", false)
         val preview = terminalOutputPreview(output, truncated) ?: return status
         return "$status\n$preview"
+    }
+
+    /**
+     * 退出码大于 128 一般是进程被信号终止（128 + 信号号），只给数字很难判断原因：
+     * 137/143 常见于超时被杀，或命令把自己的进程组一起带走了。
+     */
+    private fun Int.signalLabel(): String = when (this) {
+        129 -> "（SIGHUP）"
+        130 -> "（SIGINT）"
+        137 -> "（SIGKILL，常见于超时或内存不足被杀）"
+        143 -> "（SIGTERM）"
+        else -> ""
     }
 
     private fun terminalOutputPreview(output: String, truncated: Boolean): String? {
