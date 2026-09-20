@@ -8,6 +8,9 @@ package io.github.mangi.eta.data.repository
  */
 internal object MemoryMarkdown {
     private val HEADING_LINE = Regex("^(#{1,6})[ \\t]+(\\S.*?)[ \\t]*$")
+
+    /** 章节作用域声明：标题行正下方的 `<!-- scope: a, b -->`。 */
+    private val SCOPE_LINE = Regex("^<!--\\s*scope\\s*:\\s*(.+?)\\s*-->$")
     private const val DEFAULT_LEVEL = 2
     private const val INDEX_LIMIT_CHARS = 4_000
 
@@ -55,6 +58,41 @@ internal object MemoryMarkdown {
             endIndex = sectionEnd(headings, position, lines.size),
         )
     }
+
+    /**
+     * 解析章节标题行正下方的 `<!-- scope: 匹配项, ... -->` 作用域声明；没有声明返回空列表。
+     *
+     * 对齐 Claude Code 的 path-scoped rules：章节可以声明「只对某类工作生效」，
+     * 不相关时不占注入预算，只出现在标题索引里（模型需要时用 memory_get 取）。
+     */
+    fun scopeOf(lines: List<String>, section: Section): List<String> {
+        val first = section.startIndex + 1
+        if (first >= lines.size || first > section.endIndex) return emptyList()
+        val match = SCOPE_LINE.find(lines[first].trim()) ?: return emptyList()
+        return match.groupValues[1].split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    }
+
+    /** 列出所有带作用域声明的章节（章节 → 匹配项），用于预算不够时挑选注入。 */
+    fun scopedSections(content: String): List<Pair<Section, List<String>>> {
+        if (content.isEmpty()) return emptyList()
+        val lines = content.split('\n')
+        val headings = headingsOf(lines)
+        return headings.mapIndexedNotNull { position, located ->
+            val section = Section(
+                headingText = located.heading.text,
+                title = located.heading.title,
+                level = located.heading.level,
+                startIndex = located.index,
+                endIndex = sectionEnd(headings, position, lines.size),
+            )
+            val scope = scopeOf(lines, section)
+            if (scope.isEmpty()) null else section to scope
+        }
+    }
+
+    /** 章节正文（含标题行），用于按需注入。 */
+    fun sectionBody(lines: List<String>, section: Section): String =
+        lines.subList(section.startIndex, section.endIndex.coerceAtMost(lines.size)).joinToString("\n")
 
     /** 带行号范围的标题索引，例如 `## 设备  [L12-45]`；超出上限时按行截断。 */
     fun sectionIndex(content: String): String {

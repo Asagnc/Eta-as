@@ -45,12 +45,14 @@ internal object AgentMemoryContextBuilder {
     fun build(
         snapshot: AgentMemorySnapshot,
         contextWindow: Int?,
+        hint: String = "",
     ): AgentMemoryContext {
         val coreBudget = coreBudgetChars(contextWindow)
         val content = snapshot.content
         // 装得下就注入全文：一轮 system 消息的成本不变，却省掉「读不全 → 再 memory_get」的往返。
         val full = content.isNotBlank() && content.length <= coreBudget
-        val core = extractCore(content)
+        // 超预算时不只是取核心章节：作用域匹配当前任务的章节也一起注入（见 extractForBudget）。
+        val core = if (full) extractCore(content) else extractForBudget(content, coreBudget, hint)
         return AgentMemoryContext(
             enabled = true,
             revision = snapshot.revision,
@@ -79,6 +81,29 @@ internal object AgentMemoryContextBuilder {
             .firstOrNull { index -> lines[index].startsWith("# ") }
             ?: lines.size
         return lines.subList(start, end).joinToString("\n")
+    }
+
+    /**
+     * 超出注入预算时挑选章节：核心章节 + 作用域匹配当前任务的章节。
+     *
+     * 对齐 Claude Code 的 path-scoped rules：章节可以声明「只对某类工作生效」，不相关时只出现在
+     * 标题索引里，模型需要时再用 memory_get 取。装得下时仍然全量注入——按需加载只在预算不够时
+     * 才划算，否则多一次往返反而更贵。
+     */
+    private fun extractForBudget(content: String, budget: Int, hint: String): String {
+        val core = extractCore(content)
+        if (hint.isBlank()) return core
+        val lines = content.split('\n')
+        val builder = StringBuilder(core)
+        for ((section, scope) in MemoryMarkdown.scopedSections(content)) {
+            if (builder.length >= budget) break
+            if (scope.none { hint.contains(it, ignoreCase = true) }) continue
+            val body = MemoryMarkdown.sectionBody(lines, section)
+            if (body.isBlank()) continue
+            if (builder.length + body.length + 2 > budget) continue
+            builder.append("\n\n").append(body)
+        }
+        return builder.toString()
     }
 
     /**

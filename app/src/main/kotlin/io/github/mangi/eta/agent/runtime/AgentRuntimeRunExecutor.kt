@@ -128,6 +128,9 @@ internal class AgentRuntimeRunExecutor(
                     AgentMemoryContextBuilder.build(
                         snapshot = AgentMemoryRepository.snapshot(),
                         contextWindow = request.config.contextWindow,
+                        // 作用域匹配用的任务文本：取历史 JSON 的尾部（最近的对话）。只做粗匹配
+                        // （路径片段与关键词），不解析消息结构；4000 字符够覆盖最近几轮且开销可控。
+                        hint = request.history.toString().takeLast(4_000),
                     )
                 }.getOrElse { throwable ->
                     AndroidAgentLogger.warnThrottled("agent_memory_context_failed") {
