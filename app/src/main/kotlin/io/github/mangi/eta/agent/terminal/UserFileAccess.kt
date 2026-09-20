@@ -118,13 +118,22 @@ internal object UserFileAccess {
                         } else {
                             append("。最接近的原文（L 开头是行号）：\n")
                             append(snippet)
+                            val difference = FileTextOperations.describeFirstDifference(original, oldText)
+                            if (difference.isNotBlank()) append("\n").append(difference)
                             append("\n请按上面的原文修正 old_text 后重试")
                         }
                     },
                 )
             is FileTextOperations.ReplaceOutcome.Ambiguous -> JSONObject().put("ok", false)
                 .put("code", "EDIT_NOT_UNIQUE")
-                .put("message", "old_text 命中 ${outcome.lines.size} 处（行 ${outcome.lines.joinToString("、")}）")
+                .put(
+                    "message",
+                    buildString {
+                        append("old_text 命中 ${outcome.lines.size} 处（行 ${outcome.lines.joinToString("、")}）；")
+                        append("请补足上下文使其唯一，或设置 replace_all=true。各命中处上下文（> 为命中行）：\n")
+                        append(FileTextOperations.ambiguitySnippet(original, outcome.lines))
+                    },
+                )
             is FileTextOperations.ReplaceOutcome.Applied -> {
                 val bytes = outcome.content.toByteArray()
                 require(bytes.size <= 512 * 1024) { "替换后内容过大" }

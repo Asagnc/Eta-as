@@ -115,6 +115,80 @@ internal object FileTextOperations {
         return builder.toString().trimEnd('\n')
     }
 
+    /**
+     * 多处命中时，给出每处命中及其前后 [radius] 行，行号带真实编号。
+     *
+     * 只回行号时调用方还得再读一次文件才能区分；每处附上上下文，一次就能补足出唯一片段。
+     */
+    fun ambiguitySnippet(
+        content: String,
+        lineNumbers: List<Int>,
+        radius: Int = 1,
+        maxChars: Int = 1_200,
+    ): String {
+        val lines = linesOf(content)
+        if (lines.isEmpty() || lineNumbers.isEmpty()) return ""
+        val builder = StringBuilder()
+        for (line in lineNumbers.distinct().sorted()) {
+            val index = line - 1
+            if (index !in lines.indices) continue
+            val header = "命中 @L$line：\n"
+            if (builder.length + header.length > maxChars) break
+            builder.append(header)
+            val start = (index - radius).coerceAtLeast(0)
+            val end = (index + radius).coerceAtMost(lines.size - 1)
+            for (position in start..end) {
+                val marker = if (position == index) ">" else " "
+                val rendered = "$marker L${position + 1}: ${lines[position]}\n"
+                if (builder.length + rendered.length > maxChars) break
+                builder.append(rendered)
+            }
+        }
+        return builder.toString().trimEnd('\n')
+    }
+
+    /**
+     * 指出 old_text 首行与文件里最接近那行的**首个差异字符**。
+     *
+     * 引号、全角半角、不可见字符这类差异肉眼几乎看不出来——只回"最接近的原文"时调用方
+     * 仍要反复比对；直接点出第几个字符不同、两边各是什么，一次就能改对。
+     */
+    fun describeFirstDifference(content: String, oldText: String): String {
+        val lines = linesOf(content)
+        if (lines.isEmpty()) return ""
+        val needle = oldText.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() } ?: return ""
+        var bestIndex = -1
+        var bestScore = 0
+        lines.forEachIndexed { index, line ->
+            val trimmed = line.trim()
+            if (trimmed.isEmpty()) return@forEachIndexed
+            val score = commonPrefixLength(trimmed, needle)
+            if (score > bestScore) {
+                bestScore = score
+                bestIndex = index
+            }
+        }
+        if (bestIndex < 0) return ""
+        val actual = lines[bestIndex].trim()
+        if (actual == needle) return "第 ${bestIndex + 1} 行与 old_text 首行内容一致，差异在后续行"
+        val limit = minOf(actual.length, needle.length)
+        var position = 0
+        while (position < limit && actual[position] == needle[position]) position++
+        val actualChar = if (position < actual.length) describeChar(actual[position]) else "（行尾）"
+        val needleChar = if (position < needle.length) describeChar(needle[position]) else "（行尾）"
+        return "差异位置：第 ${bestIndex + 1} 行第 ${position + 1} 个字符起——" +
+            "文件里是 $actualChar，old_text 里是 $needleChar"
+    }
+
+    private fun describeChar(char: Char): String = when {
+        char == '\t' -> "'\\t'（制表符）"
+        char == ' ' -> "空格"
+        char.isWhitespace() -> "空白字符 U+${char.code.toString(16).uppercase().padStart(4, '0')}"
+        char.code < 0x20 -> "控制字符 U+${char.code.toString(16).uppercase().padStart(4, '0')}"
+        char.code > 0x7F -> "'$char'（U+${char.code.toString(16).uppercase().padStart(4, '0')}）"
+        else -> "'$char'"
+    }
+
     private fun commonPrefixLength(a: String, b: String): Int {
         val limit = minOf(a.length, b.length)
         var index = 0
