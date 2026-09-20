@@ -91,10 +91,14 @@ internal class AgentContextBudget(
 
     companion object {
         /**
-         * 压缩触发点对齐主流实现：Codex CLI 把生效窗口上限定在 90%，
-         * 社区实测自动压缩的最优区间是 85–90%，95% 往往来不及压缩就溢出。
+         * 触发压缩的窗口占比。
+         *
+         * 留 25% 余量：压缩本身要再发一次大请求（把整段历史读进去做摘要），贴着上限才压
+         * 很容易连锁溢出；而且溢出后服务端会直接拒绝请求，比提前压缩的代价大得多。
+         * 主流实现里 Codex CLI 把生效窗口上限定在 90%、社区实测的最优区间是 85–90%，
+         * 这里更保守一些。
          */
-        const val TRIGGER_RATIO = 0.90
+        const val TRIGGER_RATIO = 0.75
         /** 估算校准的下限与上限：单次异常 usage 不应让估算失控。 */
         const val MIN_CALIBRATION = 0.25
         const val MAX_CALIBRATION = 8.0

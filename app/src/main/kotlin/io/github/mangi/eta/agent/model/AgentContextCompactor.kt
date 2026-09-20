@@ -148,6 +148,10 @@ internal class AgentContextCompactor(
                 "保留当前目标、用户约束、已完成操作及真实结果、关键路径与标识、尚未确认的事实、待解决问题和下一步。" +
                 (if (roleplay) "另外保留角色关系、场景、剧情进展、未解决的故事线索和用户人设。" +
                     "虚构剧情与真实设备操作分开记录；不能把剧情动作写成实际工具执行结果，不能把人设当作用户现实事实。" else "") +
+                (if (config.compactInstructions.isNotBlank()) {
+                    "用户还要求压缩时特别关注：" +
+                        config.compactInstructions.take(MAX_COMPACT_INSTRUCTIONS_CHARS) + "。"
+                } else "") +
                 "保留有效旧摘要，删除重复和失效尝试，不能把尝试当成功或编造事实。只输出摘要正文，不超过 $maxChars 字符。"))
             .put(AgentConversationCodec.userTextMessage(buildString {
                 if (previous.isNotBlank()) append("此前分段摘要：\n").append(previous).append('\n')
@@ -156,6 +160,9 @@ internal class AgentContextCompactor(
             }))
 
     companion object {
+        /** 压缩指令的长度上限：它要拼进每次摘要请求的 system 消息，不能无限长。 */
+        private const val MAX_COMPACT_INSTRUCTIONS_CHARS = 1_000
+
         fun canSplit(history: List<JSONObject>, end: Int): Boolean {
             if (end <= 0 || end > history.size) return false
             val last = history[end - 1]

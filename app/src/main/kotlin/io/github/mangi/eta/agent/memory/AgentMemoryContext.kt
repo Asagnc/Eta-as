@@ -14,6 +14,8 @@ internal data class AgentMemoryContext(
     val injectedTruncated: Boolean,
     val headingIndex: String,
     val coreBudgetChars: Int,
+    /** 用户写在记忆里的压缩偏好；对齐 Claude Code 在 CLAUDE.md 写 `# Compact instructions` 的做法。 */
+    val compactInstructions: String = "",
 ) {
     companion object {
         val DISABLED = AgentMemoryContext(
@@ -58,6 +60,7 @@ internal object AgentMemoryContextBuilder {
             injectedTruncated = !full && core.length > coreBudget,
             headingIndex = MemoryMarkdown.sectionIndex(content),
             coreBudgetChars = coreBudget,
+            compactInstructions = extractCompactInstructions(content),
         )
     }
 
@@ -78,7 +81,33 @@ internal object AgentMemoryContextBuilder {
         return lines.subList(start, end).joinToString("\n")
     }
 
+    /**
+     * 取出记忆里的「压缩指令」章节。
+     *
+     * 对齐 Claude Code：压缩偏好写在记忆文件里（CLAUDE.md 的 `# Compact instructions`），
+     * 而不是另开一个设置项——用户已经能用记忆编辑器和 memory_write 维护它。
+     */
+    private fun extractCompactInstructions(content: String): String {
+        if (content.isEmpty()) return ""
+        val lines = content.split('\n')
+        val start = lines.indexOfFirst { line ->
+            MemoryMarkdown.heading(line)?.let { heading ->
+                heading.title.equals(COMPACT_HEADING, ignoreCase = true) ||
+                    heading.title.equals(COMPACT_HEADING_EN, ignoreCase = true)
+            } == true
+        }
+        if (start < 0) return ""
+        val level = MemoryMarkdown.heading(lines[start])?.level ?: return ""
+        val end = ((start + 1) until lines.size).firstOrNull { index ->
+            val heading = MemoryMarkdown.heading(lines[index])
+            heading != null && heading.level <= level
+        } ?: lines.size
+        return lines.subList(start + 1, end).joinToString("\n").trim()
+    }
+
     private const val CORE_HEADING = "# 核心记忆"
+    private const val COMPACT_HEADING = "压缩指令"
+    private const val COMPACT_HEADING_EN = "Compact instructions"
     private const val DEFAULT_CONTEXT_WINDOW = 128_000
     private const val CONTEXT_WINDOW_DIVISOR = 16
     private const val MIN_CORE_CHARS = 4_000

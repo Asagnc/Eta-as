@@ -283,6 +283,11 @@ internal object AgentModelClient {
         val subAgentTools: Boolean = true,
         /** 请求视图里保留完整内容的最新工具结果条数；0 表示只保留最后一条，负数表示不清理。 */
         val toolResultKeep: Int = 6,
+        /**
+         * 压缩时的额外要求，来自记忆文件里的「压缩指令」章节（对齐 Claude Code 的
+         * CLAUDE.md `# Compact instructions`）；空表示只用默认摘要要求。
+         */
+        val compactInstructions: String = "",
         /** 上下文占用提示的触发百分比，0 表示关闭该提示。 */
         val contextNoticePercent: Int = 60,
         val thinkingEnabled: Boolean = false,

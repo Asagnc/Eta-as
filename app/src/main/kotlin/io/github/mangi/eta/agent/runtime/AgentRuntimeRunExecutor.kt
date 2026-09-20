@@ -138,6 +138,12 @@ internal class AgentRuntimeRunExecutor(
             } else {
                 AgentMemoryContext.DISABLED
             }
+            // 记忆里若有「压缩指令」章节，让它随 config 一路传到压缩器（AgentContextCompactor）。
+            val effectiveConfig = if (memoryContext.compactInstructions.isBlank()) {
+                request.config
+            } else {
+                request.config.copy(compactInstructions = memoryContext.compactInstructions)
+            }
             val pendingSkillConflict = PendingSkillConflictCapabilityParser.parse(request.history)
             val mcpSnapshot = runBlocking {
                 runCatching { McpRunSnapshot.load() }.getOrElse { throwable ->
@@ -153,7 +159,7 @@ internal class AgentRuntimeRunExecutor(
             // 所以这里用可空引用延迟绑定，避免与 AgentLocalTools 构造顺序互相依赖。
             var toolExecutorRef: AgentModelClient.ToolExecutor? = null
             val subAgentRunner = AgentSubAgentRunner(
-                config = request.config,
+                config = effectiveConfig,
                 provider = ProviderClientFactory.getClient(request.config),
                 runController = runController,
                 onEvent = { event ->
@@ -295,7 +301,7 @@ internal class AgentRuntimeRunExecutor(
                 } else routingExecutor.execute(call)
             }
             val completedResponse = AgentModelClient.complete(
-                config = request.config,
+                config = effectiveConfig,
                 sessionId = request.effectiveModelSessionId,
                 operationId = request.runId,
                 initialUserMessageId = uiPayload?.promptMessageId(request.runId) ?: "user-${request.runId}",

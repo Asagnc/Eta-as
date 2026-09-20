@@ -165,8 +165,8 @@ class AgentContextCompactionTest {
     @Test
     fun budgetUsesModelWindowAndUsageCalibrationWithoutCountingImageBase64() {
         val budget = AgentContextBudget(10_000)
-        assertFalse(budget.shouldCompact(8999))
-        assertTrue(budget.shouldCompact(9000))
+        assertFalse(budget.shouldCompact(7499))
+        assertTrue(budget.shouldCompact(7500))
         assertFalse(budget.shouldCompact(0))
         assertFalse(AgentContextBudget(null).shouldCompact(Int.MAX_VALUE))
         assertEquals(4, AgentContextBudget.textTokens("中文测试"))
