@@ -8,6 +8,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 import io.github.mangi.eta.data.model.AnthropicProviderSetting
+import io.github.mangi.eta.data.model.BalanceOption
 import io.github.mangi.eta.data.model.CustomBody
 import io.github.mangi.eta.data.model.CustomHeader
 import io.github.mangi.eta.data.model.CustomProviderSetting
@@ -45,6 +46,7 @@ internal data class ProviderEntity(
     @ColumnInfo(name = "anthropic_version") val anthropicVersion: String,
     @ColumnInfo(name = "prompt_cache_enabled", defaultValue = "0") val promptCacheEnabled: Boolean = false,
     @ColumnInfo(name = "context_editing_enabled", defaultValue = "0") val contextEditingEnabled: Boolean = false,
+    @ColumnInfo(name = "balance_option_json", defaultValue = "'null'") val balanceOptionJson: String = "null",
 )
 
 @Serializable
@@ -127,6 +129,7 @@ internal fun ProviderSetting.toEntity(): ProviderEntity =
         },
         promptCacheEnabled = (this as? AnthropicProviderSetting)?.promptCacheEnabled ?: false,
         contextEditingEnabled = (this as? AnthropicProviderSetting)?.contextEditingEnabled ?: false,
+        balanceOptionJson = ProviderJson.encodeBalanceOption(balanceOption),
     )
 
 internal fun ProviderSetting.toModelEntities(): List<ProviderModelEntity> =
@@ -161,6 +164,7 @@ internal fun ProviderWithModels.toDomain(): ProviderSetting {
             },
             promptCacheEnabled = provider.promptCacheEnabled,
             contextEditingEnabled = provider.contextEditingEnabled,
+            balanceOption = ProviderJson.decodeBalanceOption(provider.balanceOptionJson),
         )
 
         ProviderTypes.CUSTOM -> CustomProviderSetting(
@@ -179,6 +183,7 @@ internal fun ProviderWithModels.toDomain(): ProviderSetting {
             createdAt = provider.createdAt,
             endpointMode = provider.endpointMode.ifBlank { OpenAiEndpointMode.CHAT_COMPLETIONS },
             hostedWebSearchEnabled = provider.hostedWebSearchEnabled,
+            balanceOption = ProviderJson.decodeBalanceOption(provider.balanceOptionJson),
         )
 
         else -> OpenAiCompatibleProviderSetting(
@@ -197,6 +202,7 @@ internal fun ProviderWithModels.toDomain(): ProviderSetting {
             createdAt = provider.createdAt,
             endpointMode = provider.endpointMode.ifBlank { OpenAiEndpointMode.CHAT_COMPLETIONS },
             hostedWebSearchEnabled = provider.hostedWebSearchEnabled,
+            balanceOption = ProviderJson.decodeBalanceOption(provider.balanceOptionJson),
         )
     }
 }
@@ -310,4 +316,15 @@ private object ProviderJson {
                     json.decodeFromString(ModelReasoningCapabilities.serializer(), encoded)
                 }.getOrNull()
             }
+
+    fun encodeBalanceOption(option: BalanceOption): String =
+        json.encodeToString(BalanceOption.serializer(), option)
+
+    fun decodeBalanceOption(raw: String): BalanceOption =
+        raw.takeUnless { it.isBlank() || it == "null" }
+            ?.let { encoded ->
+                runCatching {
+                    json.decodeFromString(BalanceOption.serializer(), encoded)
+                }.getOrNull()
+            } ?: BalanceOption()
 }

@@ -27,7 +27,7 @@ import androidx.room.migration.Migration
         UserPersonaEntity::class,
         SubAgentRunEntity::class,
     ],
-    version = 26,
+    version = 27,
     exportSchema = false,
 )
 internal abstract class EtaDatabase : RoomDatabase() {
@@ -71,6 +71,7 @@ internal abstract class EtaDatabase : RoomDatabase() {
                         MIGRATION_23_24,
                         MIGRATION_24_25,
                         MIGRATION_25_26,
+                        MIGRATION_26_27,
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) { createTextChunkCleanup(db) }
@@ -106,6 +107,13 @@ internal abstract class EtaDatabase : RoomDatabase() {
         internal val MIGRATION_25_26 = Migration(25, 26) { database ->
             database.execSQL(
                 "ALTER TABLE `conversation_messages` ADD COLUMN `created_at` INTEGER NOT NULL DEFAULT 0",
+            )
+        }
+
+        /** provider 余额查询配置：历史数据留 'null'，解码时回落到默认关闭。 */
+        internal val MIGRATION_26_27 = Migration(26, 27) { database ->
+            database.execSQL(
+                "ALTER TABLE `model_providers` ADD COLUMN `balance_option_json` TEXT NOT NULL DEFAULT 'null'",
             )
         }
 

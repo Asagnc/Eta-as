@@ -8,6 +8,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import io.github.mangi.eta.data.model.AppearanceAccentColor
@@ -17,10 +19,12 @@ import io.github.mangi.eta.data.model.AppearanceThemeMode
 import io.github.mangi.eta.data.model.AppearanceTopBarBlurStyle
 import io.github.mangi.eta.data.model.Settings
 import java.io.IOException
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import org.json.JSONObject
 
 internal object SettingsDataStore {
     private const val STORE_NAME = "eta_settings"
@@ -42,6 +46,15 @@ internal object SettingsDataStore {
         booleanPreferencesKey("appearance_predictive_back_enabled")
     private val APPEARANCE_INTERFACE_SCALE = floatPreferencesKey("appearance_interface_scale")
     private const val SELECTED_MODEL_BY_PROVIDER_PREFIX = "selected_model_id_by_provider."
+
+    private val APP_LAUNCH_COUNT = intPreferencesKey("app_launch_count")
+    private val RETIRED_INPUT_TOKENS = longPreferencesKey("retired_input_tokens")
+    private val RETIRED_OUTPUT_TOKENS = longPreferencesKey("retired_output_tokens")
+    private val RETIRED_CACHED_TOKENS = longPreferencesKey("retired_cached_tokens")
+    private val RETIRED_CONVERSATIONS = intPreferencesKey("retired_conversations")
+    private val RETIRED_MESSAGES = intPreferencesKey("retired_messages")
+    private val RETIRED_HEATMAP_JSON = stringPreferencesKey("retired_heatmap_json")
+    private val MODEL_USAGE_JSON = stringPreferencesKey("model_usage_json")
 
     private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = STORE_NAME)
 
@@ -231,4 +244,110 @@ internal object SettingsDataStore {
         this[APPEARANCE_PREDICTIVE_BACK_ENABLED] = settings.predictiveBackEnabled
         this[APPEARANCE_INTERFACE_SCALE] = settings.interfaceScale
     }
+
+    suspend fun launchCount(): Int {
+        ensureInitialized()
+        return dataStore.data
+            .catch { cause -> if (cause is IOException) emit(emptyPreferences()) else throw cause }
+            .map { prefs -> prefs[APP_LAUNCH_COUNT] ?: 0 }
+            .first()
+    }
+
+    suspend fun incrementLaunchCount() {
+        ensureInitialized()
+        dataStore.edit { prefs ->
+            prefs[APP_LAUNCH_COUNT] = (prefs[APP_LAUNCH_COUNT] ?: 0) + 1
+        }
+    }
+
+    suspend fun modelUsageJson(): String {
+        ensureInitialized()
+        return dataStore.data
+            .catch { cause -> if (cause is IOException) emit(emptyPreferences()) else throw cause }
+            .map { prefs -> prefs[MODEL_USAGE_JSON].orEmpty() }
+            .first()
+    }
+
+    suspend fun addModelUsage(json: String) {
+        ensureInitialized()
+        dataStore.edit { prefs ->
+            prefs.putOrRemove(MODEL_USAGE_JSON, json.takeIf { it.isNotBlank() })
+        }
+    }
+
+    suspend fun retiredUsage(): RetiredUsage {
+        ensureInitialized()
+        return dataStore.data
+            .catch { cause -> if (cause is IOException) emit(emptyPreferences()) else throw cause }
+            .map { prefs ->
+                RetiredUsage(
+                    inputTokens = prefs[RETIRED_INPUT_TOKENS] ?: 0L,
+                    outputTokens = prefs[RETIRED_OUTPUT_TOKENS] ?: 0L,
+                    cachedTokens = prefs[RETIRED_CACHED_TOKENS] ?: 0L,
+                    conversations = prefs[RETIRED_CONVERSATIONS] ?: 0,
+                    messages = prefs[RETIRED_MESSAGES] ?: 0,
+                    heatmap = decodeHeatmap(prefs[RETIRED_HEATMAP_JSON]),
+                )
+            }
+            .first()
+    }
+
+    /** 清空会话时把即将丢失的历史累计（token、会话/消息数、热力图）合并保留下来。 */
+    suspend fun addRetiredUsage(
+        inputTokens: Long,
+        outputTokens: Long,
+        cachedTokens: Long,
+        conversations: Int,
+        messages: Int,
+        heatmap: Map<LocalDate, Int>,
+    ) {
+        ensureInitialized()
+        if (
+            inputTokens <= 0L && outputTokens <= 0L && cachedTokens <= 0L &&
+            conversations <= 0 && messages <= 0 && heatmap.isEmpty()
+        ) {
+            return
+        }
+        dataStore.edit { prefs ->
+            prefs[RETIRED_INPUT_TOKENS] = (prefs[RETIRED_INPUT_TOKENS] ?: 0L) + inputTokens.coerceAtLeast(0L)
+            prefs[RETIRED_OUTPUT_TOKENS] = (prefs[RETIRED_OUTPUT_TOKENS] ?: 0L) + outputTokens.coerceAtLeast(0L)
+            prefs[RETIRED_CACHED_TOKENS] = (prefs[RETIRED_CACHED_TOKENS] ?: 0L) + cachedTokens.coerceAtLeast(0L)
+            prefs[RETIRED_CONVERSATIONS] = (prefs[RETIRED_CONVERSATIONS] ?: 0) + conversations.coerceAtLeast(0)
+            prefs[RETIRED_MESSAGES] = (prefs[RETIRED_MESSAGES] ?: 0) + messages.coerceAtLeast(0)
+            if (heatmap.isNotEmpty()) {
+                val merged = decodeHeatmap(prefs[RETIRED_HEATMAP_JSON]).toMutableMap()
+                heatmap.forEach { (day, count) ->
+                    if (count > 0) merged[day] = (merged[day] ?: 0) + count
+                }
+                prefs[RETIRED_HEATMAP_JSON] = encodeHeatmap(merged)
+            }
+        }
+    }
+
+    private fun encodeHeatmap(heatmap: Map<LocalDate, Int>): String {
+        val json = JSONObject()
+        heatmap.forEach { (day, count) -> if (count > 0) json.put(day.toString(), count) }
+        return json.toString()
+    }
+
+    private fun decodeHeatmap(raw: String?): Map<LocalDate, Int> {
+        if (raw.isNullOrBlank()) return emptyMap()
+        val json = runCatching { JSONObject(raw) }.getOrNull() ?: return emptyMap()
+        return buildMap {
+            json.keys().forEach { key ->
+                val day = runCatching { LocalDate.parse(key) }.getOrNull() ?: return@forEach
+                val count = json.optInt(key)
+                if (count > 0) put(day, count)
+            }
+        }
+    }
 }
+
+internal data class RetiredUsage(
+    val inputTokens: Long = 0L,
+    val outputTokens: Long = 0L,
+    val cachedTokens: Long = 0L,
+    val conversations: Int = 0,
+    val messages: Int = 0,
+    val heatmap: Map<LocalDate, Int> = emptyMap(),
+)

@@ -1,5 +1,6 @@
 package io.github.mangi.eta.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -158,6 +159,25 @@ internal interface ConversationDao : ChunkedTextDao {
     @Query("DELETE FROM conversation_state")
     suspend fun deleteState()
 
+    @Query("SELECT COUNT(*) FROM conversations")
+    suspend fun conversationCount(): Int
+
+    /** 可见气泡数；thinking/工具行不算消息。 */
+    @Query("SELECT COUNT(*) FROM conversation_messages WHERE type IN ('user', 'assistant')")
+    suspend fun totalMessageCount(): Int
+
+    @Query(
+        "SELECT type, input_tokens, output_tokens, cached_tokens " +
+            "FROM conversation_messages WHERE type IN ('assistant', 'context_compacted')"
+    )
+    suspend fun usageContentRows(): List<UsageContentRow>
+
+    @Query(
+        "SELECT date(created_at / 1000, 'unixepoch', 'localtime') AS day, COUNT(*) AS count " +
+            "FROM conversations WHERE created_at >= :startAt GROUP BY day"
+    )
+    suspend fun conversationCountPerDay(startAt: Long): List<ConversationDayCount>
+
     @Transaction
     suspend fun replaceAll(
         conversations: List<ConversationEntity>,
@@ -175,3 +195,15 @@ internal interface ConversationDao : ChunkedTextDao {
         state?.let { insertState(it) }
     }
 }
+
+internal data class UsageContentRow(
+    val type: String,
+    @ColumnInfo(name = "input_tokens") val inputTokens: Int? = null,
+    @ColumnInfo(name = "output_tokens") val outputTokens: Int? = null,
+    @ColumnInfo(name = "cached_tokens") val cachedTokens: Int? = null,
+)
+
+internal data class ConversationDayCount(
+    val day: String,
+    val count: Int,
+)

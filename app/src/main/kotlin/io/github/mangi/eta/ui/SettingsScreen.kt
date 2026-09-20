@@ -14,6 +14,7 @@ import androidx.compose.material.icons.rounded.AccountTree
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.QueryStats
 import androidx.compose.material.icons.rounded.Extension
 import androidx.compose.material.icons.rounded.GppMaybe
 import androidx.compose.material.icons.rounded.Hearing
@@ -525,6 +526,16 @@ internal fun SettingsScreen(
                             )
                         },
                         onClick = { onNavigate(AppRoute.DataBackup) },
+                    )
+
+                    ArrowPreference(
+                        title = stringResource(R.string.stats_page_title),
+                        startAction = {
+                            PreferenceIcon(
+                                icon = Icons.Rounded.QueryStats,
+                            )
+                        },
+                        onClick = { onNavigate(AppRoute.UsageStats) },
                     )
                 }
             }

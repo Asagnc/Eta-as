@@ -29,7 +29,9 @@ import io.github.mangi.eta.EtaApp
 import io.github.mangi.eta.R
 import io.github.mangi.eta.data.model.ProviderSetting
 import io.github.mangi.eta.data.model.ProviderSourceTypes
+import io.github.mangi.eta.data.model.canQueryBalance
 import io.github.mangi.eta.data.model.typeLabel
+import io.github.mangi.eta.data.repository.ProviderBalanceStore
 import io.github.mangi.eta.data.repository.ProviderRepository
 import io.github.mangi.eta.data.repository.RuntimeConfigRepository
 import io.github.mangi.eta.ui.components.MiuixDialogActions
@@ -53,11 +55,19 @@ internal fun ModelProviderListScreen(
     val scope = rememberCoroutineScope()
     val providers by ProviderRepository.providersFlow().collectAsState(initial = emptyList())
     val selectedProviderId by RuntimeConfigRepository.selectedProviderIdFlow().collectAsState(initial = null)
+    val balances by ProviderBalanceStore.balances.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     var providerToDelete by remember { mutableStateOf<ProviderSetting?>(null) }
 
     LaunchedEffect(Unit) {
         RuntimeConfigRepository.ensureDefaults(EtaApp.serviceInstance)
+    }
+
+    // 进入页面时按需刷新一次余额（不做后台轮询）；provider 列表变化后重新拉取启用项。
+    LaunchedEffect(providers) {
+        if (providers.any { it.canQueryBalance() }) {
+            ProviderBalanceStore.requestRefresh(scope)
+        }
     }
 
     val filteredProviders = remember(providers, searchQuery) {
@@ -130,6 +140,7 @@ internal fun ModelProviderListScreen(
                         ProviderListItem(
                             provider = provider,
                             isSelected = provider.id == selectedProviderId,
+                            balance = balances[provider.id],
                             onOpen = { onNavigate(AppRoute.ModelProviderDetail(provider.id)) },
                             onDelete = if (!provider.isBuiltIn) {
                                 { providerToDelete = provider }
@@ -179,6 +190,7 @@ internal fun ModelProviderListScreen(
 private fun ProviderListItem(
     provider: ProviderSetting,
     isSelected: Boolean,
+    balance: String?,
     onOpen: () -> Unit,
     onDelete: (() -> Unit)?,
     onSelect: () -> Unit,
@@ -228,6 +240,12 @@ private fun ProviderListItem(
                     style = MiuixTheme.textStyles.footnote1,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            if (balance != null) {
+                ProviderBalanceAmount(
+                    amount = balance,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }

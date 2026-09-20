@@ -4,6 +4,7 @@ import androidx.compose.runtime.saveable.mapSaver
 import io.github.mangi.eta.R
 import io.github.mangi.eta.agent.model.CustomHeaderFilter
 import io.github.mangi.eta.data.model.AnthropicProviderSetting
+import io.github.mangi.eta.data.model.BalanceOption
 import io.github.mangi.eta.data.model.CustomHeader
 import io.github.mangi.eta.data.model.CustomProviderSetting
 import io.github.mangi.eta.data.model.OpenAiCompatibleProviderSetting
@@ -26,6 +27,7 @@ internal data class ProviderConfigDraft(
     val anthropicVersion: String,
     val promptCacheEnabled: Boolean,
     val contextEditingEnabled: Boolean,
+    val balanceOption: BalanceOption = BalanceOption(),
     val headers: List<ProviderHeaderDraft> = emptyList(),
 ) {
     companion object {
@@ -46,6 +48,7 @@ internal data class ProviderConfigDraft(
                 ?: AnthropicProviderSetting.DEFAULT_ANTHROPIC_VERSION,
             promptCacheEnabled = (provider as? AnthropicProviderSetting)?.promptCacheEnabled ?: false,
             contextEditingEnabled = (provider as? AnthropicProviderSetting)?.contextEditingEnabled ?: false,
+            balanceOption = provider.balanceOption,
         )
     }
 }
@@ -64,6 +67,7 @@ internal val ProviderConfigDraftSaver = mapSaver(
             "anthropicVersion" to draft.anthropicVersion,
             "promptCacheEnabled" to draft.promptCacheEnabled,
             "contextEditingEnabled" to draft.contextEditingEnabled,
+            "balanceOption" to ProviderConfigDraftJson.encodeBalanceOption(draft.balanceOption),
         )
     },
     restore = { state ->
@@ -81,9 +85,22 @@ internal val ProviderConfigDraftSaver = mapSaver(
             anthropicVersion = state.getValue("anthropicVersion") as String,
             promptCacheEnabled = state.getValue("promptCacheEnabled") as Boolean,
             contextEditingEnabled = state.getValue("contextEditingEnabled") as Boolean,
+            balanceOption = ProviderConfigDraftJson.decodeBalanceOption(state["balanceOption"] as? String),
         )
     },
 )
+
+private object ProviderConfigDraftJson {
+    private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+
+    fun encodeBalanceOption(option: BalanceOption): String =
+        json.encodeToString(BalanceOption.serializer(), option)
+
+    fun decodeBalanceOption(raw: String?): BalanceOption =
+        raw?.takeIf { it.isNotBlank() }
+            ?.let { runCatching { json.decodeFromString(BalanceOption.serializer(), it) }.getOrNull() }
+            ?: BalanceOption()
+}
 
 internal fun buildUpdatedProvider(
     source: ProviderSetting,
@@ -98,6 +115,7 @@ internal fun buildUpdatedProvider(
     promptCacheEnabled: Boolean,
     contextEditingEnabled: Boolean,
     customHeaders: List<CustomHeader>,
+    balanceOption: BalanceOption,
 ): ProviderSetting {
     val prompt = systemPrompt.trim().takeIf { it.isNotBlank() }
     return when (source) {
@@ -110,6 +128,7 @@ internal fun buildUpdatedProvider(
             isEnabled = isEnabled,
             endpointMode = endpointMode,
             hostedWebSearchEnabled = hostedWebSearchEnabled,
+            balanceOption = balanceOption,
         )
         is CustomProviderSetting -> source.copy(
             customHeaders = customHeaders.map { it.copy(name = it.name.trim()) },
@@ -120,6 +139,7 @@ internal fun buildUpdatedProvider(
             isEnabled = isEnabled,
             endpointMode = endpointMode,
             hostedWebSearchEnabled = hostedWebSearchEnabled,
+            balanceOption = balanceOption,
         )
         is AnthropicProviderSetting -> source.copy(
             customHeaders = customHeaders.map { it.copy(name = it.name.trim()) },
@@ -131,6 +151,7 @@ internal fun buildUpdatedProvider(
             anthropicVersion = anthropicVersion.trim().ifBlank { AnthropicProviderSetting.DEFAULT_ANTHROPIC_VERSION },
             promptCacheEnabled = promptCacheEnabled,
             contextEditingEnabled = contextEditingEnabled,
+            balanceOption = balanceOption,
         )
     }
 }

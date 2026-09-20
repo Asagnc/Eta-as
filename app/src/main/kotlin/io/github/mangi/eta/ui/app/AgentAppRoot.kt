@@ -59,6 +59,7 @@ import io.github.mangi.eta.ui.navigation.AgentNavigator
 import io.github.mangi.eta.ui.navigation.AppRoute
 import io.github.mangi.eta.ui.pages.providers.ModelProviderDetailScreen
 import io.github.mangi.eta.ui.pages.providers.ModelProviderListScreen
+import io.github.mangi.eta.ui.screens.stats.UsageStatsScreen
 import io.github.mangi.eta.ui.screens.backup.DataBackupScreen
 import io.github.mangi.eta.ui.screens.browser.AgentBrowserScreen
 import io.github.mangi.eta.ui.screens.chat.AgentChatScreen
@@ -598,6 +599,9 @@ fun AgentAppRoot(
                     onExport = agentState::exportBackup,
                     onImport = agentState::importBackup,
                 )
+            }
+            entry<AppRoute.UsageStats>(swipeDismiss = swipeDismiss) {
+                UsageStatsScreen(onBack = ::popRoute)
             }
             entry<AppRoute.Memory>(swipeDismiss = swipeDismiss) {
                 LaunchedEffect(Unit) {

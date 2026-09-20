@@ -57,6 +57,8 @@ import io.github.mangi.eta.data.repository.AgentMemoryRepository
 import io.github.mangi.eta.data.repository.EtaBackupRepository
 import io.github.mangi.eta.data.repository.EtaBackupSummary
 import io.github.mangi.eta.data.repository.ProviderRepository
+import io.github.mangi.eta.data.repository.ModelUsageDelta
+import io.github.mangi.eta.data.repository.UsageStatsRepository
 import io.github.mangi.eta.data.repository.RuntimeConfigRepository
 import io.github.mangi.eta.ui.model.AgentChatHomeUiState
 import io.github.mangi.eta.ui.model.AgentTaskPlanCodec
@@ -991,6 +993,7 @@ internal class AgentAppState(
         if (currentRunId?.let { runConversationIds[it] } == conversationId) {
             stopCurrentRun()
         }
+        val removedState = conversationsById[conversationId]
         val wasSelected = selectedConversationId == conversationId
         conversationsById = conversationsById - conversationId
         conversationTitles = conversationTitles - conversationId
@@ -1011,6 +1014,13 @@ internal class AgentAppState(
         refreshConversationSummaries()
         persistConversations()
         scope.launch(Dispatchers.IO) {
+            runCatching { retireConversationUsage(conversationId, removedState) }
+                .onFailure { failure ->
+                    AndroidAgentLogger.warnThrottled("conversation_retire_usage_failed") {
+                        "Agent conversation action=retire-usage outcome=failed conversation=$conversationId " +
+                            "error=${failure.message}"
+                    }
+                }
             runCatching { ConversationRunPurge.purge(appContext, conversationId) }
                 .onSuccess { removed ->
                     AndroidAgentLogger.info(
@@ -2225,6 +2235,7 @@ internal class AgentAppState(
                     event.round,
                     event.usage.toUi(estimatedContextTokens = event.estimatedContextTokens),
                 )
+                recordModelUsage(runId, event.round, event.usage)
                 if (event.windowTokens != null) {
                     modelPickerState = modelPickerState.copy(contextWindowHint = event.windowTokens)
                 }
@@ -2440,6 +2451,82 @@ internal class AgentAppState(
     ) {
         updateMessages(runId, transform = transform)
         refreshConversationSummaries()
+    }
+
+    private fun recordModelUsage(runId: String, round: Int, usage: AgentTokenUsage) {
+        val model = modelPickerState.selectedModel ?: return
+        val input = (usage.inputTokens ?: 0).toLong()
+        val output = (usage.outputTokens ?: 0).toLong()
+        val cached = (usage.cachedTokens ?: 0).toLong()
+        if (input <= 0L && output <= 0L) return
+        val conversationId = conversationIdForRun(runId) ?: selectedConversationId
+        scope.launch(Dispatchers.IO) {
+            runCatching {
+                UsageStatsRepository.recordModelUsage(
+                    ModelUsageDelta(
+                        providerId = model.providerId,
+                        providerName = model.providerName,
+                        modelId = model.modelId,
+                        modelDisplayName = model.displayName.ifBlank { model.modelId },
+                        inputTokens = input,
+                        outputTokens = output,
+                        cachedTokens = cached,
+                        conversationId = conversationId,
+                        round = round,
+                    ),
+                )
+            }
+        }
+    }
+
+    /**
+     * 删除会话前把它的历史用量转入"退役累计"，这样用量统计里的历史 token、
+     * 消息数与热力图不会因为清理会话而丢失。用量从内存快照求和，避免与异步落库删行竞态。
+     */
+    private suspend fun retireConversationUsage(
+        conversationId: String,
+        removedState: AgentChatHomeUiState?,
+    ) {
+        val messages = removedState?.messages ?: return
+        if (messages.isEmpty()) return
+        var input = 0L
+        var output = 0L
+        var cached = 0L
+        var messageCount = 0
+        messages.forEach { message ->
+            when (message) {
+                is UserMessageUi -> messageCount += 1
+                is AgentMessageUi -> {
+                    messageCount += 1
+                    message.usage?.let { usage ->
+                        input += (usage.inputTokens ?: 0).toLong()
+                        output += (usage.outputTokens ?: 0).toLong()
+                        cached += (usage.cachedTokens ?: 0).toLong()
+                    }
+                }
+                else -> Unit
+            }
+        }
+        val createdAtMillis = conversationUpdatedAt[conversationId]
+            ?: messages.firstNotNullOfOrNull { (it as? UserMessageUi)?.timestamp?.takeIf { t -> t > 0 } }
+            ?: messages.firstNotNullOfOrNull { (it as? AgentMessageUi)?.timestamp?.takeIf { t -> t > 0 } }
+        val heatmap = createdAtMillis
+            ?.let {
+                mapOf(
+                    java.time.Instant.ofEpochMilli(it)
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .toLocalDate() to 1,
+                )
+            }
+            ?: emptyMap()
+        SettingsDataStore.addRetiredUsage(
+            inputTokens = input,
+            outputTokens = output,
+            cachedTokens = cached,
+            conversations = 1,
+            messages = messageCount,
+            heatmap = heatmap,
+        )
     }
 
     private fun updateAssistantUsage(runId: String, round: Int, usage: TokenUsageUi) {

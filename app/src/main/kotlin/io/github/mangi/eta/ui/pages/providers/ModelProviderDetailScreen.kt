@@ -351,6 +351,7 @@ private fun ProviderConfigTab(
                                         promptCacheEnabled = draft.promptCacheEnabled,
                                         contextEditingEnabled = draft.contextEditingEnabled,
                                         customHeaders = draft.headers.map { it.header },
+                                        balanceOption = draft.balanceOption,
                                     )
                                 )
                             } finally {
@@ -368,6 +369,30 @@ private fun ProviderConfigTab(
             onExpandedChange = { headersExpanded = it },
             onHeadersChange = { onDraftChange(draft.copy(headers = it)) },
         )
+
+        item(key = "balance_option") {
+            ProviderSection(title = stringResource(R.string.ui_balance_section_title)) {
+                ProviderBalanceOptionFields(
+                    balanceOption = draft.balanceOption,
+                    onBalanceOptionChange = { onDraftChange(draft.copy(balanceOption = it)) },
+                    provider = if (isNew) null else buildUpdatedProvider(
+                        source = provider,
+                        name = draft.name,
+                        baseUrl = draft.baseUrl,
+                        apiKey = draft.apiKey,
+                        systemPrompt = draft.systemPrompt,
+                        isEnabled = draft.isEnabled,
+                        endpointMode = draft.endpointMode,
+                        hostedWebSearchEnabled = draft.hostedWebSearchEnabled,
+                        anthropicVersion = draft.anthropicVersion,
+                        promptCacheEnabled = draft.promptCacheEnabled,
+                        contextEditingEnabled = draft.contextEditingEnabled,
+                        customHeaders = draft.headers.map { it.header },
+                        balanceOption = draft.balanceOption,
+                    ),
+                )
+            }
+        }
 
         item(key = "preferences_and_prompt") {
             ProviderSection(title = stringResource(R.string.ui_preferences_and_strategies_2abd3c)) {
@@ -437,6 +462,7 @@ private fun ProviderConfigTab(
                                 promptCacheEnabled = draft.promptCacheEnabled,
                                 contextEditingEnabled = draft.contextEditingEnabled,
                                 customHeaders = draft.headers.map { it.header },
+                                balanceOption = draft.balanceOption,
                             )
                             try {
                                 if (isNew) {
