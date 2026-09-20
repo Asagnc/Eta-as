@@ -43,7 +43,7 @@ internal object Prefs {
         const val AGENT_DEVICE_SENSITIVE_READ_TOOLS = "agent_device_sensitive_read_tools"
         const val AGENT_DEVICE_SENSITIVE_ACTION_TOOLS = "agent_device_sensitive_action_tools"
         const val AGENT_THINKING_ENABLED = "agent_thinking_enabled"
-        /** 子智能体开关，默认关闭；开启后模型才会看到 delegate 与 multi_perspective。 */
+        /** 子智能体开关，默认开启（见 BOOLEAN_DEFAULTS）；关闭后模型就看不到 delegate 与 multi_perspective。 */
         const val AGENT_SUBAGENTS_ENABLED = "agent_subagents_enabled"
         /** 请求视图里保留完整内容的最新工具结果条数。 */
         const val AGENT_TOOL_RESULT_KEEP = "agent_tool_result_keep"
