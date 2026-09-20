@@ -21,6 +21,8 @@ internal class AgentModelFailure(
     /**
      * 上游点名拒收、且省略后不改变模型行为的字段。只认这些：省略它们只影响优化或统计，
      * 不会改变推理深度、工具集合或用户自定义内容，所以可以自动重试；其它字段一律交回用户处理。
+     * 思考开关（enable_thinking / thinking）刻意不在白名单里：上游拒收时自动去掉等于
+     * 静默退回"照样思考"，正是用户关思考却没用时看到的现象，所以宁可让这一轮明确失败。
      */
     fun droppableField(): String? {
         val text = message.orEmpty()

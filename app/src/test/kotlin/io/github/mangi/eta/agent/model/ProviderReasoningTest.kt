@@ -333,6 +333,37 @@ class ProviderReasoningTest {
         assertEquals("high", request.getString("reasoning_effort"))
     }
 
+    @Test
+    fun customOffSendsToggleFieldsBecauseNamedEffortIsIgnored() {
+        val request = JSONObject().put("reasoning_effort", "high").put("thinking_budget", 4096)
+
+        ProviderReasoning.applyOpenAiCompatibleRequest(
+            request,
+            config(source = ProviderSourceTypes.CUSTOM, effort = ReasoningEffort.OFF),
+        )
+
+        // reasoning_effort=none 会被中转站忽略（实测 tokenrhythm 的 deepseek-flash 照样思考），
+        // 所以关思考必须发开关型字段，并清掉与开关冲突的旧字段。
+        assertFalse(request.getBoolean("enable_thinking"))
+        assertEquals("disabled", request.getJSONObject("thinking").getString("type"))
+        assertFalse(request.has("reasoning_effort"))
+        assertFalse(request.has("thinking_budget"))
+    }
+
+    @Test
+    fun customNamedEffortKeepsUsingReasoningEffort() {
+        val request = JSONObject()
+
+        ProviderReasoning.applyOpenAiCompatibleRequest(
+            request,
+            config(source = ProviderSourceTypes.CUSTOM, effort = ReasoningEffort.HIGH),
+        )
+
+        assertEquals("high", request.getString("reasoning_effort"))
+        assertFalse(request.has("enable_thinking"))
+        assertFalse(request.has("thinking"))
+    }
+
     private fun autoConfig(capabilities: ModelReasoningCapabilities) = config(
         source = ProviderSourceTypes.OPENAI,
         effort = ReasoningEffort.AUTO,

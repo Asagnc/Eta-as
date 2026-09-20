@@ -39,7 +39,7 @@ internal object ProviderReasoning {
             ProviderSourceTypes.OPENROUTER -> applyOpenRouter(request, effort)
             ProviderSourceTypes.STEPFUN -> applyStepFun(request, effort)
             ProviderSourceTypes.OPENAI -> applyOpenAi(request, effort)
-            ProviderSourceTypes.CUSTOM -> applyNamedReasoningEffort(request, effort)
+            ProviderSourceTypes.CUSTOM -> applyCustomReasoning(request, effort)
         }
     }
 
@@ -291,6 +291,23 @@ internal object ProviderReasoning {
 
     private fun applyNamedReasoningEffort(request: JSONObject, effort: ReasoningEffort) {
         request.put("reasoning_effort", if (effort == ReasoningEffort.OFF) "none" else effort.wireValue)
+    }
+
+    /**
+     * 自定义中转站没有统一的思考开关：`reasoning_effort: none` 被相当一部分中转站直接忽略
+     * （实测 tokenrhythm 的 deepseek-flash 照样输出思考），所以关闭思考必须同时给出开关型字段——
+     * vLLM/SGLang 系认 enable_thinking，Anthropic 风格的中转认 thinking.type。
+     * 上游若点名拒收这两个字段，AgentModelRetry 会去掉它们重试，退回模型默认行为。
+     */
+    private fun applyCustomReasoning(request: JSONObject, effort: ReasoningEffort) {
+        if (effort != ReasoningEffort.OFF) {
+            applyNamedReasoningEffort(request, effort)
+            return
+        }
+        request.put("enable_thinking", false)
+        request.put("thinking", JSONObject().put("type", "disabled"))
+        request.remove("reasoning_effort")
+        request.remove("thinking_budget")
     }
 
     private fun unsupportedEffort(providerName: String, effort: ReasoningEffort): Nothing =
