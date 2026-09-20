@@ -47,6 +47,10 @@ internal interface ConversationDao : ChunkedTextDao {
         restoreText("conversations", conversationId, "roleplay", it)
     }
 
+    /** 任务清单快照（task_plan）：本轮开始时要把它注入请求，压缩或跨轮之后模型才不会丢计划。 */
+    @Query("SELECT task_plan_json FROM conversations WHERE id = :conversationId")
+    suspend fun taskPlanJson(conversationId: String): String?
+
     @Query("SELECT * FROM conversation_messages ORDER BY conversation_id ASC, sort_index ASC")
     suspend fun messageRows(): List<ConversationMessageEntity>
 

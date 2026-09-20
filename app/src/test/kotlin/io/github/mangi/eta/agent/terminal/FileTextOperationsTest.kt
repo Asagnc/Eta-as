@@ -155,4 +155,80 @@ class FileTextOperationsTest {
 
         assertTrue(snippet.contains("未展示"))
     }
+
+    @Test
+    fun `clip chars never splits a surrogate pair`() {
+        val text = "ab\uD83D\uDE00cd"
+
+        val (clipped, truncated) = FileTextOperations.clipChars(text, 3)
+
+        assertEquals("ab", clipped)
+        assertTrue(truncated)
+    }
+
+    @Test
+    fun `clip chars returns the whole text when it fits`() {
+        val (text, truncated) = FileTextOperations.clipChars("abc", 3)
+
+        assertEquals("abc", text)
+        assertFalse(truncated)
+    }
+
+    @Test
+    fun `clip chars reports truncation for an empty budget`() {
+        assertEquals("" to true, FileTextOperations.clipChars("abc", 0))
+        assertEquals("" to false, FileTextOperations.clipChars("", 0))
+    }
+
+    @Test
+    fun `directory listing drops the total line and keeps every entry`() {
+        val raw = "total 8\ndrwxr-xr-x 2 root root 4096 a\n-rw-r--r-- 1 root root 0 b\n"
+
+        val listing = FileTextOperations.directoryListing(raw, entryCount = 2, maxEntries = 80)
+
+        assertEquals("drwxr-xr-x 2 root root 4096 a\n-rw-r--r-- 1 root root 0 b", listing.text)
+        assertEquals(2, listing.entryCount)
+        assertFalse(listing.truncated)
+    }
+
+    @Test
+    fun `directory listing reports truncation from the directory entry count`() {
+        val raw = "-rw-r--r-- 1 root root 0 b\n"
+
+        val listing = FileTextOperations.directoryListing(raw, entryCount = 5, maxEntries = 1)
+
+        assertEquals("-rw-r--r-- 1 root root 0 b", listing.text)
+        assertEquals(5, listing.entryCount)
+        assertTrue(listing.truncated)
+    }
+
+    @Test
+    fun `directory listing keeps an entry whose name starts with total`() {
+        val raw = "total 8\n-rw-r--r-- 1 root root 0 total 5\n"
+
+        val listing = FileTextOperations.directoryListing(raw, entryCount = 1, maxEntries = 80)
+
+        assertEquals("-rw-r--r-- 1 root root 0 total 5", listing.text)
+    }
+
+    @Test
+    fun `search page skips the offset and reports further pages`() {
+        val lines = (1..10).map { "line $it" }
+
+        val first = FileTextOperations.searchPage(lines, offset = 0, limit = 4)
+        val last = FileTextOperations.searchPage(lines, offset = 8, limit = 4)
+
+        assertEquals(4, first.lines.size)
+        assertTrue(first.hasMore)
+        assertEquals(listOf("line 9", "line 10"), last.lines)
+        assertFalse(last.hasMore)
+    }
+
+    @Test
+    fun `search page past the end reports no further page`() {
+        val page = FileTextOperations.searchPage(listOf("a", "b"), offset = 5, limit = 2)
+
+        assertTrue(page.lines.isEmpty())
+        assertFalse(page.hasMore)
+    }
 }

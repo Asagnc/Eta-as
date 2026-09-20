@@ -1161,7 +1161,11 @@ internal class AgentLocalTools(
                 maxResults = args.optInt("max_results", FileTextOperations.DEFAULT_SEARCH_RESULTS),
                 contextLines = args.optInt("context_lines", 0),
                 maxChars = args.optInt("max_chars", 8_000).coerceIn(200, 32_000),
-                filesOnly = args.optBoolean("files_only", false)
+                filesOnly = args.optBoolean("files_only", false),
+                ignoreCase = args.optBoolean("ignore_case", false),
+                offset = args.optInt("offset", 0),
+                noIgnore = args.optBoolean("no_ignore", false),
+                hidden = args.optBoolean("hidden", false)
             ),
         )
         if (pattern == requested) return result
@@ -1191,7 +1195,13 @@ internal class AgentLocalTools(
             return errorResult("INVALID_ARGUMENT", "path 不能包含引号、分号、管道等 Shell 字符")
         }
         val limit = args.optInt("limit", DEFAULT_FIND_LIMIT).coerceIn(1, MAX_FIND_LIMIT)
-        return terminalController.findFiles(path = path, glob = glob, limit = limit)
+        return terminalController.findFiles(
+            path = path,
+            glob = glob,
+            limit = limit,
+            noIgnore = args.optBoolean("no_ignore", false),
+            hidden = args.optBoolean("hidden", false),
+        )
     }
 
     /** BusyBox 的 grep -E 不支持 PCRE 语法；报错时直接给出可用写法，省掉一轮试错。 */

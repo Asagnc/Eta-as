@@ -30,6 +30,54 @@ internal object FileTextOperations {
         data class Ambiguous(val lines: List<Int>) : ReplaceOutcome
     }
 
+    /**
+     * 按字符预算裁剪文本，返回「裁后文本 + 是否还有剩余」。
+     *
+     * 不切在代理对中间：切一半会生成孤立代理，编码回字节时变成替换字符，续读偏移也就跟着偏了。
+     * 多字节字符在字节层被切开时由解码方补替换字符，这里只保证字符层不产生新的坏边界。
+     */
+    fun clipChars(text: String, maxChars: Int): Pair<String, Boolean> {
+        if (maxChars <= 0) return "" to text.isNotEmpty()
+        if (text.length <= maxChars) return text to false
+        var end = maxChars
+        if (end < text.length && text[end - 1].isHighSurrogate()) end--
+        return text.substring(0, end) to true
+    }
+
+    /** 目录列表的解析结果：展示文本、目录内条目总数、是否因条目上限被截断。 */
+    data class DirectoryListing(val text: String, val entryCount: Int, val truncated: Boolean)
+
+    /**
+     * 解析目录列表。
+     *
+     * `ls -l` 的首行是 `total N`（磁盘块统计，不是条目数），命令侧已用 `tail -n +2` 去掉，
+     * 这里再兜一层：只丢**首行**的 `total`，免得某个文件名恰好以 "total " 开头时被误删。
+     * [entryCount] 由命令侧单独统计（同一次 `ls` 的条目数），[maxEntries] 之外的部分不展示。
+     */
+    fun directoryListing(entriesText: String, entryCount: Int, maxEntries: Int): DirectoryListing {
+        val lines = entriesText.lines().filter { it.isNotBlank() }
+        val withoutTotal = if (lines.firstOrNull()?.startsWith("total ") == true) lines.drop(1) else lines
+        val shown = withoutTotal.take(maxEntries.coerceAtLeast(0))
+        return DirectoryListing(
+            text = shown.joinToString("\n"),
+            entryCount = entryCount,
+            truncated = entryCount > shown.size,
+        )
+    }
+
+    /** 一页命中：本页行、是否还有下一页。 */
+    data class SearchPage(val lines: List<String>, val hasMore: Boolean)
+
+    /**
+     * 命中分页。命令侧按 `offset + limit + 1` 条取回，多取的那一条只用来判断"还有下一页"。
+     * 截断判定必须把 offset 算进去：否则翻到最后一页时会因为总量大于 limit 而谎报还有下一页。
+     */
+    fun searchPage(lines: List<String>, offset: Int, limit: Int): SearchPage {
+        val start = offset.coerceAtLeast(0)
+        val page = lines.drop(start).take(limit.coerceAtLeast(1))
+        return SearchPage(page, lines.size > start + page.size)
+    }
+
     /** 与 BufferedReader.readLine 一致的行划分：末尾换行不产生额外空行，空内容为 0 行。 */
     fun linesOf(content: String): List<String> {
         if (content.isEmpty()) return emptyList()

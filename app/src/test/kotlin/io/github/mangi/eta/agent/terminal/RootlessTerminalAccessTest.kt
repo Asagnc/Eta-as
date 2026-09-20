@@ -65,19 +65,24 @@ class RootlessTerminalAccessTest {
             File(dir, "alpha.kt").writeText("")
             File(dir, "beta.txt").writeText("")
 
-            val found = JSONObject(UserFileAccess.findFiles(dir.path, "*.kt", 10))
+            val found = JSONObject(UserFileAccess.findFiles(dir.path, "*.kt", 10, noIgnore = false, hidden = false))
             assertTrue(found.toString(), found.getBoolean("ok"))
             assertEquals(1, found.getInt("count"))
             assertEquals("alpha.kt", File(found.getJSONArray("files").getString(0)).name)
 
-            val missing = JSONObject(UserFileAccess.findFiles(File(dir, "nope").path, "*.kt", 10))
+            val missing = JSONObject(
+                UserFileAccess.findFiles(File(dir, "nope").path, "*.kt", 10, noIgnore = false, hidden = false),
+            )
             assertFalse(missing.getBoolean("ok"))
             assertEquals("PATH_NOT_FOUND", missing.getString("code"))
             assertTrue(missing.getString("message"), missing.getString("message").contains("路径不存在"))
             assertTrue(missing.getString("message"), missing.getString("message").contains("alpha.kt"))
 
             val search = JSONObject(
-                UserFileAccess.searchCode(File(dir, "nope").path, "alpha", null, 10, 0, 1000, false),
+                UserFileAccess.searchCode(
+                    File(dir, "nope").path, "alpha", null, 10, 0, 1000, false,
+                    ignoreCase = false, offset = 0, noIgnore = false, hidden = false,
+                ),
             )
             assertEquals("PATH_NOT_FOUND", search.getString("code"))
         } finally {

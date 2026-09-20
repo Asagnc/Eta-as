@@ -37,6 +37,11 @@ internal class AgentLoop(
     private val onTranscript: (List<AgentModelClient.ConversationMessage>) -> Unit = {},
     private val purpose: ProviderRequestPurpose = ProviderRequestPurpose.CHAT,
     private val roleplayContext: RoleplayRunContext? = null,
+    /**
+     * 当前任务清单（task_plan 的 JSON 快照）。计划只存在对话状态与 UI 里，压缩或跨轮之后
+     * 模型就看不到自己排的清单了，于是会出现「按计划继续」却不知道计划是什么的情况。
+     */
+    private val taskPlanSnapshot: (() -> String?)? = null,
     initialSupplementIndex: Int = 0,
 ) {
     data class Result(
@@ -398,8 +403,9 @@ internal class AgentLoop(
             ?: AgentContextPruner.copyOf(messages)
         val pruned = AgentContextPruner.prune(base, config.toolResultKeep)
         runStats?.updatePrunedToolResults(pruned)
-        // 每轮请求都把当前时间重新附到最后一条用户消息上，让模型据此判断「现在」。
-        AgentRequestClock.attach(base)
+        // 每轮请求都把当前时间与当前任务清单重新附到最后一条消息上：时间让模型据此判断「现在」，
+        // 计划让它在压缩或跨轮之后仍然知道自己排了什么（两者都按前缀去重，不会叠加）。
+        AgentRequestContext.attach(base, taskPlanSnapshot?.invoke())
         return base
     }
 

@@ -102,6 +102,8 @@ internal object AgentModelClient {
         initialSupplementIndex: Int = 0,
         roleplayContext: RoleplayRunContext? = null,
         rewriteReply: Boolean = false,
+        /** 当前任务清单（task_plan 快照）：每轮请求附在最后一条消息上，压缩后计划也不会丢。 */
+        taskPlanSnapshot: (() -> String?)? = null,
         onContextSnapshot: (AgentContextSnapshot) -> Unit = {},
         onTranscript: (List<ConversationMessage>) -> Unit = {},
         runStats: AgentRunStats? = null,
@@ -181,6 +183,7 @@ internal object AgentModelClient {
             onEvent = onEvent,
             purpose = if (rewriteReply) ProviderRequestPurpose.REPLY_REWRITE else ProviderRequestPurpose.CHAT,
             roleplayContext = roleplayContext,
+            taskPlanSnapshot = taskPlanSnapshot,
             initialSupplementIndex = initialSupplementIndex,
             runStats = runStats,
             maxParallelToolCalls = config.maxParallelToolCalls,

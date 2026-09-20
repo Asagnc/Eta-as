@@ -199,6 +199,11 @@ internal class AgentRuntimeRunExecutor(
                     }
                 },
             )
+            // 计划只存在对话状态里，跨轮就丢了：本轮开始时先把上次的清单读进来，随请求注入，
+            // 之后由 task_plan 工具的更新回调保持最新。
+            var latestTaskPlan: String? = conversationId?.let { id ->
+                runBlocking { EtaDatabase.get(appContext).conversationDao().taskPlanJson(id) }
+            }
             val executor = AgentLocalTools(
                 context = appContext,
                 logger = AndroidAgentLogger,
@@ -266,6 +271,7 @@ internal class AgentRuntimeRunExecutor(
                 runStatsSummary = { runStats.summaryText() },
                 subAgentRunner = subAgentRunner,
                 onTaskPlanUpdated = { planJson ->
+                    latestTaskPlan = planJson
                     acceptEvent(
                         session,
                         AgentEvent.TaskPlanUpdated(planJson),
@@ -318,6 +324,7 @@ internal class AgentRuntimeRunExecutor(
                 initialUserMessageId = uiPayload?.promptMessageId(request.runId) ?: "user-${request.runId}",
                 initialSupplementIndex = uiPayload?.lastSupplementIndex ?: 0,
                 roleplayContext = roleplayContext,
+                taskPlanSnapshot = { latestTaskPlan },
                 rewriteReply = request.operation == AgentRuntimeWire.OP_REWRITE_REPLY,
                 compactOnly = request.operation == AgentRuntimeWire.OP_COMPACT,
                 compactUntilMessageId = request.compactUntilMessageId,
