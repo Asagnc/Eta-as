@@ -33,10 +33,10 @@ import io.github.asagnc.sta.ui.app.WorkspaceFileStore
 import io.github.asagnc.sta.ui.components.ListEmptyState
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.PreferenceIcon
+import io.github.asagnc.sta.ui.components.StaCard
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 
@@ -110,7 +110,7 @@ internal fun WorkspaceScreen(onBack: () -> Unit) {
             )
         }
         item(key = "actions") {
-            Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
                 ArrowPreference(
                     title = stringResource(R.string.capability_workspace_import),
                     enabled = !busy,
@@ -139,7 +139,7 @@ internal fun WorkspaceScreen(onBack: () -> Unit) {
         }
         if (path.isNotBlank()) {
             item(key = "parent") {
-                Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
                     ArrowPreference(
                         title = stringResource(R.string.capability_workspace_parent),
                         startAction = { PreferenceIcon(Icons.Rounded.FolderOpen) },
@@ -157,7 +157,7 @@ internal fun WorkspaceScreen(onBack: () -> Unit) {
             }
         }
         items(entries, key = { it.path }) { entry ->
-            Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
                 ArrowPreference(
                     title = entry.name,
                     summary = if (entry.directory) stringResource(R.string.capability_workspace_directory)

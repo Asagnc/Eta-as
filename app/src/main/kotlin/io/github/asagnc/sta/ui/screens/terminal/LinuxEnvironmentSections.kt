@@ -14,9 +14,9 @@ import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.agent.terminal.LinuxDistribution
 import io.github.asagnc.sta.agent.terminal.LinuxExecutionBackend
+import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Text
@@ -35,7 +35,7 @@ internal fun LinuxEnvironmentStatusCard(
     actionEnabled: Boolean,
     onAction: () -> Unit,
 ) {
-    Card(
+    StaCard(
         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
         insideMargin = PaddingValues(16.dp),
     ) {
@@ -91,7 +91,7 @@ internal fun LinuxEnvironmentConfiguration(
 ) {
     val distributions = LinuxDistribution.entries
     val backends = listOf(LinuxExecutionBackend.PROOT, LinuxExecutionBackend.CHROOT)
-    Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+    StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
         WindowSpinnerPreference(
             title = stringResource(R.string.linux_distribution_title),
             items = distributions.map {

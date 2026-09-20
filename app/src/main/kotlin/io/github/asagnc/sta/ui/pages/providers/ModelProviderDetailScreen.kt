@@ -55,12 +55,12 @@ import io.github.asagnc.sta.ui.components.StatusError
 import io.github.asagnc.sta.ui.components.StatusSuccess
 import io.github.asagnc.sta.ui.layout.horizontalCutoutPadding
 import io.github.asagnc.sta.ui.navigation.NewProviderType
+import io.github.asagnc.sta.ui.components.StaCard
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
@@ -499,7 +499,7 @@ private fun ProviderConfigTab(
 
         if (!isNew) {
             item(key = "danger_zone") {
-                Card(
+                StaCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp)

@@ -26,9 +26,9 @@ import io.github.asagnc.sta.ui.model.AgentSkillsAction
 import io.github.asagnc.sta.ui.model.AgentSkillsUiState
 import io.github.asagnc.sta.ui.model.SkillItemUi
 import io.github.asagnc.sta.ui.model.canDeleteUserSkill
+import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -72,7 +72,7 @@ fun AgentSkillsScreen(
 
         item(key = "zip-import-title") { SmallTitle(stringResource(R.string.ui_install_087db6)) }
         item(key = "zip-import-card") {
-            Card(
+            StaCard(
                 modifier = Modifier
                     .padding(horizontal = CardHorizontalPadding)
                     .padding(bottom = CardBottomPadding),
@@ -108,7 +108,7 @@ fun AgentSkillsScreen(
         if (builtinInstalled.isNotEmpty()) {
             item(key = "builtin-title") { SmallTitle(stringResource(R.string.ui_built_in_skills_1ceedf)) }
             item(key = "builtin-card") {
-                Card(
+                StaCard(
                     modifier = Modifier
                         .padding(horizontal = CardHorizontalPadding)
                         .padding(bottom = CardBottomPadding),
@@ -129,7 +129,7 @@ fun AgentSkillsScreen(
         if (userInstalled.isNotEmpty()) {
             item(key = "user-title") { SmallTitle(stringResource(R.string.ui_user_skills_748e7f)) }
             item(key = "user-card") {
-                Card(
+                StaCard(
                     modifier = Modifier
                         .padding(horizontal = CardHorizontalPadding)
                         .padding(bottom = CardBottomPadding),
@@ -151,7 +151,7 @@ fun AgentSkillsScreen(
         if (removed.isNotEmpty()) {
             item(key = "removed-title") { SmallTitle(stringResource(R.string.ui_removed_4e5c49)) }
             item(key = "removed-card") {
-                Card(
+                StaCard(
                     modifier = Modifier
                         .padding(horizontal = CardHorizontalPadding)
                         .padding(bottom = CardBottomPadding),

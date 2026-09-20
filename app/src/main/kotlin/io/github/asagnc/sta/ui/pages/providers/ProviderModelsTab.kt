@@ -71,12 +71,12 @@ import io.github.asagnc.sta.ui.components.PreferenceIcon
 import io.github.asagnc.sta.ui.components.StatusError
 import io.github.asagnc.sta.ui.components.StatusSuccess
 import io.github.asagnc.sta.ui.model.formatCompactTokenCount
+import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.components.StaCardDefaults
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
@@ -580,7 +580,7 @@ private fun ModelListGroupItem(
 ) {
     val surfaceColor = MiuixTheme.colorScheme.surfaceContainer
     val contentColor = MiuixTheme.colorScheme.onSurfaceContainer
-    val cornerRadius = CardDefaults.CornerRadius
+    val cornerRadius = StaCardDefaults.CornerRadius
     val surfaceModifier = if (isFirst || isLast) {
         Modifier.squircleSurface(
             color = surfaceColor,
@@ -616,7 +616,7 @@ private fun ModelSelectionBar(
     onExit: () -> Unit,
 ) {
     val context = LocalContext.current
-    Card(
+    StaCard(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
@@ -908,7 +908,7 @@ private fun ModelEditDialog(
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
                 )
-                Card(modifier = Modifier.fillMaxWidth()) {
+                StaCard(modifier = Modifier.fillMaxWidth()) {
                     SwitchPreference(
                         checked = reasoningEnabled,
                         onCheckedChange = { enabled ->

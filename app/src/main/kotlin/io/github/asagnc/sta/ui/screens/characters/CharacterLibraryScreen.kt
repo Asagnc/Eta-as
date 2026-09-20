@@ -23,8 +23,8 @@ import io.github.asagnc.sta.ui.app.CharacterLibraryStore
 import io.github.asagnc.sta.ui.components.ListEmptyState
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.navigation.AppRoute
+import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
@@ -130,7 +130,7 @@ internal fun CharacterLibraryScreen(
             }
         }
         items(store.filteredCharacters, key = { it.id }) { profile ->
-            Card(
+            StaCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = CharacterCardPadding, vertical = 6.dp),
@@ -160,7 +160,7 @@ internal fun CharacterLibraryScreen(
         }
         item(key = "persona-title") { SmallTitle("我的") }
         item(key = "persona") {
-            Card(
+            StaCard(
                 modifier = Modifier
                     .padding(horizontal = CharacterCardPadding)
                     .padding(bottom = 12.dp),

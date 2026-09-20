@@ -32,6 +32,7 @@ import io.github.asagnc.sta.ui.model.actualToolName
 import io.github.asagnc.sta.ui.model.toolCardAction
 import io.github.asagnc.sta.ui.model.toolCardRequirement
 import top.yukonga.miuix.kmp.basic.Card
+import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -61,7 +62,7 @@ internal fun ToolCard(
         AgentToolsAction.OpenEnhancements -> stringResource(R.string.tools_view_enhancements)
         else -> stringResource(R.string.ui_view_description)
     }
-    Card(
+    StaCard(
         modifier = modifier.heightIn(min = 136.dp),
         insideMargin = PaddingValues(16.dp),
         colors = CardDefaults.defaultColors(

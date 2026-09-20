@@ -22,8 +22,8 @@ import io.github.asagnc.sta.ui.app.rememberDeviceCapabilities
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.PreferenceIcon
 import io.github.asagnc.sta.ui.model.AgentSystemEnhanceAction
+import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TextButton
 
@@ -41,7 +41,7 @@ fun SystemEnhanceScreen(
         modifier = modifier,
     ) {
         item(key = "access") {
-            Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
                 BasicComponent(
                     title = "Root",
                     summary = capabilities.root.description(context),
@@ -73,7 +73,7 @@ fun SystemEnhanceScreen(
             }
         }
         item(key = "framework-help") {
-            Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
                 BasicComponent(
                     title = stringResource(R.string.capability_xposed_help),
                     summary = stringResource(R.string.capability_xposed_help_summary),
@@ -83,7 +83,7 @@ fun SystemEnhanceScreen(
         }
         item(key = "root-title") { SmallTitle(stringResource(R.string.capability_root_features)) }
         item(key = "root-features") {
-            Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
                 BasicComponent(
                     title = stringResource(R.string.capability_root_device),
                     summary = stringResource(R.string.capability_root_device_summary),
@@ -103,7 +103,7 @@ fun SystemEnhanceScreen(
         }
         item(key = "hook-title") { SmallTitle(stringResource(R.string.capability_system_features)) }
         item(key = "hook-features") {
-            Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
                 BasicComponent(
                     title = stringResource(R.string.capability_hook_assistants),
                     summary = stringResource(R.string.capability_hook_assistants_summary),

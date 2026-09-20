@@ -25,6 +25,7 @@ import io.github.asagnc.sta.data.model.ProviderSetting
 import io.github.asagnc.sta.ui.components.PreferenceIcon
 import io.github.asagnc.sta.ui.components.providerBrandLogoRes as sharedProviderBrandLogoRes
 import top.yukonga.miuix.kmp.basic.Card
+import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -40,7 +41,7 @@ internal fun ProviderSection(
         if (title != null) {
             SmallTitle(title)
         }
-        Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+        StaCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
             content()
         }
     }

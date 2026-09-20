@@ -51,9 +51,8 @@ internal fun SettingsPageTheme(content: @Composable () -> Unit) {
 
 @Composable
 internal fun SettingsGroup(content: @Composable ColumnScope.() -> Unit) {
-    Card(
+    StaCard(
         modifier = Modifier.padding(horizontal = SettingsItemLayout.SidePadding).padding(bottom = 16.dp),
-        cornerRadius = 24.dp,
         content = content,
     )
 }

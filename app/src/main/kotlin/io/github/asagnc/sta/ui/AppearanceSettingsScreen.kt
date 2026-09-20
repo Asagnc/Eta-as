@@ -34,8 +34,9 @@ import io.github.asagnc.sta.data.repository.AppearanceSettingsRepository
 import io.github.asagnc.sta.ui.app.LocalAppearanceSettings
 import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
+import io.github.asagnc.sta.ui.components.StaCard
+import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Slider
 import top.yukonga.miuix.kmp.basic.SliderDefaults
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -47,7 +48,6 @@ import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
-import kotlin.math.roundToInt
 
 @Composable
 internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
@@ -120,7 +120,7 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
             SmallTitle(text = stringResource(R.string.appearance_group_color))
         }
         item(key = "appearance_color_card") {
-            Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
                 OverlayDropdownPreference(
                     title = stringResource(R.string.appearance_theme_mode),
                     summary = themeModeLabels[appearance.themeMode.ordinal],
@@ -185,7 +185,7 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
             SmallTitle(text = stringResource(R.string.appearance_group_interface))
         }
         item(key = "appearance_interface_card") {
-            Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
                 SwitchPreference(
                     title = stringResource(R.string.appearance_blur),
                     summary = stringResource(R.string.appearance_blur_summary),

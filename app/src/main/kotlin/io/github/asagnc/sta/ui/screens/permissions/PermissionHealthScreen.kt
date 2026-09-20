@@ -29,6 +29,7 @@ import io.github.asagnc.sta.ui.model.PermissionHealthAction
 import io.github.asagnc.sta.ui.model.PermissionHealthItemUi
 import io.github.asagnc.sta.ui.model.PermissionHealthUiState
 import top.yukonga.miuix.kmp.basic.Card
+import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.preference.ArrowPreference
@@ -49,7 +50,7 @@ fun PermissionHealthScreen(
             SmallTitle(stringResource(R.string.ui_permissions_and_status_35f368))
         }
         item(key = "card") {
-            Card(modifier = Modifier.padding(horizontal = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 12.dp)) {
                 state.items.forEach { item ->
                     PermissionItemRow(
                         item = item,

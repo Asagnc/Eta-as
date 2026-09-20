@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.app.CharacterLibraryStore
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
+import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -103,7 +103,7 @@ internal fun CharacterEditorScreen(
             )
         }
         item(key = "advanced") {
-            Card(modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = 8.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = 8.dp)) {
                 ArrowPreference(
                     title = "高级设置",
                     summary = "性格、背景、示例对话、提示词、作者信息与世界书",

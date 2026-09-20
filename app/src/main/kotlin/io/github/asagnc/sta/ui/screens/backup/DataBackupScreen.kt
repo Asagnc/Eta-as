@@ -26,6 +26,7 @@ import io.github.asagnc.sta.R
 import io.github.asagnc.sta.data.repository.StaBackupSummary
 import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
+import io.github.asagnc.sta.ui.components.StaCard
 import java.io.InputStream
 import java.io.OutputStream
 import java.text.SimpleDateFormat
@@ -34,7 +35,6 @@ import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.BasicComponent
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -104,7 +104,7 @@ internal fun DataBackupScreen(
         onBack = onBack,
     ) {
         item(key = "warning") {
-            Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
                 BasicComponent(
                     title = stringResource(R.string.data_backup_warning_title),
                     summary = stringResource(R.string.data_backup_warning_summary),
@@ -115,7 +115,7 @@ internal fun DataBackupScreen(
             SmallTitle(stringResource(R.string.data_backup_actions))
         }
         item(key = "actions-card") {
-            Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
                 ArrowPreference(
                     title = stringResource(R.string.data_backup_export),
                     summary = if (busy) {

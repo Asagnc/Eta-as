@@ -34,7 +34,7 @@ fun PermissionHealthCard(
     modifier: Modifier = Modifier,
 ) {
     val issueCount = state.items.count { it.status != PermissionStatusUi.Available }
-    Card(
+    StaCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp),

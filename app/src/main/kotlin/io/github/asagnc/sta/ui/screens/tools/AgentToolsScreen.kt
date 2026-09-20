@@ -30,6 +30,7 @@ import io.github.asagnc.sta.ui.model.AgentToolsUiState
 import io.github.asagnc.sta.ui.model.ToolItemUi
 import io.github.asagnc.sta.ui.model.projectToolGroups
 import top.yukonga.miuix.kmp.basic.Card
+import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TabRow
 import top.yukonga.miuix.kmp.preference.ArrowPreference
@@ -65,7 +66,7 @@ fun AgentToolsScreen(
             )
         }
         item(key = "capability-discovery") {
-            Card(modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp)) {
                 ArrowPreference(
                     title = stringResource(R.string.capability_enhancements),
                     summary = stringResource(R.string.capability_enhancements_summary),

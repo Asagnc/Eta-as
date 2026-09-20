@@ -80,11 +80,12 @@ import io.github.asagnc.sta.agent.browser.AgentBrowserSession
 import io.github.asagnc.sta.agent.browser.BrowserSessionSnapshot
 import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.StatusError
+import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.components.StaCardDefaults
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -325,7 +326,7 @@ private fun BrowserWindow(
     onProxy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    StaCard(
         modifier = modifier,
         insideMargin = PaddingValues(0.dp),
         colors = CardDefaults.defaultColors(
@@ -357,8 +358,8 @@ private fun BrowserWindow(
                 // 普通 clip 走 clipToOutline，硬件裁剪对 WebView 安全。
                 .clip(
                     RoundedCornerShape(
-                        bottomStart = CardDefaults.CornerRadius,
-                        bottomEnd = CardDefaults.CornerRadius,
+                        bottomStart = StaCardDefaults.CornerRadius,
+                        bottomEnd = StaCardDefaults.CornerRadius,
                     )
                 ),
         ) {
@@ -581,7 +582,7 @@ private fun ColumnScope.BrowserStatusBanner(snapshot: BrowserSessionSnapshot) {
         enter = fadeIn() + expandVertically(),
         exit = fadeOut() + shrinkVertically(),
     ) {
-        Card(
+        StaCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 10.dp),

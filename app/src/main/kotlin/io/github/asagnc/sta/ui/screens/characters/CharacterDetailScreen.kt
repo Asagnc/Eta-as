@@ -27,9 +27,9 @@ import io.github.asagnc.sta.ui.app.CharacterLibraryStore
 import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.navigation.AppRoute
+import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.BasicComponentColors
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -68,7 +68,7 @@ internal fun CharacterDetailScreen(
             return@MiuixScaffoldPage
         }
         item(key = "profile") {
-            Card(
+            StaCard(
                 modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = 6.dp),
                 insideMargin = PaddingValues(16.dp),
             ) {
@@ -119,7 +119,7 @@ internal fun CharacterDetailScreen(
             )
         }
         item(key = "persona") {
-            Card(
+            StaCard(
                 modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = 6.dp),
             ) {
                 SwitchPreference(
@@ -133,7 +133,7 @@ internal fun CharacterDetailScreen(
         }
         item(key = "greetings-title") { SmallTitle("开场白") }
         item(key = "greetings") {
-            Card(modifier = Modifier.padding(horizontal = CharacterCardPadding)) {
+            StaCard(modifier = Modifier.padding(horizontal = CharacterCardPadding)) {
                 val greetings = listOf(profile.card.firstMessage) + profile.card.alternateGreetings
                 greetings.forEachIndexed { index, greeting ->
                     RadioButtonPreference(
@@ -168,7 +168,7 @@ internal fun CharacterDetailScreen(
         }
         item(key = "management-title") { SmallTitle("管理") }
         item(key = "management") {
-            Card(modifier = Modifier.padding(horizontal = CharacterCardPadding)) {
+            StaCard(modifier = Modifier.padding(horizontal = CharacterCardPadding)) {
                 ArrowPreference(title = "编辑角色", enabled = !store.busy, onClick = {
                     store.discardEditor()
                     onNavigate(AppRoute.CharacterEditor(id))
@@ -211,7 +211,7 @@ internal fun CharacterDetailScreen(
         }
         if (store.compatibilityWarnings.isNotEmpty()) {
             item(key = "compatibility") {
-                Card(
+                StaCard(
                     modifier = Modifier
                         .padding(horizontal = CharacterCardPadding)
                         .padding(top = 12.dp),

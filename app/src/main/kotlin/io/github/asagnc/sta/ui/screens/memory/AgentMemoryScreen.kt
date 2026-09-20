@@ -29,9 +29,10 @@ import io.github.asagnc.sta.ui.components.MiuixScaffold
 import io.github.asagnc.sta.ui.layout.horizontalCutoutPadding
 import io.github.asagnc.sta.ui.model.AgentMemoryAction
 import io.github.asagnc.sta.ui.model.AgentMemoryUiState
+import io.github.asagnc.sta.ui.components.StaCard
+import java.text.NumberFormat
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -41,7 +42,6 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import top.yukonga.miuix.kmp.window.WindowDialog
-import java.text.NumberFormat
 
 @Composable
 internal fun AgentMemoryScreen(
@@ -76,7 +76,7 @@ internal fun AgentMemoryScreen(
             ) {
                 item(key = "status-title") { SmallTitle(stringResource(R.string.ui_memory_b55ff5)) }
                 item(key = "status-card") {
-                    Card(
+                    StaCard(
                         modifier = Modifier
                             .padding(horizontal = 12.dp)
                             .padding(bottom = 12.dp),
@@ -103,7 +103,7 @@ internal fun AgentMemoryScreen(
                     .navigationBarsPadding(),
             ) {
                 SmallTitle("MEMORY.md")
-                Card(
+                StaCard(
                     modifier = Modifier
                         .padding(horizontal = 12.dp)
                         .padding(bottom = 12.dp),

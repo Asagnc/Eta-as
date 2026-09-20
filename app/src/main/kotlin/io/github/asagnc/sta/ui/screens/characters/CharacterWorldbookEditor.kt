@@ -11,6 +11,7 @@ import io.github.asagnc.sta.agent.roleplay.CharacterBookEntryDraft
 import io.github.asagnc.sta.agent.roleplay.CharacterWorldbook
 import io.github.asagnc.sta.ui.app.CharacterLibraryStore
 import top.yukonga.miuix.kmp.basic.Card
+import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
@@ -31,7 +32,7 @@ internal fun LazyListScope.characterWorldbookEditor(
     val enabled = !store.busy
     item(key = "worldbook-title") { SmallTitle("世界书") }
     item(key = "worldbook-header") {
-        Card(modifier = Modifier.padding(horizontal = CharacterCardPadding)) {
+        StaCard(modifier = Modifier.padding(horizontal = CharacterCardPadding)) {
             ArrowPreference(
                 title = "内嵌世界书",
                 summary = "${book.entries.size} 个条目 · ${if (expanded) "收起" else "展开编辑"}",
@@ -54,7 +55,7 @@ internal fun LazyListScope.characterWorldbookEditor(
         }, enabled, singleLine = true)
     }
     item(key = "worldbook-recursive") {
-        Card(modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = 6.dp)) {
+        StaCard(modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = 6.dp)) {
             SwitchPreference(
                 title = "递归匹配",
                 summary = "使用已匹配条目的内容继续寻找相关条目",
@@ -67,7 +68,7 @@ internal fun LazyListScope.characterWorldbookEditor(
     item(key = "worldbook-entries-title") { SmallTitle("条目") }
     val unsupported = CharacterWorldbook.unsupportedEntries(card).associate { it.index to it.reasons }
     itemsIndexed(book.entries, key = { index, _ -> "worldbook-entry-$index" }) { index, entry ->
-        Card(
+        StaCard(
             modifier = Modifier
                 .padding(horizontal = CharacterCardPadding, vertical = 6.dp),
         ) {
