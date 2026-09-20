@@ -20,8 +20,8 @@ enum class ReasoningEffort(
 
     /**
      * 自动档：由 Eta 按请求用途与轮次决定实际档位（辅助请求低档、主循环首轮高档、
-     * 后续工具轮中档，见 ProviderReasoning.resolveAutoEffort），再按模型能力归一化。
-     * rank 与 DEFAULT 相同，只为在列表里占位，不参与"降到最近可用档"的比较。
+     * 工具回填轮关思考、上一轮工具失败时升回高档，见 ProviderReasoning.resolveAutoEffort），
+     * 再按模型能力归一化。rank 与 DEFAULT 相同，只为在列表里占位，不参与"降到最近可用档"的比较。
      */
     @SerialName("auto")
     AUTO("auto", "Auto", 1),

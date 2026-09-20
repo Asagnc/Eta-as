@@ -265,6 +265,7 @@ class ProviderReasoningTest {
                 ReasoningEffort.MEDIUM,
                 ReasoningEffort.HIGH,
             ),
+            canDisable = true,
         )
         val firstTurn = JSONArray()
             .put(JSONObject().put("role", "system").put("content", "约束"))
@@ -290,7 +291,8 @@ class ProviderReasoningTest {
             ProviderRequestPurpose.CHAT,
             laterTurn,
         )
-        assertEquals("medium", laterTurnRequest.getString("reasoning_effort"))
+        // 工具回填轮不再思考：这一档在 OpenAI 源上就是 reasoning_effort=none
+        assertEquals("none", laterTurnRequest.getString("reasoning_effort"))
 
         val compactionRequest = JSONObject()
         ProviderReasoning.applyOpenAiCompatibleRequest(
@@ -360,6 +362,77 @@ class ProviderReasoningTest {
         )
 
         assertEquals("high", request.getString("reasoning_effort"))
+        assertFalse(request.has("enable_thinking"))
+        assertFalse(request.has("thinking"))
+    }
+
+    @Test
+    fun autoEffortTurnsThinkingOffOnToolRoundsForCustomRelays() {
+        val request = JSONObject()
+
+        ProviderReasoning.applyOpenAiCompatibleRequest(
+            request,
+            config(source = ProviderSourceTypes.CUSTOM, effort = ReasoningEffort.AUTO),
+            ProviderRequestPurpose.CHAT,
+            JSONArray()
+                .put(JSONObject().put("role", "user").put("content", "继续"))
+                .put(JSONObject().put("role", "assistant").put("content", "好的"))
+                .put(JSONObject().put("role", "tool").put("content", "{\"ok\":true}")),
+        )
+
+        // 中转站认不了 reasoning_effort=none，自动档的工具轮必须落到开关字段上才算真的关掉思考
+        assertFalse(request.getBoolean("enable_thinking"))
+        assertEquals("disabled", request.getJSONObject("thinking").getString("type"))
+        assertFalse(request.has("reasoning_effort"))
+    }
+
+    @Test
+    fun autoEffortEscalatesBackToHighAfterToolFailure() {
+        val request = JSONObject()
+
+        ProviderReasoning.applyOpenAiCompatibleRequest(
+            request,
+            config(source = ProviderSourceTypes.CUSTOM, effort = ReasoningEffort.AUTO),
+            ProviderRequestPurpose.CHAT,
+            JSONArray()
+                .put(JSONObject().put("role", "user").put("content", "继续"))
+                .put(JSONObject().put("role", "assistant").put("content", "我查一下"))
+                .put(
+                    JSONObject().put("role", "tool")
+                        .put("content", "{\"ok\":false,\"code\":\"PATH_NOT_FOUND\"}"),
+                ),
+        )
+
+        // 工具失败是"这题难"的唯一硬证据：这一轮升回高档
+        assertEquals("high", request.getString("reasoning_effort"))
+        assertFalse(request.has("enable_thinking"))
+    }
+
+    @Test
+    fun autoEffortStaysAtProviderDefaultWhenModelCannotDisableThinking() {
+        val request = JSONObject()
+
+        ProviderReasoning.applyOpenAiCompatibleRequest(
+            request,
+            autoConfig(
+                ModelReasoningCapabilities(
+                    supportedEfforts = listOf(
+                        ReasoningEffort.LOW,
+                        ReasoningEffort.MEDIUM,
+                        ReasoningEffort.HIGH,
+                    ),
+                    mandatory = true,
+                ),
+            ),
+            ProviderRequestPurpose.CHAT,
+            JSONArray()
+                .put(JSONObject().put("role", "user").put("content", "继续"))
+                .put(JSONObject().put("role", "assistant").put("content", "好的"))
+                .put(JSONObject().put("role", "tool").put("content", "{\"ok\":true}")),
+        )
+
+        // 能力里没有 OFF（mandatory）时归一到 DEFAULT：一个字段都不发，绝不硬塞关思考的开关
+        assertFalse(request.has("reasoning_effort"))
         assertFalse(request.has("enable_thinking"))
         assertFalse(request.has("thinking"))
     }

@@ -11,6 +11,9 @@ import org.json.JSONObject
 internal object ProviderReasoning {
     private const val ANTHROPIC_LARGE_MAX_TOKENS = 65_536
 
+    /** 自动档判断"上一轮工具失败"时，只看尾部这么多条工具结果。 */
+    private const val AUTO_FAILURE_SCAN_MESSAGES = 6
+
     fun applyOpenAiCompatibleRequest(
         request: JSONObject,
         config: AgentModelClient.ModelConfig,
@@ -338,11 +341,14 @@ internal object ProviderReasoning {
 
     /**
      * 自动档的档位规则，只依赖可观察的事实，不猜任务难度：
-     * 压缩、回复重写这类辅助请求用低档；主循环里还没有助手或工具消息（首轮规划）用高档；
-     * 之后的工具回填轮用中档。
+     * 压缩、回复重写这类辅助请求用低档；主循环首轮用高档（这一轮定方向，最值得想）；
+     * 之后的工具回填轮不再思考——工具轮的输出是机械的，思考只是白烧 1~3 秒；
+     * 上一轮的工具结果里出现失败时升回高档，因为那是"这题难"的唯一硬证据。
      *
      * 拿不到模型能力（多数中转站没有模型元数据）时只产出 Low / High：这是各家 effort 字段
      * 的公共子集，Kimi K3、StepFun 这类只认 low/high 的供应商不会因此报错。
+     * 关思考同样只在模型能力支持时才会真的发出去：能力里没有 OFF 时
+     * [ModelReasoningCapabilities.normalize] 会把 OFF 归一到 DEFAULT。
      */
     private fun resolveAutoEffort(
         purpose: ProviderRequestPurpose,
@@ -351,14 +357,38 @@ internal object ProviderReasoning {
     ): ReasoningEffort = when {
         purpose != ProviderRequestPurpose.CHAT -> ReasoningEffort.LOW
         !hasAssistantTurn(messages) -> ReasoningEffort.HIGH
+        hasRecentToolFailure(messages) -> ReasoningEffort.HIGH
         capabilities == null -> ReasoningEffort.HIGH
-        else -> ReasoningEffort.MEDIUM
+        else -> ReasoningEffort.OFF
     }
 
     private fun hasAssistantTurn(messages: JSONArray): Boolean {
         for (index in 0 until messages.length()) {
             val role = messages.optJSONObject(index)?.optString("role").orEmpty()
             if (role == "assistant" || role == "tool") return true
+        }
+        return false
+    }
+
+    /**
+     * 尾部若干条工具结果里有没有失败：工具结果统一带 `ok` 字段，失败时是 false。
+     * 只看尾部是为了不让很早以前的失败一直把后续轮次钉在高档上。
+     */
+    private fun hasRecentToolFailure(messages: JSONArray): Boolean {
+        var inspected = 0
+        var index = messages.length() - 1
+        while (index >= 0 && inspected < AUTO_FAILURE_SCAN_MESSAGES) {
+            val message = messages.optJSONObject(index) ?: break
+            if (message.optString("role") == "tool") {
+                inspected++
+                val text = when (val content = message.opt("content")) {
+                    is JSONObject -> content.toString()
+                    is String -> content
+                    else -> content?.toString().orEmpty()
+                }
+                if (text.replace(" ", "").contains("\"ok\":false")) return true
+            }
+            index--
         }
         return false
     }
