@@ -281,17 +281,35 @@ internal class AgentTraceFormatter {
     private fun parseResultJson(result: AgentModelClient.ToolResult): JSONObject? =
         runCatching { JSONObject(result.content) }.getOrNull()
 
-    /** 失败摘要保留 code= 标记，供运行日志提取稳定错误码；message 是工具侧给出的中文原因。 */
+    /**
+     * 失败摘要保留 code= 标记，供运行日志提取稳定错误码；message 是工具侧给出的中文原因。
+     *
+     * message 可能是多行的（edit_file 的「最接近的原文」+ 差异说明、PathHints 的
+     * 「最近可用目录 + 其下条目」都是）：折叠行只取第一行，展开卡片要能看到完整原因，
+     * 所以这里保留换行并限制行数，而不是把整段压成一行再截 80 字——那正好把可行动的部分截掉。
+     */
     private fun summarizeFailure(json: JSONObject?): String {
         val code = json?.optString("code")?.takeIf { it.isNotBlank() }
         val reason = json?.optString("message")
-            ?.let(::sanitizeSummaryValue)
+            ?.let(::failureDetail)
             ?.takeIf { it.isNotBlank() }
         return buildList {
             add("失败")
             reason?.let(::add)
             code?.let { add("code=$it") }
         }.joinToString(" · ")
+    }
+
+    /** 多行失败原因：逐行原样保留（不折叠空白、不替换标点），超出上限时标出省略。 */
+    private fun failureDetail(message: String): String {
+        val lines = message.replace("\r\n", "\n").trim().lines().map { it.trimEnd() }
+        val shown = lines.take(MAX_FAILURE_DETAIL_LINES).joinToString("\n")
+        return when {
+            lines.size > MAX_FAILURE_DETAIL_LINES ->
+                "$shown\n…（其余 ${lines.size - MAX_FAILURE_DETAIL_LINES} 行略）"
+            shown.length > MAX_FAILURE_DETAIL_CHARS -> shown.take(MAX_FAILURE_DETAIL_CHARS) + "…"
+            else -> shown
+        }
     }
 
     private fun summarizeMemoryResult(toolName: String, json: JSONObject): String =
@@ -361,8 +379,9 @@ internal class AgentTraceFormatter {
         }
         val truncated = json.optBoolean("stdout_truncated", false) ||
             json.optBoolean("stderr_truncated", false)
-        val preview = terminalOutputPreview(output, truncated) ?: return status
-        return "$status\n$preview"
+        val hint = json.optString("hint").trim().takeIf { it.isNotBlank() }
+        val preview = terminalOutputPreview(output, truncated)
+        return listOfNotNull(status, preview, hint?.let { "提示：$it" }).joinToString("\n")
     }
 
     /**
@@ -568,6 +587,10 @@ internal class AgentTraceFormatter {
 
     private companion object {
         const val BROWSER_TOOL_NAME = "browser_use"
+
+        /** 失败详情（展开卡片最多显示 10 行）的展示上限：行数与字符数各留一道闸。 */
+        private const val MAX_FAILURE_DETAIL_LINES = 12
+        private const val MAX_FAILURE_DETAIL_CHARS = 800
         const val MAX_DISPLAY_COMMAND_CHARS = 4_000
         const val MAX_QUERY_SUMMARY_CHARS = 30
         const val MAX_LISTED_APP_NAMES = 3

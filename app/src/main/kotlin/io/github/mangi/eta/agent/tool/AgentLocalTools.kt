@@ -1097,29 +1097,38 @@ internal class AgentLocalTools(
             .toString()
     }
 
-    private fun runCommand(args: JSONObject): String =
-        terminalController.runCommand(
-            command = args.optString("command"),
-            cwd = args.optString("cwd").ifBlank { null },
-            timeoutSeconds = args.optInt("timeout_seconds", 30)
+    private fun runCommand(args: JSONObject): String {
+        val command = args.optString("command")
+        return SelfKillHint.append(
+            command,
+            terminalController.runCommand(
+                command = command,
+                cwd = args.optString("cwd").ifBlank { null },
+                timeoutSeconds = args.optInt("timeout_seconds", 30)
+            ),
         )
+    }
 
     private fun terminal(args: JSONObject): String {
-        return terminalController.terminalAction(
-            action = args.optString("action", "open_and_exec"),
-            command = args.optString("command"),
-            cwd = args.optString("cwd").ifBlank { null },
-            timeoutMs = args.optInt("timeout_ms", 30_000),
-            identity = args.optString("identity"),
-            mergeStderr = args.optBoolean("merge_stderr", false),
-            sessionId = args.optString("session_id").ifBlank { null },
-            jobId = args.optString("job_id").ifBlank { null },
-            async = args.optBoolean("async", false),
-            offsetChars = args.optInt("offset_chars", 0),
-            maxChars = args.optInt("max_chars", 8_000),
-            closeIfDone = args.optBoolean("close_if_done", false),
-            environment = args.optString("environment", "android"),
-            taskId = args.optString("task_id").ifBlank { null },
+        val command = args.optString("command")
+        return SelfKillHint.append(
+            command,
+            terminalController.terminalAction(
+                action = args.optString("action", "open_and_exec"),
+                command = command,
+                cwd = args.optString("cwd").ifBlank { null },
+                timeoutMs = args.optInt("timeout_ms", 30_000),
+                identity = args.optString("identity"),
+                mergeStderr = args.optBoolean("merge_stderr", false),
+                sessionId = args.optString("session_id").ifBlank { null },
+                jobId = args.optString("job_id").ifBlank { null },
+                async = args.optBoolean("async", false),
+                offsetChars = args.optInt("offset_chars", 0),
+                maxChars = args.optInt("max_chars", 8_000),
+                closeIfDone = args.optBoolean("close_if_done", false),
+                environment = args.optString("environment", "android"),
+                taskId = args.optString("task_id").ifBlank { null },
+            ),
         )
     }
 

@@ -472,6 +472,80 @@ class AgentTraceFormatterTest {
         assertTrue(summary.length < longOutput.length)
     }
 
+    @Test
+    fun failureDetailKeepsEveryLineOfTheToolMessage() {
+        val message = "没有匹配 old_text 的文本（文件共 469 行）。最接近的原文（L 开头是行号）：\n" +
+            "L75: val (text, charTruncated) = FileTextOperations.clipChars(\n" +
+            "L76:     raw.decodeToString(),\n" +
+            "请按上面的原文修正 old_text 后重试"
+
+        val summary = formatter.summarizeResult(
+            "edit_file",
+            AgentModelClient.ToolResult(
+                content = JSONObject()
+                    .put("ok", false)
+                    .put("code", "EDIT_NOT_FOUND")
+                    .put("message", message)
+                    .toString(),
+            ),
+        )
+
+        assertTrue(summary, summary.contains("L75: val (text, charTruncated) = FileTextOperations.clipChars("))
+        assertTrue(summary, summary.contains("请按上面的原文修正 old_text 后重试"))
+        assertTrue(summary, summary.endsWith(" · code=EDIT_NOT_FOUND"))
+    }
+
+    @Test
+    fun longFailureDetailIsCappedWithAMarker() {
+        val message = (1..40).joinToString("\n") { "第 $it 行" }
+
+        val summary = formatter.summarizeResult(
+            "edit_file",
+            AgentModelClient.ToolResult(
+                content = JSONObject()
+                    .put("ok", false)
+                    .put("code", "EDIT_NOT_FOUND")
+                    .put("message", message)
+                    .toString(),
+            ),
+        )
+
+        assertTrue(summary, summary.contains("第 12 行"))
+        assertFalse(summary, summary.contains("第 13 行"))
+        assertTrue(summary, summary.contains("其余 28 行略"))
+    }
+
+    @Test
+    fun terminalHintIsShownUnderTheStatusLine() {
+        val summary = formatter.summarizeResult(
+            "run_command",
+            AgentModelClient.ToolResult(
+                content = JSONObject()
+                    .put("ok", false)
+                    .put("exit_code", 143)
+                    .put("stdout", "")
+                    .put("stderr", "Terminated")
+                    .put("hint", "命令被信号终止（exit=143）。pkill 会匹配到命令自身的命令行")
+                    .toString(),
+            ),
+        )
+
+        assertTrue(summary, summary.contains("退出码 143（SIGTERM）"))
+        assertTrue(summary, summary.contains("提示：命令被信号终止"))
+    }
+
+    @Test
+    fun terminalResultWithoutHintStaysUnchanged() {
+        val summary = formatter.summarizeResult(
+            "run_command",
+            AgentModelClient.ToolResult(
+                content = JSONObject().put("ok", true).put("exit_code", 0).put("stdout", "done").toString(),
+            ),
+        )
+
+        assertEquals("执行完成\ndone", summary)
+    }
+
     private data class RedactionCase(
         val toolName: String,
         val argumentsJson: String,
