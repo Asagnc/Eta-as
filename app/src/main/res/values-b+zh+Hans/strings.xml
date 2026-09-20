@@ -257,6 +257,7 @@
   <string name="system_notice_stopped">已停止</string>
   <string name="system_notice_empty_result">运行已完成，但没有返回文字。</string>
   <string name="system_notice_runtime_failed">Runtime 运行失败</string>
+  <string name="system_notice_self_review">运行自查</string>
   <string name="conversation_persistence_failed">无法保存对话，请重试</string>
   <string name="system_notice_interrupted">任务已中断。已保留部分输出，未自动重试尚未完成的操作。</string>
   <string name="tool_status_unknown">结果未知</string>
