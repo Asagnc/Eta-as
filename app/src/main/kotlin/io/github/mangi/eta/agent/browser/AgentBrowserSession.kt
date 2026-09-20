@@ -581,6 +581,7 @@ internal object AgentBrowserSession {
         val timeout = args.optLong("timeout_ms", NAVIGATION_TIMEOUT_MS)
             .coerceIn(500L, NAVIGATION_TIMEOUT_MS)
         val generation = navigationGeneration.incrementAndGet()
+        var headerInjected = false
         callOnMain {
             requireActiveOperation(epoch)
             if (navigationGeneration.get() != generation) {
@@ -600,7 +601,7 @@ internal object AgentBrowserSession {
                     WebSettings.getDefaultUserAgent(view.context)
                 }
             }
-            applyHeaderScriptOnMain(view, headers)
+            headerInjected = applyHeaderScriptOnMain(view, headers)
             if (headers == null) view.loadUrl(rawUrl) else view.loadUrl(rawUrl, headers)
         }
 
@@ -627,7 +628,12 @@ internal object AgentBrowserSession {
         }
         val envelope = baseEnvelope("navigate", ok = true, status = "ok")
             .put("redirected", rawUrl != currentUrl)
-        if (headers != null) envelope.put("header_names", JSONArray(headers.keys.toList()))
+        if (headers != null) {
+            envelope.put("header_names", JSONArray(headers.keys.toList()))
+            // 注入没成功时只有主文档请求带这些头：把范围写进结果，别让 header_names 造成
+            // 「页面自身发出的同源请求也带了头」的误解。
+            envelope.put("header_scope", if (headerInjected) "document_start" else "main_document_only")
+        }
         if (userAgent != null) envelope.put("user_agent", callOnMain { view.settings.userAgentString })
         return toolResult(envelope)
     }
@@ -650,7 +656,10 @@ internal object AgentBrowserSession {
         if (source.isBlank()) return ""
         // 包一层 IIFE：既把 Readability 的顶层变量限制在自己的作用域里（不与提取脚本撞名），
         // 又把构造函数交回来，供提取脚本直接使用。
-        return "var Readability = (function () {\n$source\nreturn Readability;\n})();\n"
+        // 内层 try/catch 是降级通道：readability.js 运行期抛错时返回 null，提取脚本的
+        // `typeof Readability === 'function'` 判假后走启发式，而不是让整次 readPage 失败。
+        // （语法错误在解析期就失败，try 兜不住，只能靠构建期保证资产本身可用。）
+        return "var Readability = (function () {\ntry {\n$source\nreturn Readability;\n} catch (error) { return null; }\n})();\n"
     }
 
     private fun readPage(args: JSONObject, readable: Boolean): BrowserToolResult {
@@ -1321,15 +1330,20 @@ internal object AgentBrowserSession {
     }
 
     /**
-     * 把这一批请求头装进文档开始脚本，让页面自己发出的同源 fetch/XHR 也带上；没有请求头时移除，
-     * 保持“请求头只对本次导航生效”的语义。WebView 不支持文档开始注入时静默跳过，此时只有主文档请求带请求头。
+     * 给本次导航装请求头，返回文档开始注入脚本是否真的装上。
+     *
+     * 把这一批头装进文档开始脚本，让页面自己发出的同源 fetch/XHR 也带上；没有请求头时移除，
+     * 保持“请求头只对本次导航生效”的语义。
+     *
+     * 两条失败路径都是静默的（WebView 不支持该特性、注册抛异常），所以必须把结果回给调用方：
+     * 否则返回值里的 header_names 会让模型以为页面自身发出的同源请求也带了这些头。
      */
-    private fun applyHeaderScriptOnMain(view: WebView, headers: Map<String, String>?) {
+    private fun applyHeaderScriptOnMain(view: WebView, headers: Map<String, String>?): Boolean {
         val previous = headerScript
         headerScript = null
         if (previous != null) runCatching { previous.remove() }
-        if (headers.isNullOrEmpty()) return
-        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return
+        if (headers.isNullOrEmpty()) return false
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return false
         headerScript = runCatching {
             WebViewCompat.addDocumentStartJavaScript(
                 view,
@@ -1337,6 +1351,7 @@ internal object AgentBrowserSession {
                 setOf("*"),
             )
         }.getOrNull()
+        return headerScript != null
     }
 
     private fun customHeaders(args: JSONObject): Map<String, String>? {

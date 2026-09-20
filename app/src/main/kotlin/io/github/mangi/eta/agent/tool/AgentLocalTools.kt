@@ -406,7 +406,10 @@ internal class AgentLocalTools(
     private fun taskPlan(args: JSONObject): String {
         val raw = args.optJSONArray("todos")
             ?: return errorResult("INVALID_ARGUMENT", "todos 必须是数组")
-        val normalized = JSONArray()
+        // 两阶段：先把整份清单校验完，再动任何状态。否则校验失败时 activeItemId 已经被改写，
+        // 后续普通工具的调用痕迹会记到清单里不存在的项上，且同一 id 再次以 in_progress 出现时
+        // 会因为 activeItemId 相等而跳过 startedAt 重置，快照里的 elapsed_ms 用上次的旧时间戳。
+        val parsed = mutableListOf<Triple<String, String, String>>()
         val seen = mutableSetOf<String>()
         var inProgress = 0
         for (index in 0 until raw.length()) {
@@ -422,6 +425,13 @@ internal class AgentLocalTools(
                 return errorResult("INVALID_ARGUMENT", "status 只能是 pending、in_progress 或 completed，收到：$status")
             }
             if (status == "in_progress") inProgress++
+            parsed += Triple(id, content, status)
+        }
+        if (inProgress > 1) {
+            return errorResult("INVALID_ARGUMENT", "同一时间只能有一项 in_progress，当前有 $inProgress 项")
+        }
+        val normalized = JSONArray()
+        for ((id, content, status) in parsed) {
             val activity = itemActivities.getOrPut(id) { ItemActivity() }
             if (status == "in_progress" && activeItemId != id) {
                 activeItemId = id
@@ -441,9 +451,6 @@ internal class AgentLocalTools(
                     .put("status", status)
                     .also { decorateActivity(it, activity, status) },
             )
-        }
-        if (inProgress > 1) {
-            return errorResult("INVALID_ARGUMENT", "同一时间只能有一项 in_progress，当前有 $inProgress 项")
         }
         currentTaskPlan = normalized.toString()
         onTaskPlanUpdated?.invoke(currentTaskPlan)
@@ -1756,8 +1763,9 @@ internal class AgentLocalTools(
      * 执行 Skill 在 frontmatter 中声明的命令。
      *
      * 命令文本与 SKILL.md 正文都不进入上下文：脚本内容由 Shell 读取，模型只看到输出，
-     * 这也是让"已固化流程"不再消耗上下文的关键。requires 只支持 root 与 linux 两个值，
-     * 未知值直接拒绝而不是忽略，避免 Skill 作者以为写了预检条件。
+     * 这也是让"已固化流程"不再消耗上下文的关键。requires 支持两类值：root 与 linux 是环境要求，
+     * 其余值一律按「环境里必须存在的命令」处理——执行前用 command -v 探测一次，免得脚本跑到一半
+     * 才发现缺工具。所以未知值不是被忽略，也不是一律拒绝。
      */
     private fun skillsRun(args: JSONObject): String {
         if (skillTreeMutationUncertain.get()) return nextTurnRequired("Skill 树")

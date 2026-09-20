@@ -81,6 +81,20 @@ internal class AgentModelFailure(
             "model_not_available",
         )
 
+        /** 各服务商对「上下文超容量」用的 code/type 命名并不统一，这里按已知口径尽量收全。 */
+        private val overflowCodes = setOf(
+            "context_length_exceeded", "context_window_exceeded", "prompt_too_long", "input_too_long",
+            "tokens_exceeded", "max_tokens_exceeded", "input_length_exceeded", "context_too_long",
+            "too_many_tokens", "string_above_max_length",
+        )
+
+        /** 溢出的自然语言说法：既用于错误对象的 message，也用于非 JSON 的原始响应正文。 */
+        private val overflowPhrases = listOf(
+            "maximum context length", "prompt is too long", "exceeds the context window",
+            "input token count exceeds", "too many tokens", "maximum number of tokens",
+            "reduce the length of the messages", "input is too long", "context length exceeded",
+        )
+
         /**
          * 只展示已解析出的错误对象内容：正文不是 JSON 时保持沉默，避免把网关的
          * 挑战页、代理错误页之类正文当作服务端说明展示。message 为空时退回 code，
@@ -102,7 +116,7 @@ internal class AgentModelFailure(
 
         fun http(status: Int, body: String): AgentModelFailure {
             val error = errorPayload(body)
-            if (isContextOverflow(error)) return AgentModelFailure(
+            if (isContextOverflow(error, body, status)) return AgentModelFailure(
                 "CONTEXT_OVERFLOW", false, "模型上下文超过容量限制。",
             )
             val permanent = isPermanent(error, body)
@@ -172,14 +186,22 @@ internal class AgentModelFailure(
                 this is SSLPeerUnverifiedException ||
                 cause is CertificateException
 
-        private fun isContextOverflow(error: JSONObject?): Boolean {
-            if (error == null) return false
-            if (listOf(error.optString("code"), error.optString("type")).any {
-                it in setOf("context_length_exceeded", "context_window_exceeded", "prompt_too_long", "input_too_long")
-            }) return true
-            val message = error.optString("message").lowercase()
-            return message.contains("maximum context length") || message.contains("prompt is too long") ||
-                message.contains("exceeds the context window") || message.contains("input token count exceeds")
+        /**
+         * 判断一次失败是不是「上下文超容量」。
+         *
+         * 判据覆盖三类表达：结构化的 code/type、错误对象里的自然语言、以及网关直接用 HTTP 413
+         * 或非 JSON 正文表达的情况。只认前两类时，换个不按套路命名的服务商就会把溢出当成普通
+         * 失败——压缩路径不触发，用户只看到一次莫名其妙的请求失败。
+         */
+        private fun isContextOverflow(error: JSONObject?, body: String? = null, status: Int? = null): Boolean {
+            if (status == 413) return true
+            val codeOrType = listOf(error?.optString("code").orEmpty(), error?.optString("type").orEmpty())
+            if (codeOrType.any { it.isNotEmpty() && it in overflowCodes }) return true
+            val message = error?.optString("message").orEmpty().lowercase()
+            if (message.isNotBlank() && overflowPhrases.any { message.contains(it) }) return true
+            // error 为 null 通常说明正文不是 JSON（网关直接回纯文本或 HTML），这时仍要从原文认。
+            val raw = body.orEmpty().lowercase()
+            return raw.isNotBlank() && overflowPhrases.any { raw.contains(it) }
         }
 
         private fun isPermanent(error: JSONObject?, body: String): Boolean =
