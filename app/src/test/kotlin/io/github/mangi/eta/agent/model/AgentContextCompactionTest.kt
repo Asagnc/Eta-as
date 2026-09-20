@@ -261,6 +261,34 @@ class AgentContextCompactionTest {
         assertEquals(finalText, result.transcript.last().content)
     }
 
+    @Test
+    fun oneOffInstructionsArePassedToTheSummaryRequest() {
+        val session = AgentContextSession(config, jsonHistory(), 1, "operation", provider { request, _ ->
+            assertEquals(ProviderRequestPurpose.COMPACTION, request.purpose)
+            assertTrue(request.messages.toString().contains("这次的重点是保留测试结论"))
+            response("摘要")
+        }, AgentRunController(), { emptySet() }, {}, {})
+
+        session.compact(JSONArray(), force = true, extraInstructions = "这次的重点是保留测试结论")
+    }
+
+    @Test
+    fun oneOffInstructionsOverrideThePersistentCompactInstructions() {
+        val session = AgentContextSession(
+            config.copy(compactInstructions = "记忆里的关注点"),
+            jsonHistory(), 1, "operation",
+            provider { request, _ ->
+                val text = request.messages.toString()
+                assertTrue(text.contains("这次的重点"))
+                assertFalse(text.contains("记忆里的关注点"))
+                response("摘要")
+            },
+            AgentRunController(), { emptySet() }, {}, {},
+        )
+
+        session.compact(JSONArray(), force = true, extraInstructions = "这次的重点")
+    }
+
     private fun history() = (1..6).flatMap { turn -> listOf(
         AgentModelClient.ConversationMessage("user", "问题 $turn"),
         AgentModelClient.ConversationMessage("assistant", "事实 ".repeat(1000)),

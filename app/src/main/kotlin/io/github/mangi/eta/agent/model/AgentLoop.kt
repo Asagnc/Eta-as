@@ -300,12 +300,18 @@ internal class AgentLoop(
             }
         }
         val instructions = requested ?: return
-        context.compact(
-            roundTools,
-            force = true,
-            reasonCode = AgentEvent.ContextCompaction.REASON_REQUESTED,
-            extraInstructions = instructions,
-        )
+        try {
+            context.compact(
+                roundTools,
+                force = true,
+                reasonCode = AgentEvent.ContextCompaction.REASON_REQUESTED,
+                extraInstructions = instructions,
+            )
+        } catch (failure: Exception) {
+            runController.throwIfCancelled()
+            // 用户主动要求的压缩失败不该拖垮整个运行：failed 事件已经发出，上下文压力下一轮
+            // 仍会按阈值正常处理；只有取消要继续传播。
+        }
     }
 
     private fun appendPendingSteeringMessage(): Boolean {
