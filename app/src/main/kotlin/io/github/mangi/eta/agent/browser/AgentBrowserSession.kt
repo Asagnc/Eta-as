@@ -689,6 +689,11 @@ internal object AgentBrowserSession {
         }
         val envelope = mergeValue(baseEnvelope(action, true, "ok"), value)
             .put("content_format", if (readable) "markdown" else "text")
+        if (readable) {
+            // Readability 资产读不到时脚本会静默退回启发式提取；把这条降级写进结果，
+            // 否则调用方分不清「页面本来就没正文」和「Readability 根本没被用上」。
+            envelope.put("readability_available", readabilitySource.isNotBlank())
+        }
         return toolResult(elideRepeatedRead(action, offset, maxChars, value, withUnreadHint(value, envelope)))
     }
 
@@ -873,12 +878,60 @@ internal object AgentBrowserSession {
         val view = requirePage()
         val resultKey = "etaScript" + System.nanoTime().toString(36)
         val urlAtStart = currentUrl
-        val payload = if (bridgeUsable(view)) {
-            awaitBridgePayload(view, expression, resultKey, maxChars, timeout, urlAtStart)
-        } else {
-            awaitPolledPayload(view, expression, resultKey, maxChars, timeout, urlAtStart)
+        val payload = try {
+            runScript(view, expression, resultKey, maxChars, timeout, urlAtStart)
+        } catch (failure: BrowserFailure) {
+            // 「一串语句」放在表达式位置会直接语法失败，这里换两种包装各跑一次，取第一个真正
+            // 返回 ok 的结果。判据必须是结果，不能是「注入成功」：eval 包装对含 return 的语句块
+            // 语法合法但运行期报错，只看注入会误判成功，把真正能用的包装跳过。
+            if (failure.code != "SCRIPT_FAILED") throw failure
+            retryAsWrappedStatements(view, expression, resultKey, maxChars, timeout, urlAtStart, failure)
         }
         return scriptResult(payload)
+    }
+
+    private fun runScript(
+        view: WebView,
+        expression: String,
+        resultKey: String,
+        maxChars: Int,
+        timeout: Long,
+        urlAtStart: String,
+    ): String = if (bridgeUsable(view)) {
+        awaitBridgePayload(view, expression, resultKey, maxChars, timeout, urlAtStart)
+    } else {
+        awaitPolledPayload(view, expression, resultKey, maxChars, timeout, urlAtStart)
+    }
+
+    /**
+     * expression 在表达式位置语法失败时的补救：两种包装各跑一次，谁先真正返回 ok 就用谁。
+     *
+     * 两种包装各有适用面：`eval` 包装会交出最后一条语句的值，但对含 `return` 的语句块在运行期
+     * 报语法错误；语句块包装能跑 `return` / `await`，但返回值是 undefined。所以只能在拿到结果后判断。
+     */
+    private fun retryAsWrappedStatements(
+        view: WebView,
+        expression: String,
+        resultKey: String,
+        maxChars: Int,
+        timeout: Long,
+        urlAtStart: String,
+        cause: BrowserFailure,
+    ): String {
+        val attempts = listOf(
+            "(async () => { return eval(${JSONObject.quote(expression)}); })()",
+            "(async () => {\n$expression\n})()",
+        )
+        for (wrapped in attempts) {
+            val raw = runCatching { runScript(view, wrapped, resultKey, maxChars, timeout, urlAtStart) }
+                .getOrNull() ?: continue
+            if (runCatching { JSONObject(raw).optBoolean("ok") }.getOrDefault(false)) return raw
+        }
+        throw BrowserFailure(
+            "SCRIPT_FAILED",
+            "expression 无法执行（${cause.message}）。这里要的是单个表达式：" +
+                "多条语句请包成 (async () => { ... })()，并用 return 交出结果。",
+        )
     }
 
     /** 桥对象只对安装监听之后创建的文档生效，所以要在页面里确认一次再决定走哪条路。 */
@@ -900,39 +953,9 @@ internal object AgentBrowserSession {
         maxChars: Int,
         bridgeName: String?,
     ) {
-        try {
-            evaluateObject(view, BrowserDomScripts.evaluateScript(expression, resultKey, maxChars, bridgeName))
-        } catch (failure: BrowserFailure) {
-            if (failure.code != "SCRIPT_FAILED") throw failure
-            // 一串语句（function 声明、`var x=1; x` 之类）放进表达式位置必然语法失败。
-            // 先按函数体重试：用 eval 执行原样代码，这样还能拿到最后一条语句的值。
-            if (retryAsStatements(view, expression, resultKey, maxChars, bridgeName)) return
-            throw BrowserFailure(
-                "SCRIPT_FAILED",
-                "expression 无法执行（${failure.message}）。这里要的是单个表达式：" +
-                    "多条语句请包成 (async () => { ... })()，并用 return 交出结果。",
-            )
-        }
-    }
-
-    /** 把整段代码当语句块重试一次；成功返回 true。 */
-    private fun retryAsStatements(
-        view: WebView,
-        expression: String,
-        resultKey: String,
-        maxChars: Int,
-        bridgeName: String?,
-    ): Boolean {
-        val attempts = listOf(
-            // eval 会返回最后一条语句的完成值，最贴近"我写了一段脚本"的预期。
-            "(async () => { return eval(${JSONObject.quote(expression)}); })()",
-            "(async () => {\n$expression\n})()",
-        )
-        return attempts.any { wrapped ->
-            runCatching {
-                evaluateObject(view, BrowserDomScripts.evaluateScript(wrapped, resultKey, maxChars, bridgeName))
-            }.isSuccess
-        }
+        // 只负责注入。语法失败的重试上移到 evaluateScript：那里能看到结果，而这里只能看到
+        // 「注入是否成功」——拿它当判据会把运行期报错的候选误判为成功（见 retryAsWrappedStatements）。
+        evaluateObject(view, BrowserDomScripts.evaluateScript(expression, resultKey, maxChars, bridgeName))
     }
 
     private fun awaitBridgePayload(

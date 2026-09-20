@@ -631,8 +631,10 @@ internal class AgentLocalTools(
 
     private fun saveFlow(args: JSONObject): String {
         val name = args.optString("name").trim()
-        if (name.isBlank() || name.length > 80 || !name.all { it.isLetterOrDigit() || it == '_' || it == '-' }) {
-            return errorResult("INVALID_ARGUMENT", "name 必填，仅允许字母数字 _-，不超过 80 字符")
+        if (name.isBlank() || name.length > MAX_FLOW_NAME_CHARS ||
+            !name.all { it.isLetterOrDigit() || it == '_' || it == '-' }
+        ) {
+            return errorResult("INVALID_ARGUMENT", "name 必填，仅允许字母数字 _-，不超过 $MAX_FLOW_NAME_CHARS 字符")
         }
         val steps = args.optJSONArray("steps") ?: return errorResult("INVALID_ARGUMENT", "steps 不能为空")
         if (steps.length() == 0 || steps.length() > MAX_SEQUENCE_STEPS) {
@@ -668,7 +670,13 @@ internal class AgentLocalTools(
 
     private fun useFlow(args: JSONObject): String {
         val name = args.optString("name").trim()
-        if (name.isBlank()) return errorResult("INVALID_ARGUMENT", "name 不能为空")
+        // 与 save_flow 用同一套白名单：只判空会让 "../../x" 这类名字拼出 flowsDir 之外的路径，
+        // 把任意可读的 json 当成 steps 执行。
+        if (name.isBlank() || name.length > MAX_FLOW_NAME_CHARS ||
+            !name.all { it.isLetterOrDigit() || it == '_' || it == '-' }
+        ) {
+            return errorResult("INVALID_ARGUMENT", "name 必填，仅允许字母数字 _-，不超过 $MAX_FLOW_NAME_CHARS 字符")
+        }
         val file = java.io.File(flowsDir(), "$name.json")
         if (!file.exists()) return errorResult("FLOW_NOT_FOUND", "未找到流程 $name，可先用 save_flow 保存")
         val flow = runCatching { JSONObject(file.readText()) }
@@ -1816,7 +1824,9 @@ internal class AgentLocalTools(
                 )
             }
         }
-        // 参数值一律做 shell 转义后再落进命令，避免值里的引号或分号改变命令结构。
+        // inputs 是「值」，一律做 shell 转义后再替换进命令，避免值里的引号或分号改变命令结构；
+        // arguments 是调用方显式追加的原始参数串，按原样拼在命令之后（与 run_command 同属
+        // RootRequirement.PARTIAL，不转义——转义会把 "--flag value" 挤成一个参数，破坏其用途）。
         val resolvedDeclared = if (declaredInputs.isEmpty()) {
             declared
         } else {
@@ -2021,6 +2031,9 @@ internal class AgentLocalTools(
     ): String = when (result) {
         is SkillInstallResult.Success -> {
             pendingSkillConflict.set(null)
+            // 安装成功即技能树状态重新确定：不复位这个标记，COMMIT_FAILED 之后本实例内的
+            // skills_list / skills_read / skills_read_resource / skills_run 会永久返回 NEXT_TURN_REQUIRED。
+            skillTreeMutationUncertain.set(false)
             val installed = JSONArray()
             result.installed.forEach { skill ->
                 mutatedSkillIds += SkillParser.normalizeSkillLookup(skill.id)
@@ -2198,6 +2211,9 @@ internal class AgentLocalTools(
 }
 
 private const val MAX_SEQUENCE_STEPS = 12
+
+/** 流程名白名单长度上限：save_flow 与 use_flow 共用，避免两边校验不一致。 */
+private const val MAX_FLOW_NAME_CHARS = 80
 private const val SEQUENCE_RESULT_CHARS = 200
 
 private const val STALE_CONTENT_CODE = "STALE_CONTENT"

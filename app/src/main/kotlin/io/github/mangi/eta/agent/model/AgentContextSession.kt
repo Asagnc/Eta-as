@@ -97,7 +97,9 @@ internal class AgentContextSession(
                     candidate, systemCount, sensitiveIds(), force, untilMessageId,
                 )
                 attempts++
-                val tokens = budget.estimate(candidate, roundTools)
+                // 用不带地板的估算判断「是否已经缩小」：estimate() 的下界是上一次服务端回报的真实
+                // input，拿它做收敛判断会让循环永远判定还超线（见 estimateForReduction 的说明）。
+                val tokens = budget.estimateForReduction(candidate, roundTools)
                 if (!budget.shouldCompact(tokens)) break
                 if (attempts >= AgentContextBudget.MAX_OVERFLOW_ATTEMPTS) {
                     throw AgentContextCompactor.failure("CONTEXT_NO_REDUCTION", "摘要后上下文仍超过容量预算。")

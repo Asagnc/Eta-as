@@ -74,6 +74,16 @@ internal class AgentContextBudget(
         return maxOf(estimated, observedInputTokens)
     }
 
+    /**
+     * 只用于「压缩后有没有变小」的比较：不带 [observedInputTokens] 地板。
+     *
+     * 带地板的 [estimate] 恒 ≥ 上一次服务端回报的真实 input，而溢出恢复时 effectiveWindow
+     * 也被压到同一量级，于是 `shouldCompact` 永远为真：压缩循环每轮白烧一次摘要调用，
+     * 走满上限后抛 CONTEXT_NO_REDUCTION。比较压缩前后的缩减量必须用这个视图。
+     */
+    fun estimateForReduction(messages: JSONArray, tools: JSONArray): Int =
+        ceil(rawEstimate(messages, tools) * calibration).toInt()
+
     fun shouldCompact(tokens: Int): Boolean =
         effectiveWindow?.let { tokens >= it * TRIGGER_RATIO } == true
 
