@@ -171,8 +171,13 @@ internal class AgentContextCompactor(
     }
 
     companion object {
-        /** 压缩指令的长度上限：它要拼进每次摘要请求的 system 消息，不能无限长。 */
-        private const val MAX_COMPACT_INSTRUCTIONS_CHARS = 1_000
+        /**
+         * 压缩指令的长度上限：它要拼进每次摘要请求的 system 消息，不能无限长。
+         *
+         * 这是唯一定义处——[AgentConversationToolCatalog] 的 `compact_context` 工具参数上限
+         * 直接引用它，免得「工具声明允许 1000 字」与「压缩器实际只采用 N 字」各写一份而脱节。
+         */
+        const val MAX_COMPACT_INSTRUCTIONS_CHARS = 1_000
 
         fun canSplit(history: List<JSONObject>, end: Int): Boolean {
             if (end <= 0 || end > history.size) return false

@@ -178,6 +178,8 @@ internal object AgentMemoryContextBuilder {
         return lines.subList(start + 1, end).joinToString("\n").trim()
     }
 
+    // 作用域匹配用的任务文本上限：这是工程量级的选择（合计约 1k token，相对上下文成本可忽略），
+    // 不是从某个基准测出来的——目标是覆盖最近一轮工具调用序列，最新的消息最能代表当前任务。
     private const val TASK_HINT_MESSAGES = 6
     private const val TASK_HINT_CHARS = 4_000
     private const val HINT_CONTENT_CHARS = 800

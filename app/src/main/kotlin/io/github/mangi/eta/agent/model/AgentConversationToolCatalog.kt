@@ -7,8 +7,8 @@ internal object AgentConversationToolCatalog {
     const val READ_HISTORY = "conversation_history"
     const val COMPACT_CONTEXT = "compact_context"
 
-    /** 压缩指令长度上限：它会拼进每次摘要请求的 system 消息，不能无限长。 */
-    const val MAX_INSTRUCTIONS_CHARS = 1_000
+    /** 压缩指令长度上限；与压缩器共用同一个常量，工具声明和实际截断不会脱节。 */
+    const val MAX_INSTRUCTIONS_CHARS = AgentContextCompactor.MAX_COMPACT_INSTRUCTIONS_CHARS
 
     fun schema(): JSONObject = AgentToolSchema.function(
         name = READ_HISTORY,

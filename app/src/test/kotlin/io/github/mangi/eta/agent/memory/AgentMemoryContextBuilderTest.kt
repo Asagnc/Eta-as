@@ -113,6 +113,36 @@ class AgentMemoryContextBuilderTest {
         assertEquals("", AgentMemoryContextBuilder.taskHint(emptyList()))
     }
 
+    @Test
+    fun oversizedFileSkipsUnfittableSectionButKeepsLaterOnes() {
+        // 逐节挑选：放不下的大章节跳过，后面放得下的小章节仍然注入——结果可能不连续，这是刻意的
+        // （预算内尽量多给有用的章节，而不是遇到第一个放不下的就整体退回截断开头）。
+        val content = "# 核心记忆\n通用偏好\n" +
+            "## 大块\n" + "z".repeat(9_000) + "\n" +
+            "## 小尾巴\n尾巴内容"
+        val context = AgentMemoryContextBuilder.build(snapshot(content), null)
+
+        assertFalse(context.injectedFull)
+        assertTrue(context.injectedContent.contains("通用偏好"))
+        assertTrue(context.injectedContent.contains("尾巴内容"))
+        assertFalse(context.injectedContent.contains("zzz"))
+    }
+
+    @Test
+    fun scopedSectionTakesItsSubsectionsWithIt() {
+        // 作用域不匹配的章节连同子章节一起跳过：子章节脱离父章节单独注入会失去上下文。
+        val content = "# 核心记忆\n通用偏好\n" +
+            "## Eta 改造\n<!-- scope: Eta-src -->\n改造细节\n" +
+            "### 子节\n子节细节\n" +
+            "## 其他\n其他内容\n" +
+            "## 大块\n" + "z".repeat(9_000)
+        val context = AgentMemoryContextBuilder.build(snapshot(content), null, hint = "整理相册")
+
+        assertFalse(context.injectedContent.contains("改造细节"))
+        assertFalse(context.injectedContent.contains("子节细节"))
+        assertTrue(context.injectedContent.contains("其他内容"))
+    }
+
     private fun message(role: String, content: String, toolCalls: String = "") =
         AgentModelClient.ConversationMessage(role = role, content = content, toolCallsJson = toolCalls)
 
