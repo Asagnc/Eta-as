@@ -107,7 +107,9 @@ internal object AgentModelClient {
         onContextSnapshot: (AgentContextSnapshot) -> Unit = {},
         onTranscript: (List<ConversationMessage>) -> Unit = {},
         runStats: AgentRunStats? = null,
-        onEvent: (AgentEvent) -> Unit = {}
+        onEvent: (AgentEvent) -> Unit = {},
+        /** 工具失败学习记录的落盘目录（通常是 App 的 filesDir）；为 null 时不记录。 */
+        failureLogDir: java.io.File? = null
     ): ModelResponse.Text {
         config.validate()
         val initialCapabilities = capabilitiesProvider()
@@ -201,6 +203,7 @@ internal object AgentModelClient {
                 toolsFor(capabilities)
             },
         )
+        loop.failureRecorder = failureRecorder(failureLogDir)
         val result = try {
             if (compactOnly) loop.compactOnly(compactUntilMessageId) else loop.run()
         } catch (throwable: Throwable) {
@@ -364,6 +367,26 @@ internal object AgentModelClient {
             val transcript: List<ConversationMessage> = emptyList(),
             val contextSnapshot: AgentContextSnapshot? = null,
         ) : ModelResponse
+    }
+
+    /**
+     * 把工具失败整理成学习记录并落盘。签名与失败详情都来自真实执行结果，
+     * 命令取自工具参数（截断保存），不落任何用户内容。
+     */
+    private fun failureRecorder(
+        directory: java.io.File?,
+    ): ((AgentModelClient.ToolCall, String, Int) -> Unit)? {
+        if (directory == null) return null
+        return { call, content, round ->
+            val entry = AgentFailureLearningRecord.of(
+                toolName = call.name,
+                round = round,
+                resultContent = content,
+                command = traceFormatter.displayCommand(call).orEmpty(),
+                timestampMs = System.currentTimeMillis(),
+            )
+            if (entry != null) AgentFailureLearningStore.record(directory, entry)
+        }
     }
 
 }

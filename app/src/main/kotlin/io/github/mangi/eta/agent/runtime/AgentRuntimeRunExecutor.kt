@@ -347,16 +347,18 @@ internal class AgentRuntimeRunExecutor(
                 skillContext = skillContext,
                 memoryContext = memoryContext,
                 additionalTools = runTools,
-            ) { event ->
-                timing.accept(event)
-                acceptEvent(
-                    session,
-                    event,
-                    archivedEvents,
-                    entrySurfaceGuard,
-                    checkpointRecorder,
-                )
-            }
+                failureLogDir = appContext.filesDir,
+                onEvent = { event ->
+                    timing.accept(event)
+                    acceptEvent(
+                        session,
+                        event,
+                        archivedEvents,
+                        entrySurfaceGuard,
+                        checkpointRecorder,
+                    )
+                },
+            )
             response = completedResponse
             AgentRuntimeWire.RunResult(
                 runId = request.runId,

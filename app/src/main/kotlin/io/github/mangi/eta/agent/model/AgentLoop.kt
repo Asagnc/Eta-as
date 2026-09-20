@@ -77,6 +77,12 @@ internal class AgentLoop(
     private val repeatGuard = AgentRepeatGuard()
     private val failureGuard = AgentFailureGuard()
 
+    /**
+     * 工具失败时追加一条学习记录（默认关闭）。写成回调而不是直接依赖 Android 的 File，
+     * 是为了让 AgentLoop 保持可在 JVM 单测里构造；接线在 AgentModelClient。
+     */
+    var failureRecorder: ((AgentModelClient.ToolCall, String, Int) -> Unit)? = null
+
     fun contextSnapshot(): AgentContextSnapshot? = context.snapshot()
 
     private fun appendMessage(message: JSONObject) {
@@ -586,6 +592,10 @@ internal class AgentLoop(
         toolCall: AgentModelClient.ToolCall,
         result: AgentModelClient.ToolResult,
     ) {
+        val success = traceFormatter.isSuccessResult(result)
+        if (!success) {
+            runCatching { failureRecorder?.invoke(toolCall, result.content, round) }
+        }
         onEvent(
             AgentEvent.ToolFinished(
                 round = round,
@@ -594,7 +604,7 @@ internal class AgentLoop(
                 resultSummary = traceFormatter.summarizeResult(toolCall.name, result),
                 imageCount = result.images.size,
                 imageBytes = result.images.sumOf { it.bytes },
-                success = traceFormatter.isSuccessResult(result),
+                success = success,
             )
         )
     }
