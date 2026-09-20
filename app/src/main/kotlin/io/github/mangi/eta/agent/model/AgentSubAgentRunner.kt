@@ -248,6 +248,7 @@ internal class AgentSubAgentRunner(
             buildString {
                 append("你是本次任务中的「").append(role).append("」角色，只处理交给你的这一部分。")
                 append("不要推测其它角色或主智能体的结论，也不要请求工具以外的能力。\n")
+                AgentSubAgentRoles.instructionFor(role)?.let { append(it).append('\n') }
                 append("结论写成可直接交给主智能体的摘要：先给结论，再给关键证据（文件路径与行号或命令输出要点），不要复述过程。\n")
                 if (context.isNotBlank()) append("\n背景：\n").append(context)
             },
@@ -267,7 +268,7 @@ internal class AgentSubAgentRunner(
         const val PHASE_STARTED = "started"
         const val PHASE_FINISHED = "finished"
         const val PHASE_FAILED = "failed"
-        const val DEFAULT_ROLE = "检索"
+        const val DEFAULT_ROLE = AgentSubAgentRoles.DEFAULT
     }
 }
 

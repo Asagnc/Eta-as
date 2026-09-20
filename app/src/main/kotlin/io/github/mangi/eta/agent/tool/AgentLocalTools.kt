@@ -17,6 +17,7 @@ import io.github.mangi.eta.agent.model.AgentRunStatsToolCatalog
 import io.github.mangi.eta.agent.model.AgentScreenObservationContract
 import io.github.mangi.eta.agent.model.AgentSensitiveToolPolicy
 import io.github.mangi.eta.agent.model.AgentSubAgentBudget
+import io.github.mangi.eta.agent.model.AgentSubAgentRoles
 import io.github.mangi.eta.agent.model.AgentSubAgentRunner
 import io.github.mangi.eta.agent.model.AgentSubAgentToolCatalog
 import io.github.mangi.eta.agent.model.SUB_AGENT_INVOCATION_LIMIT
@@ -246,8 +247,7 @@ internal class AgentLocalTools(
                 "skills_inspect_github" -> textResult(skillsInspectGitHub(args))
                 "skills_install_from_github" -> textResult(skillsInstallFromGitHub(args))
                 "skills_run" -> textResult(terminalTool { skillsRun(args) })
-                AgentSubAgentToolCatalog.DELEGATE,
-                AgentSubAgentToolCatalog.MULTI_PERSPECTIVE -> {
+                AgentSubAgentToolCatalog.DELEGATE -> {
                     val used = subAgentInvocations.incrementAndGet()
                     if (used > SUB_AGENT_INVOCATION_LIMIT) {
                         textResult(
@@ -257,10 +257,8 @@ internal class AgentLocalTools(
                                     "请自己继续处理，或先汇总已有结论",
                             ),
                         )
-                    } else if (toolCall.name == AgentSubAgentToolCatalog.DELEGATE) {
-                        textResult(delegate(args))
                     } else {
-                        textResult(multiPerspective(args))
+                        textResult(delegate(args))
                     }
                 }
                 else -> textResult(
@@ -1879,61 +1877,67 @@ internal class AgentLocalTools(
     }
 
     /**
-     * 把一个检索型子任务交给受限子智能体，只取回摘要。
+     * 把可以独立完成的工作交给受限子智能体，只取回摘要。
      *
-     * 子智能体的上下文与工具输出都不进入当前 run，所以这里的返回值就是它交给主 loop 的全部信息；
-     * 主 loop 需要自己校验摘要，不能直接把它当结论。
+     * 单入口设计：`roles` 省略或只给一个时是单角色子任务，给多个时并行派发、各自独立取证，
+     * 由主 loop 汇总对照。子智能体的上下文与工具输出都不进入当前 run，所以这里的返回值
+     * 就是它交给主 loop 的全部信息；主 loop 需要自己校验摘要，不能直接把它当结论。
      */
     private fun delegate(args: JSONObject): String {
         val runner = subAgentRunner ?: return errorResult("SUB_AGENT_DISABLED", "子智能体未开启")
         val task = args.optString("task").trim()
         if (task.isBlank()) return errorResult("MISSING_PARAM", "缺少 task")
-        val role = args.optString("role").trim().ifBlank { DEFAULT_SUB_AGENT_ROLE }
+        val roles = subAgentRoles(args)
+        if (roles.size > MAX_SUB_AGENT_ROLES) {
+            return errorResult(
+                "INVALID_ARGUMENT",
+                "角色最多 $MAX_SUB_AGENT_ROLES 个（与并行上限一致）；请合并同类角色后重试",
+            )
+        }
         // 预算按"档位 + 同档位历史消耗"算，而不是写死一个数：样本够就用 P75，
         // 不够就退回档位默认值，来源会一并回给模型。
         val scope = SubAgentScope.fromWire(args.optString("scope"))
         val plan = AgentSubAgentBudget.plan(scope, subAgentHistory(scope))
-        val outcome = runner.run(
+        // 多角色是并行的，预算按角色数线性叠加，所以这里必须有一道总量闸门：
+        // 否则一次调用就能把整轮会话的预算吃光。
+        val totalBudget = plan.tokenBudget * roles.size
+        if (totalBudget > SUB_AGENT_TOTAL_TOKEN_CAP) {
+            return errorResult(
+                "SUB_AGENT_BUDGET_EXCEEDED",
+                "本次派发总预算 ${totalBudget} 超过上限 $SUB_AGENT_TOTAL_TOKEN_CAP" +
+                    "（每角色 ${plan.tokenBudget} × ${roles.size} 个角色）；请减少角色数，或把 scope 降到 quick 后重试",
+            )
+        }
+        val context = args.optString("context").trim().take(MAX_SUB_AGENT_CONTEXT_CHARS)
+        val requests = roles.map { role ->
             AgentSubAgentRunner.Request(
                 role = role,
                 brief = task.take(MAX_SUB_AGENT_TASK_CHARS),
-                context = args.optString("context").trim().take(MAX_SUB_AGENT_CONTEXT_CHARS),
+                context = context,
                 plan = plan,
-            ),
-        )
-        recordSubAgentRuns(listOf(outcome))
-        return subAgentResult(listOf(outcome))
-    }
-
-    private fun multiPerspective(args: JSONObject): String {
-        val runner = subAgentRunner ?: return errorResult("SUB_AGENT_DISABLED", "子智能体未开启")
-        val topic = args.optString("topic").trim()
-        if (topic.isBlank()) return errorResult("MISSING_PARAM", "缺少 topic")
-        val rolesJson = args.optJSONArray("roles") ?: return errorResult("MISSING_PARAM", "缺少 roles")
-        val roles = (0 until rolesJson.length())
-            .mapNotNull { index -> rolesJson.optString(index).trim().takeIf { it.isNotBlank() } }
-            .distinct()
-        if (roles.size < MIN_SUB_AGENT_ROLES) {
-            return errorResult("INVALID_ARGUMENT", "至少需要 $MIN_SUB_AGENT_ROLES 个互不相同的角色")
+            )
         }
-        if (roles.size > MAX_SUB_AGENT_ROLES) {
-            return errorResult("INVALID_ARGUMENT", "角色最多 $MAX_SUB_AGENT_ROLES 个")
+        val outcomes = if (requests.size == 1) {
+            listOf(runner.run(requests.single()))
+        } else {
+            runner.runAll(requests)
         }
-        val brief = args.optString("brief").trim()
-        val scope = SubAgentScope.fromWire(args.optString("scope"))
-        val plan = AgentSubAgentBudget.plan(scope, subAgentHistory(scope))
-        val outcomes = runner.runAll(
-            roles.map { role ->
-                AgentSubAgentRunner.Request(
-                    role = role,
-                    brief = topic.take(MAX_SUB_AGENT_TASK_CHARS),
-                    context = brief.take(MAX_SUB_AGENT_CONTEXT_CHARS),
-                    plan = plan,
-                )
-            },
-        )
         recordSubAgentRuns(outcomes)
         return subAgentResult(outcomes)
+    }
+
+    /**
+     * `roles` 省略、为空或全是空白时退回默认单角色；否则去重后保序返回。
+     *
+     * 多取一个名额（MAX + 1）是为了让"角色过多"走到明确报错，而不是被静默截断。
+     */
+    private fun subAgentRoles(args: JSONObject): List<String> {
+        val array = args.optJSONArray("roles") ?: return listOf(DEFAULT_SUB_AGENT_ROLE)
+        val roles = (0 until array.length())
+            .mapNotNull { index -> array.optString(index).trim().takeIf { it.isNotBlank() } }
+            .distinct()
+            .take(MAX_SUB_AGENT_ROLES + 1)
+        return roles.ifEmpty { listOf(DEFAULT_SUB_AGENT_ROLE) }
     }
 
     /** 摘要与失败原因一起交回模型，让主 loop 能判断要不要自己补做。 */
@@ -2237,9 +2241,18 @@ private val BUSYBOX_REGEX_ERROR_MARKERS = listOf(
 /** 子智能体入口的取值范围，与 AgentSubAgentToolCatalog 的 schema 保持一致。 */
 private const val MAX_SUB_AGENT_TASK_CHARS = 2_000
 private const val MAX_SUB_AGENT_CONTEXT_CHARS = 4_000
-private const val MIN_SUB_AGENT_ROLES = 2
-private const val MAX_SUB_AGENT_ROLES = 4
-private const val DEFAULT_SUB_AGENT_ROLE = "检索"
+
+/** 多角色并行上限，与 AgentSubAgentRunner 的并行上限一致：再多不会更快，只会放大成本。 */
+private const val MAX_SUB_AGENT_ROLES = 3
+
+/**
+ * 单次派发的总 token 预算闸门。
+ *
+ * 每个角色的预算按档位算（deep 档默认 55k），多角色是线性叠加；没有这道闸门时，
+ * 一次 3 角色的 deep 派发就能吃掉整轮会话的预算。
+ */
+private const val SUB_AGENT_TOTAL_TOKEN_CAP = 120_000
+private const val DEFAULT_SUB_AGENT_ROLE = AgentSubAgentRoles.DEFAULT
 
 /** 预算评估取最近多少条同档位样本；太多会让旧习惯拖住新任务。 */
 private const val SUB_AGENT_HISTORY_SAMPLES = 12

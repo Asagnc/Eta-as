@@ -25,7 +25,6 @@ internal class AgentTraceFormatter {
             "use_flow" -> "运行流程"
             "skills_run" -> "运行技能"
             "delegate" -> "委派子智能体"
-            "multi_perspective" -> "多视角分析"
             "input_text" -> summarizeTextLength("输入文本", toolCall.argumentsJson, "text")
             "replace_text" -> summarizeTextLength("替换文本", toolCall.argumentsJson, "text")
             "paste_text", "set_clipboard" ->

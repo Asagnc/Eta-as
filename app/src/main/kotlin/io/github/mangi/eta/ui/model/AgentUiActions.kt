@@ -61,10 +61,6 @@ sealed interface AgentToolsAction {
     data object OpenPermissions : AgentToolsAction
     data object NavigateBack : AgentToolsAction
     data object OpenBrowser : AgentToolsAction
-    data object RunEvaluation : AgentToolsAction
-
-    /** 跑完整任务集；默认入口只跑轻量层，避免一次评估既慢又贵。 */
-    data object RunFullEvaluation : AgentToolsAction
 }
 
 sealed interface AgentSkillsAction {

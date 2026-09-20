@@ -1203,9 +1203,6 @@
   <string name="context_compact_action">Compact context</string>
   <string name="context_compact_until_here">Compact up to here</string>
   <string name="context_usage_estimated">%1$s\nEstimated after compaction</string>
-    <string name="eval_run_title">运行快速评估</string>
-    <string name="eval_run_full_title">运行完整评估</string>
-    <string name="eval_run_full_summary">全部 13 个任务，含多步检索与系统操作，耗时与 token 消耗都更高</string>
     <string name="ui_balance_section_title">Balance</string>
     <string name="ui_balance_info_title">Show account balance</string>
     <string name="ui_balance_info_summary">Queried when you open this screen or refresh manually; no background polling</string>

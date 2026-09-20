@@ -64,7 +64,7 @@ internal object AgentToolRequirements {
             "set_alarm", "set_timer", "media_control", "set_volume",
             "memory_write", "character_memory_write",
             "skills_install_from_github", "task_plan",
-            "delegate", "multi_perspective",
+            "delegate",
         )
         registerParallelSafe(
             RootRequirement.NONE,

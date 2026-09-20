@@ -4,102 +4,67 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 子智能体与多视角工具的 schema。
+ * 子智能体工具（`delegate`）的 schema。
  *
- * 两者都是同一套受限子 loop 的入口：`delegate` 是单个角色的子任务，`multi_perspective`
- * 是并行派生多个隔离上下文的角色，再由主 loop 汇总。它们只在显式开启子智能体时出现。
+ * 单一入口，多角色是它的一个参数——对齐两家主流实现：
+ * - Claude Code 的 subagents 只做"派一个角色干活"，多角色协作另设 agent teams（实验性、明确标注 token 更贵）；
+ * - Codex 的 subagent workflows 连独立工具都没有，"一个点派一个 agent"靠一次 spawn 多个 agent 表达。
+ *
+ * 共同点是：编排集中在主 loop、子代理跑在独立上下文、只回摘要（避免 context pollution / context rot）、
+ * 角色必须窄而明确（Codex: narrow and opinionated），否则多角色会退化成同一份意见的不同措辞。
  */
 internal object AgentSubAgentToolCatalog {
     const val DELEGATE = "delegate"
-    const val MULTI_PERSPECTIVE = "multi_perspective"
 
     fun appendTo(tools: JSONArray) {
-        tools
-            .put(
-                AgentToolSchema.function(
-                    name = DELEGATE,
-                    description = "把一个可以独立完成的子任务交给受限子智能体：它有自己的上下文，只能用文件检索类工具，" +
-                        "只回一份摘要，过程不进入当前上下文。它的价值是隔离上下文，不是加速。" +
-                        "所以任务必须窄到一个能直接回答的问题（例如“某个常量定义在哪个文件哪一行”），" +
-                        "并在 context 里写明要什么格式的输出。" +
-                        "需要多步追踪、写文件、跑命令或操作设备时自己查，不要派发——任务写宽了，子智能体会把预算耗在探索上，最后拿不出结论。",
-                    parameters = JSONObject()
-                        .put("type", "object")
-                        .put(
-                            "properties",
-                            JSONObject()
-                                .put(
-                                    "task",
-                                    JSONObject()
-                                        .put("type", "string")
-                                        .put("maxLength", 2_000)
-                                        .put("description", "子任务与验收标准；规格越具体，产出越可靠。")
-                                )
-                                .put(
-                                    "role",
-                                    JSONObject()
-                                        .put("type", "string")
-                                        .put("maxLength", 60)
-                                        .put("description", "该子智能体扮演的角色名，例如 检索、日志分析；默认 检索。")
-                                )
-                                .put(
-                                    "context",
-                                    JSONObject()
-                                        .put("type", "string")
-                                        .put("maxLength", 4_000)
-                                        .put("description", "可选背景（已知路径、约束），只发给这个子智能体。")
-                                )
-                                .put(
-                                    "scope",
-                                    JSONObject()
-                                        .put("type", "string")
-                                        .put(
-                                            "enum",
-                                            JSONArray().put("quick").put("compare").put("deep"),
-                                        )
-                                        .put(
-                                            "description",
-                                            "子任务规模，决定它的轮数与 token 预算，也决定它值不值得派生：" +
-                                                "quick 单点查找；compare 多方向对比（默认）；deep 大范围检索。" +
-                                                "能给一个文件解决的事就别用子智能体，也别给简单任务选 deep。",
-                                        )
-                                )
-                        )
-                )
-                .put("required", JSONArray().put("task")))
-            .put(
-                AgentToolSchema.function(
-                    name = MULTI_PERSPECTIVE,
-                    description = "并行派生多个互相隔离的角色，各自独立作答，再由当前 loop 汇总对照。" +
-                        "每个角色要对同一个问题给出同一格式的结论，否则无法逐条对照。" +
-                        "角色之间不共享中间推理，否则会退化成同一份意见的不同措辞；汇总与校验由调用方负责。" +
-                        "需要写文件、跑命令或操作设备时不要用它，它只做分析与判断。",
-                    parameters = JSONObject()
-                        .put("type", "object")
-                        .put("properties", JSONObject()
+        tools.put(
+            AgentToolSchema.function(
+                name = DELEGATE,
+                description = "把可以独立完成的工作交给受限子智能体：它有自己的上下文，只能用只读检索工具，" +
+                    "只回一份摘要，过程与工具输出都不进入当前上下文。它的价值是隔离上下文与并行取证，不是加速。" +
+                    "roles 只给一个时是单角色子任务，任务要窄到能直接回答（例如“某个常量定义在哪个文件哪一行”）；" +
+                    "给多个角色时它们各自独立作答、由你汇总对照，适合需要不同立场交叉验证的判断类问题" +
+                    "（例如 攻击/防御/合规、正确性/性能/可维护性）——此时必须在 task 里写清统一输出格式，" +
+                    "否则各角色无法逐条对照。内置角色 检索、审查、验证 各自带专门的取证要求，优先用它们。" +
+                    "写文件、跑命令、操作设备这类改动型工作不要派发：子智能体没有写权限，并行改动只会互相冲突。" +
+                    "任务写宽了，子智能体会把预算耗在探索上，最后拿不出结论。",
+                parameters = JSONObject()
+                    .put("type", "object")
+                    .put(
+                        "properties",
+                        JSONObject()
                             .put(
-                                "topic",
+                                "task",
                                 JSONObject()
                                     .put("type", "string")
                                     .put("maxLength", 2_000)
-                                    .put("description", "需要多角度回答的问题或待审对象。")
+                                    .put(
+                                        "description",
+                                        "子任务与验收标准；多角色时还要写清每个角色共用的输出格式。规格越具体，产出越可靠。",
+                                    )
                             )
                             .put(
                                 "roles",
                                 JSONObject()
                                     .put("type", "array")
                                     .put("items", JSONObject().put("type", "string").put("maxLength", 60))
-                                    .put("minItems", 2)
-                                    .put("maxItems", 4)
+                                    .put("minItems", 1)
+                                    .put("maxItems", 3)
                                     .put("uniqueItems", true)
-                                    .put("description", "2-4 个互不相同的角色名，例如 攻击视角、防御视角、合规视角。")
+                                    .put(
+                                        "description",
+                                        "角色列表，最多 3 个（与并行上限一致）。省略或只给一个 = 单角色子任务，" +
+                                            "默认角色 检索；给 2-3 个时并行派发、各自独立取证。" +
+                                            "内置角色：检索（定位取证）、审查（找问题与风险）、验证（独立复核找反例）；" +
+                                            "也可以用自定义角色名，但自定义角色没有额外的取证要求。",
+                                    )
                             )
                             .put(
-                                "brief",
+                                "context",
                                 JSONObject()
                                     .put("type", "string")
                                     .put("maxLength", 4_000)
-                                    .put("description", "可选补充要求（输出格式、判定标准），三个角色共用。")
+                                    .put("description", "可选背景（已知路径、约束），所有角色共用。")
                             )
                             .put(
                                 "scope",
@@ -111,12 +76,14 @@ internal object AgentSubAgentToolCatalog {
                                     )
                                     .put(
                                         "description",
-                                        "规模档位，决定每个角色的轮数与 token 预算：quick 快速核对；" +
-                                            "compare 一般对照（默认）；deep 需要深挖的多视角审视。",
+                                        "规模档位，决定每个角色的轮数与 token 预算：quick 单点查找；" +
+                                            "compare 多方向对比（默认）；deep 大范围检索。" +
+                                            "能给一个文件解决的事就别派子智能体，也别给简单任务选 deep。",
                                     )
                             )
-                        )
-                        .put("required", JSONArray().put("topic").put("roles")))
+                    )
+                    .put("required", JSONArray().put("task"))
             )
+        )
     }
 }

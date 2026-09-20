@@ -25,7 +25,6 @@ import io.github.mangi.eta.R
 import io.github.mangi.eta.agent.tool.AgentToolCapabilities
 import io.github.mangi.eta.ui.app.rememberDeviceCapabilities
 import io.github.mangi.eta.ui.components.MiuixScaffoldPage
-import io.github.mangi.eta.ui.model.AgentEvaluationUi
 import io.github.mangi.eta.ui.model.AgentToolsAction
 import io.github.mangi.eta.ui.model.AgentToolsUiState
 import io.github.mangi.eta.ui.model.ToolItemUi
@@ -34,14 +33,6 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TabRow
 import top.yukonga.miuix.kmp.preference.ArrowPreference
-
-/** 评测卡片上的一行说明：没跑过讲用途，跑的时候讲进度，跑完讲上次结果。 */
-private fun evaluationSummary(state: AgentEvaluationUi): String = when {
-    state.running -> "进行中：第 ${state.finishedCount}/${state.taskCount} 个任务" +
-        "（${state.currentTaskId}），已通过 ${state.passedCount}"
-    state.summary.isNotBlank() -> state.summary
-    else -> "按任务集跑一遍真实 run，比较轮次、token 与成功率"
-}
 
 private object ToolsMetrics {
     val GridHorizontalPadding = 20.dp
@@ -79,20 +70,6 @@ fun AgentToolsScreen(
                     title = stringResource(R.string.capability_enhancements),
                     summary = stringResource(R.string.capability_enhancements_summary),
                     onClick = { onAction(AgentToolsAction.OpenEnhancements) },
-                )
-            }
-        }
-        item(key = "capability-evaluation") {
-            Card(modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp)) {
-                ArrowPreference(
-                    title = stringResource(R.string.eval_run_title),
-                    summary = evaluationSummary(state.evaluation),
-                    onClick = { onAction(AgentToolsAction.RunEvaluation) },
-                )
-                ArrowPreference(
-                    title = stringResource(R.string.eval_run_full_title),
-                    summary = stringResource(R.string.eval_run_full_summary),
-                    onClick = { onAction(AgentToolsAction.RunFullEvaluation) },
                 )
             }
         }
