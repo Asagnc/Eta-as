@@ -11,7 +11,7 @@ internal object AgentBrowserToolCatalog {
         tools.put(
             AgentToolSchema.function(
                 name = "browser_use",
-                description = "操作 Eta 共享的离屏 Agent 浏览器，不会切换到外部浏览器。单个动作用 action；已确定无疑问的连续多步可以用 actions 数组一次提交，按顺序执行，某步失败即停止并回报失败步序号；网页浏览通常先 navigate，再用 get_readable 提取正文，或用 find_elements 查找可交互元素。evaluate_js 可在页面里执行 JS 表达式（支持 await），get_cookies 与 set_cookie 读写该浏览器的 Cookie，set_proxy 与 clear_proxy 控制该进程内所有 WebView 的代理（例如指向本机抓包工具），设置后 download 也走同一条代理，download 把 http(s) 文件保存到公共下载目录并返回路径。需要把 URI 显式交给外部应用时使用 open_uri。",
+                description = "操作 Eta 共享的离屏 Agent 浏览器，不会切换到外部浏览器。单个动作用 action；已确定无疑问的连续多步可以用 actions 数组一次提交，按顺序执行，某步失败即停止并回报失败步序号；网页浏览通常先 navigate，再用 get_readable 提取正文，或用 find_elements 查找可交互元素。get_readable 的返回里 extractor 标明这次走了哪条提取路径（readability / heuristic / +body-text），非 readability 路径会附 link_density（链接文字占比）与 noise_candidates（疑似导航、广告、推荐位等容器的数量，只统计不删除）：两者偏高说明结果可能混入页面杂项，宜用选择器重取或核对原文。evaluate_js 可在页面里执行 JS 表达式（支持 await），get_cookies 与 set_cookie 读写该浏览器的 Cookie，set_proxy 与 clear_proxy 控制该进程内所有 WebView 的代理（例如指向本机抓包工具），设置后 download 也走同一条代理，download 把 http(s) 文件保存到公共下载目录并返回路径。需要把 URI 显式交给外部应用时使用 open_uri。",
                 parameters = JSONObject()
                     .put("type", "object")
                     .put(

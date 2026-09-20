@@ -377,6 +377,44 @@ internal object BrowserDomScripts {
           document.body.appendChild(holder);
           return holder;
         };
+        // 启发式路径的噪声度量：只统计、不删除任何节点。Readability 能给出正文时用不到它，
+        // 那一路已经按文本密度和 class/id 模式做过清理。
+        // 只认独立词元（-、_、空白、驼峰边界分隔），所以 download、adaptive 这类含 ad 的普通词不会命中。
+        var NOISE_MARK_PATTERN = /(^|[\s_-])(ad|ads|advert|advertorial|advertisement|sponsor|sponsored|promo|promotion|recommend|recommended|related|sidebar|comment|comments|cookie|gdpr|newsletter|subscribe|share|banner|popup|skyscraper|social|footer|header|menu|nav)([\s_-]|$)/i;
+        var countNoiseCandidates = function (root) {
+          if (!root) return 0;
+          var nodes = root.querySelectorAll('[class],[id]');
+          var limit = Math.min(nodes.length, 4000);
+          var hits = 0;
+          for (var index = 0; index < limit; index++) {
+            // 先把 relatedPosts、adBanner 这类驼峰拆成词元，否则整词边界会把它们整段漏掉。
+            var mark = (String(nodes[index].getAttribute('class') || '') + ' ' +
+              String(nodes[index].getAttribute('id') || ''))
+              .replace(/([a-z0-9])([A-Z])/g, '${'$'}1 ${'$'}2');
+            if (NOISE_MARK_PATTERN.test(mark)) hits++;
+          }
+          return hits;
+        };
+        // 链接文本占比：导航、相关推荐、广告位这类容器里几乎全是链接文字，正文则相反。
+        var linkDensity = function (root, deadline) {
+          if (!root) return 0;
+          var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+          var total = 0;
+          var linked = 0;
+          var seen = 0;
+          var node;
+          while ((node = walker.nextNode())) {
+            seen++;
+            if (seen > 6000 || (seen % 128 === 0 && Date.now() > deadline)) break;
+            var parent = node.parentElement;
+            if (!parent || !visible(parent)) continue;
+            var length = String(node.nodeValue || '').replace(/\s+/g, ' ').trim().length;
+            if (!length) continue;
+            total += length;
+            if (parent.closest('a')) linked += length;
+          }
+          return total > 0 ? Math.round((linked / total) * 1000) / 1000 : 0;
+        };
         var article = null;
         try {
           if (typeof Readability === 'function') {
@@ -405,6 +443,7 @@ internal object BrowserDomScripts {
           if (target && target.parentNode) target.parentNode.removeChild(target);
         }
         var markdown = cleanBlock(state.parts.join(''), MAX_DOCUMENT_CHARS);
+        var usedBodyText = false;
         // 兜底：正文装配失手时退回整页可见文本（复用同一套可见性遍历，不直接读渲染文本属性）。宁可粒度粗，也不要交给调用方 0 字符。
         if (!markdown && document.body) {
           var bodyText = cleanBlock(
@@ -413,8 +452,18 @@ internal object BrowserDomScripts {
           );
           if (bodyText) {
             markdown = bodyText;
+            usedBodyText = true;
             extractor = extractor + '+body-text';
           }
+        }
+        // 噪声度量只在非 Readability 路径计算：那两路才可能把导航、推广一起倒出来。
+        // 放在这里是因为 root 要取真正交付内容的节点——body 兜底时就是 body。
+        var linkDensityValue = null;
+        var noiseCandidateCount = null;
+        if (!fromReadability) {
+          var metricRoot = usedBodyText ? document.body : target;
+          linkDensityValue = linkDensity(metricRoot, Date.now() + 200);
+          noiseCandidateCount = countNoiseCandidates(metricRoot);
         }
         var total = markdown.length;
         var start = Math.min($offset, total);
@@ -430,6 +479,8 @@ internal object BrowserDomScripts {
           visited_nodes: state.visited,
           selector_used: selectorFor(target),
           extractor: extractor,
+          link_density: linkDensityValue,
+          noise_candidates: noiseCandidateCount,
           language: cleanInline(document.documentElement.lang, 32) || null,
           canonical_url: (function() {
             var item = document.querySelector('link[rel="canonical"]');
