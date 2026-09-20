@@ -128,9 +128,8 @@ internal class AgentRuntimeRunExecutor(
                     AgentMemoryContextBuilder.build(
                         snapshot = AgentMemoryRepository.snapshot(),
                         contextWindow = request.config.contextWindow,
-                        // 作用域匹配用的任务文本：取历史 JSON 的尾部（最近的对话）。只做粗匹配
-                        // （路径片段与关键词），不解析消息结构；4000 字符够覆盖最近几轮且开销可控。
-                        hint = request.history.toString().takeLast(4_000),
+                        // 作用域匹配用的任务文本：最近几条消息的正文与工具参数（见 taskHint）。
+                        hint = AgentMemoryContextBuilder.taskHint(request.history),
                     )
                 }.getOrElse { throwable ->
                     AndroidAgentLogger.warnThrottled("agent_memory_context_failed") {
@@ -294,11 +293,20 @@ internal class AgentRuntimeRunExecutor(
             }
             val runTools = JSONArray(mcpTools.toString()).also { tools ->
                 if (historyTool != null) tools.put(AgentConversationToolCatalog.schema())
+                tools.put(AgentConversationToolCatalog.compactSchema())
                 if (characterMemoryTools != null && memoryEnabled) CharacterMemoryTools.appendSchemas(tools)
             }
             val runToolExecutor = AgentModelClient.ToolExecutor { call ->
                 if (call.name == AgentConversationToolCatalog.READ_HISTORY && historyTool != null) {
                     historyTool.execute(call)
+                } else if (call.name == AgentConversationToolCatalog.COMPACT_CONTEXT) {
+                    // 压缩由 AgentLoop 在本批工具结果并入历史后执行；这里只回执并把指令带出去。
+                    AgentModelClient.ToolResult(JSONObject()
+                        .put("ok", true)
+                        .put("code", "COMPACT_REQUESTED")
+                        .put("instructions", AgentConversationToolCatalog.instructionsOf(call.argumentsJson))
+                        .put("message", "压缩请求已受理：本批工具结果并入历史后立即压缩上下文。")
+                        .toString())
                 } else if (call.name in CharacterMemoryTools.NAMES && characterMemoryTools != null) {
                     characterMemoryTools.execute(call)
                 } else routingExecutor.execute(call)

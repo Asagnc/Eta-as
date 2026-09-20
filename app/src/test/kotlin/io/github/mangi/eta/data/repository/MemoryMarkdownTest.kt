@@ -56,4 +56,35 @@ class MemoryMarkdownTest {
         assertEquals(2, MemoryMarkdown.heading("## 设备  ")?.level)
         assertEquals("设备", MemoryMarkdown.heading("## 设备  ")?.title)
     }
+
+    @Test
+    fun sectionsListEveryHeadingInFileOrder() {
+        val sections = MemoryMarkdown.sections(content)
+
+        assertEquals(listOf("# 核心记忆", "## 项目", "## 其他"), sections.map { it.first.headingText })
+        assertEquals(emptyList<String>(), sections[0].second)
+    }
+
+    @Test
+    fun scopedSectionsCarryTheDeclaredScope() {
+        val scoped = "# 核心记忆\n通用\n## Eta 改造\n<!-- scope: Eta-src, AgentLoop -->\n细节\n"
+
+        val sections = MemoryMarkdown.sections(scoped)
+
+        assertEquals(listOf("Eta-src", "AgentLoop"), sections.single { it.first.title == "Eta 改造" }.second)
+        assertEquals(1, MemoryMarkdown.scopedSections(scoped).size)
+        assertEquals(emptyList<Pair<MemoryMarkdown.Section, List<String>>>(), MemoryMarkdown.scopedSections(content))
+    }
+
+    @Test
+    fun sectionOwnBodyStopsBeforeNestedHeadings() {
+        val lines = content.split('\n')
+        val top = MemoryMarkdown.findSection(lines, "核心记忆")!!
+
+        assertEquals("# 核心记忆\n旧偏好", MemoryMarkdown.sectionOwnBody(lines, top))
+        assertEquals(
+            "## 项目\n旧项目",
+            MemoryMarkdown.sectionOwnBody(lines, MemoryMarkdown.findSection(lines, "项目")!!),
+        )
+    }
 }

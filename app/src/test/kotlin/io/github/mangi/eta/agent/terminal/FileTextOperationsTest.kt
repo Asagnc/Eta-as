@@ -110,4 +110,49 @@ class FileTextOperationsTest {
 
         assertTrue(diff.contains("+ 4\td"))
     }
+
+    @Test
+    fun `first difference points at the line that differs`() {
+        val description = FileTextOperations.describeFirstDifference("alpha\nbeta\ngamma\n", "alpha\nBETA\ngamma")
+
+        assertTrue(description.contains("第 2 行"))
+    }
+
+    @Test
+    fun `first difference reports indentation on the first line`() {
+        val description = FileTextOperations.describeFirstDifference("    fun main() {\n    }\n", "fun main() {\n}")
+
+        assertTrue(description.contains("第 1 行"))
+    }
+
+    @Test
+    fun `ambiguity snippet keeps the matched line for every hit`() {
+        val content = (1..40).joinToString("\n") { "line $it" }
+
+        val snippet = FileTextOperations.ambiguitySnippet(content, listOf(5, 20, 35))
+
+        assertTrue(snippet.contains("> L5:"))
+        assertTrue(snippet.contains("> L20:"))
+        assertTrue(snippet.contains("> L35:"))
+        assertFalse(snippet.contains("未展示"))
+    }
+
+    @Test
+    fun `ambiguity snippet clips long lines instead of dropping later hits`() {
+        val content = "x".repeat(5_000) + "\nshort\n" + "x".repeat(5_000)
+
+        val snippet = FileTextOperations.ambiguitySnippet(content, listOf(1, 2), radius = 1, maxChars = 1_200)
+
+        assertTrue(snippet.contains("> L1:"))
+        assertTrue(snippet.contains("> L2:"))
+    }
+
+    @Test
+    fun `ambiguity snippet admits hits dropped by the budget`() {
+        val content = (1..200).joinToString("\n") { "line $it" }
+
+        val snippet = FileTextOperations.ambiguitySnippet(content, (1..200).toList(), radius = 1, maxChars = 400)
+
+        assertTrue(snippet.contains("未展示"))
+    }
 }

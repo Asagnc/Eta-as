@@ -230,6 +230,7 @@ internal class AgentLoop(
                 appendToolImages(round, outcomes)
                 publishTranscript()
                 noticeRepeatedToolCalls(round, toolCalls)
+                compactOnRequest(outcomes, roundTools)
                 round += 1
                 continue
             }
@@ -282,6 +283,28 @@ internal class AgentLoop(
         runController.steer(
             "注意：第 $round 轮的这次工具调用与前几轮完全相同（$names），再调用一次也不会得到新信息。" +
                 "请改参数、换工具，或直接根据已有信息给出结论。",
+        )
+    }
+
+    /**
+     * 处理模型转达的压缩请求（`compact_context`）。
+     *
+     * 压缩是宿主行为——要发一次摘要请求并重写历史——所以放在本批工具结果并入历史之后执行：
+     * 这样刚拿到的结果也会进入摘要，下一轮请求立刻用上压缩后的上下文。
+     */
+    private fun compactOnRequest(outcomes: List<ToolOutcome>, roundTools: JSONArray) {
+        var requested: String? = null
+        for (outcome in outcomes) {
+            if (outcome.call.name == AgentConversationToolCatalog.COMPACT_CONTEXT) {
+                requested = AgentConversationToolCatalog.instructionsOf(outcome.call.argumentsJson)
+            }
+        }
+        val instructions = requested ?: return
+        context.compact(
+            roundTools,
+            force = true,
+            reasonCode = AgentEvent.ContextCompaction.REASON_REQUESTED,
+            extraInstructions = instructions,
         )
     }
 

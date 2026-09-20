@@ -119,6 +119,8 @@ internal object FileTextOperations {
      * 多处命中时，给出每处命中及其前后 [radius] 行，行号带真实编号。
      *
      * 只回行号时调用方还得再读一次文件才能区分；每处附上上下文，一次就能补足出唯一片段。
+     * 预算按「命中行优先」分配：每处先保证命中行本身出现，剩余额度才用来补上下文——否则
+     * 一处超长上下文就能把后面的命中处全挤掉，调用方反而拿不到区分依据。
      */
     fun ambiguitySnippet(
         content: String,
@@ -128,56 +130,96 @@ internal object FileTextOperations {
     ): String {
         val lines = linesOf(content)
         if (lines.isEmpty() || lineNumbers.isEmpty()) return ""
+        val targets = lineNumbers.distinct().sorted().filter { line -> line - 1 in lines.indices }
+        if (targets.isEmpty()) return ""
         val builder = StringBuilder()
-        for (line in lineNumbers.distinct().sorted()) {
-            val index = line - 1
-            if (index !in lines.indices) continue
-            val header = "命中 @L$line：\n"
-            if (builder.length + header.length > maxChars) break
-            builder.append(header)
-            val start = (index - radius).coerceAtLeast(0)
-            val end = (index + radius).coerceAtMost(lines.size - 1)
-            for (position in start..end) {
-                val marker = if (position == index) ">" else " "
-                val rendered = "$marker L${position + 1}: ${lines[position]}\n"
-                if (builder.length + rendered.length > maxChars) break
-                builder.append(rendered)
-            }
+        var shown = 0
+        for (line in targets) {
+            val block = snippetBlock(lines, line - 1, radius, maxChars - builder.length)
+            if (block.isEmpty()) break
+            builder.append(block)
+            shown++
         }
-        return builder.toString().trimEnd('\n')
+        val text = builder.toString().trimEnd('\n')
+        if (shown >= targets.size) return text
+        val note = "（另有 ${targets.size - shown} 处命中因字符预算 $maxChars 未展示）"
+        return if (text.isEmpty()) note else "$text\n$note"
     }
 
+    /** 一处命中的展示块：命中行一定在内，上下文按「越近越优先」塞进剩余预算。 */
+    private fun snippetBlock(lines: List<String>, index: Int, radius: Int, budget: Int): String {
+        val header = "命中 @L${index + 1}：\n"
+        val marker = snippetLine(">", index + 1, lines[index])
+        if (header.length + marker.length > budget) return ""
+        val builder = StringBuilder(header).append(marker)
+        for (offset in 1..radius) {
+            val before = index - offset
+            if (before >= 0) {
+                val text = snippetLine(" ", before + 1, lines[before])
+                if (builder.length + text.length <= budget) builder.insert(header.length, text)
+            }
+            val after = index + offset
+            if (after < lines.size) {
+                val text = snippetLine(" ", after + 1, lines[after])
+                if (builder.length + text.length <= budget) builder.append(text)
+            }
+        }
+        return builder.toString()
+    }
+
+    /** 单行渲染；超长行截断，免得一行就吃掉整段预算。 */
+    private fun snippetLine(marker: String, lineNumber: Int, text: String): String {
+        val clipped = if (text.length <= SNIPPET_LINE_CHARS) text else text.take(SNIPPET_LINE_CHARS) + "…"
+        return "$marker L$lineNumber: $clipped\n"
+    }
+
+    private const val SNIPPET_LINE_CHARS = 200
+
     /**
-     * 指出 old_text 首行与文件里最接近那行的**首个差异字符**。
+     * 指出 old_text 与文件里最接近那段的**第一处差异**。
      *
-     * 引号、全角半角、不可见字符这类差异肉眼几乎看不出来——只回"最接近的原文"时调用方
-     * 仍要反复比对；直接点出第几个字符不同、两边各是什么，一次就能改对。
+     * 引号、全角半角、缩进、不可见字符这类差异肉眼几乎看不出来——只回"最接近的原文"时调用方
+     * 仍要反复比对；这里先按首行定位最接近的位置，再逐行比对，点出第一处不同的行号与字符。
      */
     fun describeFirstDifference(content: String, oldText: String): String {
         val lines = linesOf(content)
         if (lines.isEmpty()) return ""
-        val needle = oldText.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() } ?: return ""
+        val needles = oldText.lines()
+        val anchor = needles.firstOrNull { it.isNotBlank() }?.trim() ?: return ""
         var bestIndex = -1
         var bestScore = 0
         lines.forEachIndexed { index, line ->
             val trimmed = line.trim()
             if (trimmed.isEmpty()) return@forEachIndexed
-            val score = commonPrefixLength(trimmed, needle)
+            val score = commonPrefixLength(trimmed, anchor)
             if (score > bestScore) {
                 bestScore = score
                 bestIndex = index
             }
         }
         if (bestIndex < 0) return ""
-        val actual = lines[bestIndex].trim()
-        if (actual == needle) return "第 ${bestIndex + 1} 行与 old_text 首行内容一致，差异在后续行"
+        for ((offset, needle) in needles.withIndex()) {
+            val index = bestIndex + offset
+            if (index >= lines.size) {
+                return "old_text 比文件长：文件到第 ${lines.size} 行结束，" +
+                    "old_text 第 ${offset + 1} 行起没有对应内容"
+            }
+            val actual = lines[index]
+            if (actual == needle) continue
+            return "差异位置：第 ${index + 1} 行第 ${firstDifferenceAt(actual, needle)}"
+        }
+        return "old_text 从文件第 ${bestIndex + 1} 行起逐行都能对上，但整段未命中——" +
+            "说明这段还出现在别处，或前后存在未比对到的内容"
+    }
+
+    /** 行内第一处差异，形如 `第 N 个字符起——文件里是 X，old_text 里是 Y`。 */
+    private fun firstDifferenceAt(actual: String, needle: String): String {
         val limit = minOf(actual.length, needle.length)
         var position = 0
         while (position < limit && actual[position] == needle[position]) position++
         val actualChar = if (position < actual.length) describeChar(actual[position]) else "（行尾）"
         val needleChar = if (position < needle.length) describeChar(needle[position]) else "（行尾）"
-        return "差异位置：第 ${bestIndex + 1} 行第 ${position + 1} 个字符起——" +
-            "文件里是 $actualChar，old_text 里是 $needleChar"
+        return "${position + 1} 个字符起——文件里是 $actualChar，old_text 里是 $needleChar"
     }
 
     private fun describeChar(char: Char): String = when {

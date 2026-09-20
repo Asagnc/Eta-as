@@ -24,6 +24,7 @@ internal sealed interface AgentEvent {
                 REASON_TRIGGER_RATIO -> "上下文已接近窗口上限"
                 REASON_OVERFLOW -> "模型报告上下文超出容量"
                 REASON_MANUAL -> "手动压缩"
+                REASON_REQUESTED -> "按你的要求压缩"
                 REASON_FINAL -> "运行结束整理"
                 else -> null
             }
@@ -51,6 +52,8 @@ internal sealed interface AgentEvent {
             const val REASON_TRIGGER_RATIO = "CONTEXT_TRIGGER_RATIO"
             const val REASON_OVERFLOW = "CONTEXT_OVERFLOW"
             const val REASON_MANUAL = "CONTEXT_MANUAL"
+            /** 模型按用户要求转达的压缩请求（compact_context）。 */
+            const val REASON_REQUESTED = "CONTEXT_REQUESTED"
             const val REASON_FINAL = "CONTEXT_FINAL"
             /** 进行中的展示文案前缀；UI 的运行态判定用 phase，不依赖这里的完整文案。 */
             const val RUNNING_DETAIL = "正在压缩上下文…"

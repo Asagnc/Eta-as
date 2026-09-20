@@ -67,6 +67,7 @@ internal class AgentContextSession(
         final: Boolean = false,
         untilMessageId: String? = null,
         reasonCode: String = "",
+        extraInstructions: String? = null,
     ) {
         val before = budget.estimate(messages, roundTools)
         // 服务端已经拒收过这个规模：记下实测上限，之后按更小的窗口触发，避免反复撞墙。
@@ -94,7 +95,7 @@ internal class AgentContextSession(
             var attempts = 0
             do {
                 candidate = AgentContextCompactor(config, provider, runController, roleplay = roleplay).compact(
-                    candidate, systemCount, sensitiveIds(), force, untilMessageId,
+                    candidate, systemCount, sensitiveIds(), force, untilMessageId, extraInstructions,
                 )
                 attempts++
                 // 用不带地板的估算判断「是否已经缩小」：estimate() 的下界是上一次服务端回报的真实

@@ -72,12 +72,12 @@ internal object MemoryMarkdown {
         return match.groupValues[1].split(',').map { it.trim() }.filter { it.isNotEmpty() }
     }
 
-    /** 列出所有带作用域声明的章节（章节 → 匹配项），用于预算不够时挑选注入。 */
-    fun scopedSections(content: String): List<Pair<Section, List<String>>> {
+    /** 按文件顺序列出所有章节（章节 → 作用域匹配项；没写声明时是空列表）。 */
+    fun sections(content: String): List<Pair<Section, List<String>>> {
         if (content.isEmpty()) return emptyList()
         val lines = content.split('\n')
         val headings = headingsOf(lines)
-        return headings.mapIndexedNotNull { position, located ->
+        return headings.mapIndexed { position, located ->
             val section = Section(
                 headingText = located.heading.text,
                 title = located.heading.title,
@@ -85,14 +85,30 @@ internal object MemoryMarkdown {
                 startIndex = located.index,
                 endIndex = sectionEnd(headings, position, lines.size),
             )
-            val scope = scopeOf(lines, section)
-            if (scope.isEmpty()) null else section to scope
+            section to scopeOf(lines, section)
         }
     }
 
-    /** 章节正文（含标题行），用于按需注入。 */
+    /** 只列出带作用域声明的章节，用于预算不够时挑选注入。 */
+    fun scopedSections(content: String): List<Pair<Section, List<String>>> =
+        sections(content).filter { (_, scope) -> scope.isNotEmpty() }
+
+    /** 章节正文（含标题行、含子章节），用于整节注入。 */
     fun sectionBody(lines: List<String>, section: Section): String =
         lines.subList(section.startIndex, section.endIndex.coerceAtMost(lines.size)).joinToString("\n")
+
+    /**
+     * 章节自有正文（含标题行，**不含**子章节）：标题行到第一个子标题之前。
+     *
+     * 逐节注入时用它拼接：[sectionBody] 会把子章节一起带上，逐节取整段就会重复注入同一批内容。
+     */
+    fun sectionOwnBody(lines: List<String>, section: Section): String {
+        val end = section.endIndex.coerceAtMost(lines.size)
+        val ownEnd = ((section.startIndex + 1) until end)
+            .firstOrNull { index -> heading(lines[index]) != null }
+            ?: end
+        return lines.subList(section.startIndex, ownEnd).joinToString("\n")
+    }
 
     /** 带行号范围的标题索引，例如 `## 设备  [L12-45]`；超出上限时按行截断。 */
     fun sectionIndex(content: String): String {

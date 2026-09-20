@@ -52,6 +52,7 @@ internal class AgentTraceFormatter {
             "open_system_panel" -> "打开系统面板"
             "read_image" -> "查看图片"
             AgentConversationToolCatalog.READ_HISTORY -> "读取当前会话历史"
+            AgentConversationToolCatalog.COMPACT_CONTEXT -> "压缩上下文"
             "memory_get", "character_memory_get" -> summarizeMemoryGetArguments(toolCall.argumentsJson)
             "memory_write", "character_memory_write" -> summarizeMemoryWriteArguments(toolCall.argumentsJson)
             "skills_list" -> "查看技能列表"
@@ -268,6 +269,7 @@ internal class AgentTraceFormatter {
         return when (toolName) {
             BROWSER_TOOL_NAME -> json?.let(::summarizeBrowserResult) ?: "浏览器操作完成"
             AgentConversationToolCatalog.READ_HISTORY -> "已读取历史分页"
+            AgentConversationToolCatalog.COMPACT_CONTEXT -> "已请求压缩上下文"
             "memory_get", "memory_write", "character_memory_get", "character_memory_write" ->
                 json?.let { summarizeMemoryResult(toolName, it) } ?: "完成"
             "search_apps" -> json?.let(::summarizeSearchAppsResult) ?: "完成"

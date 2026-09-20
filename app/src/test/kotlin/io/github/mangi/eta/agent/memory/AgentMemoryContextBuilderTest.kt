@@ -1,5 +1,6 @@
 package io.github.mangi.eta.agent.memory
 
+import io.github.mangi.eta.agent.model.AgentModelClient
 import io.github.mangi.eta.data.repository.AgentMemorySnapshot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -38,29 +39,82 @@ class AgentMemoryContextBuilderTest {
     }
 
     @Test
-    fun oversizedFileFallsBackToTruncatedCoreSection() {
+    fun oversizedFileFallsBackToTruncatedHead() {
         val content = "# 核心记忆\n" + "a".repeat(10_000)
         val snapshot = snapshot(content)
         val context = AgentMemoryContextBuilder.build(snapshot, null)
 
-        assertEquals(8_000, context.injectedContent.length)
+        assertTrue(context.injectedContent.startsWith("# 核心记忆"))
+        assertTrue(context.injectedContent.length <= 8_000)
         assertFalse(context.injectedFull)
         assertTrue(context.injectedTruncated)
         assertEquals(snapshot.revision, context.revision)
     }
 
     @Test
-    fun oversizedFileWithoutCoreHeadingIsIndexedButNotInjected() {
+    fun oversizedFileWithoutCoreHeadingStillInjectsItsHead() {
+        // 用户没用 `# 核心记忆` 当标题时也不能一点记忆都不给：按行边界截断注入开头一段。
         val context = AgentMemoryContextBuilder.build(
             snapshot("# 项目\n" + "只应按需读取的细节".repeat(2_000)),
             128_000,
         )
 
-        assertEquals("", context.injectedContent)
+        assertTrue(context.injectedContent.startsWith("# 项目"))
         assertFalse(context.injectedFull)
-        assertFalse(context.injectedTruncated)
         assertEquals("# 项目  [L1-2]", context.headingIndex)
     }
+
+    @Test
+    fun scopedSectionIsInjectedOnlyWhenTheTaskMatches() {
+        val content = "# 核心记忆\n通用偏好\n" +
+            "## Eta 改造\n<!-- scope: Eta-src -->\n改造细节\n" +
+            "## 大块\n" + "z".repeat(9_000)
+        val snapshot = snapshot(content)
+
+        val unrelated = AgentMemoryContextBuilder.build(snapshot, null, hint = "整理相册")
+        assertFalse(unrelated.injectedContent.contains("改造细节"))
+        assertTrue(unrelated.injectedContent.contains("通用偏好"))
+
+        val related = AgentMemoryContextBuilder.build(snapshot, null, hint = "改 /workspace/Eta-src 的代码")
+        assertTrue(related.injectedContent.contains("改造细节"))
+    }
+
+    @Test
+    fun scopedOnlyFileInjectsNothingWhenNothingMatches() {
+        val content = "## Eta 改造\n<!-- scope: Eta-src -->\n改造细节\n" + "z".repeat(9_000)
+
+        val context = AgentMemoryContextBuilder.build(snapshot(content), null, hint = "整理相册")
+
+        assertEquals("", context.injectedContent)
+    }
+
+    @Test
+    fun taskHintKeepsRecentMessagesAndToolArguments() {
+        val history = listOf(
+            message("user", "第1条"),
+            message("user", "第2条"),
+            message("user", "第3条"),
+            message("user", "第4条"),
+            message("user", "第5条"),
+            message("user", "第6条"),
+            message("user", "第7条"),
+            message("assistant", "", """{"name":"read_file","arguments":{"path":"/workspace/Eta-src"}}"""),
+        )
+
+        val hint = AgentMemoryContextBuilder.taskHint(history)
+
+        assertTrue(hint.contains("/workspace/Eta-src"))
+        assertFalse(hint.contains("第1条"))
+        assertTrue(hint.contains("第7条"))
+    }
+
+    @Test
+    fun taskHintIsEmptyWithoutHistory() {
+        assertEquals("", AgentMemoryContextBuilder.taskHint(emptyList()))
+    }
+
+    private fun message(role: String, content: String, toolCalls: String = "") =
+        AgentModelClient.ConversationMessage(role = role, content = content, toolCallsJson = toolCalls)
 
     private fun snapshot(content: String): AgentMemorySnapshot = AgentMemorySnapshot(
         content = content,
