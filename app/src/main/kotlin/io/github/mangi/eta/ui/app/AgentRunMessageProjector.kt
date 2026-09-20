@@ -168,6 +168,11 @@ internal class AgentRunMessageProjector(
         )
     }
 
+    /**
+     * 轮结束入口：本轮的流式思考块在这里收尾，elapsedSeconds 冻结在轮结束时刻。
+     * 只有"本轮没有流式思考块、但模型回传了思考正文"时才补一条兜底卡片；
+     * 两者都没有就原样返回，不补空卡片。
+     */
     fun ensureCompletedThinking(
         runId: String,
         round: Int,
@@ -180,6 +185,8 @@ internal class AgentRunMessageProjector(
         ) {
             return finalizeThinkingRound(runId, round, messages)
         }
+
+        if (content.isBlank()) return messages
 
         val thinkingId = thinkingFallbackMessageId(runId, round)
         return messages.insertBeforeFirstAssistant(

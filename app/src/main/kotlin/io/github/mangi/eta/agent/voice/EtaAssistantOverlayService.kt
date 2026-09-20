@@ -606,14 +606,13 @@ internal class EtaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
             }
 
             is AgentEvent.AssistantReceived -> {
-                if (event.reasoningContent.isNotBlank()) {
-                    messages = runMessageProjector.ensureCompletedThinking(
-                        runId = runId,
-                        round = event.round,
-                        content = event.reasoningContent,
-                        messages = messages,
-                    )
-                }
+                // 与主界面一致：每轮都收尾思考块，否则用时会计到整个 run 结束。
+                messages = runMessageProjector.ensureCompletedThinking(
+                    runId = runId,
+                    round = event.round,
+                    content = event.reasoningContent,
+                    messages = messages,
+                )
             }
 
             is AgentEvent.RunFinished -> {

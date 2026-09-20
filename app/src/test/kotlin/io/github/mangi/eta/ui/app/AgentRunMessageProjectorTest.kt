@@ -545,4 +545,45 @@ class AgentRunMessageProjectorTest {
         assertFalse(interruptedNotice.running)
         assertEquals(base + completed, projector.finishContextCompaction(runId, base + completed, "上下文压缩已中断"))
     }
+
+    @Test
+    fun roundEndFinalizesStreamedThinkingAndSkipsEmptyFallback() {
+        var now = 1_000L
+        val projector = AgentRunMessageProjector(nowElapsedRealtime = { now })
+        val runId = "run-round-end"
+        // 工具轮：模型只输出思考 + 工具调用，没有 TEXT 块，轮结束时思考块仍是流式状态。
+        val messages = projector.appendReasoningDelta(runId, 1, 0, "先想", emptyList())
+        now = 41_000L
+        val finalized = projector.ensureCompletedThinking(runId, round = 1, content = "", messages = messages)
+        assertEquals(1, finalized.size)
+        val thinking = finalized.filterIsInstance<ThinkingMessageUi>().single()
+        assertFalse(thinking.isStreaming)
+        assertEquals(40, thinking.elapsedSeconds ?: -1)
+        // 没有流式块、也没有回传正文时，不补空卡片。
+        assertEquals(
+            emptyList<AgentChatMessageUi>(),
+            projector.ensureCompletedThinking(runId, round = 2, content = "  ", messages = emptyList()),
+        )
+    }
+
+    @Test
+    fun roundEndFallbackThinkingUsesReasoningContentAndKeepsStreamedContent() {
+        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 5_000L })
+        val runId = "run-round-fallback"
+        val assistant = AgentMessageUi(id = "assistant-$runId-1-0", content = "答案", isStreaming = true)
+        val withFallback = projector.ensureCompletedThinking(
+            runId = runId,
+            round = 1,
+            content = "模型回传的思考",
+            messages = listOf(assistant),
+        )
+        val fallback = withFallback.filterIsInstance<ThinkingMessageUi>().single()
+        assertEquals("模型回传的思考", fallback.content)
+        assertFalse(fallback.isStreaming)
+        assertEquals(2, withFallback.size)
+        // 已有流式块时，轮结束只收尾，不用兜底正文覆盖已经流式得到的内容。
+        val streamed = projector.appendReasoningDelta(runId, 2, 0, "流式思考", emptyList())
+        val kept = projector.ensureCompletedThinking(runId, round = 2, content = "别的正文", messages = streamed)
+        assertEquals("流式思考", kept.filterIsInstance<ThinkingMessageUi>().single().content)
+    }
 }

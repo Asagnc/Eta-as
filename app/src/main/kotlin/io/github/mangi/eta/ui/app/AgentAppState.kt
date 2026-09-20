@@ -2241,15 +2241,15 @@ internal class AgentAppState(
             }
 
             is AgentEvent.AssistantReceived -> {
-                if (event.reasoningContent.isNotBlank()) {
-                    updateRunTrace(runId) { messages ->
-                        runMessageProjector.ensureCompletedThinking(
-                            runId = runId,
-                            round = event.round,
-                            content = event.reasoningContent,
-                            messages = messages,
-                        )
-                    }
+                // 每轮都要收尾思考块：流式思考的正文不在 reasoningContent 里，
+                // 只在"没收到流式思考、但模型回传了正文"时才由兜底分支补卡片。
+                updateRunTrace(runId) { messages ->
+                    runMessageProjector.ensureCompletedThinking(
+                        runId = runId,
+                        round = event.round,
+                        content = event.reasoningContent,
+                        messages = messages,
+                    )
                 }
             }
 

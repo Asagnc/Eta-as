@@ -460,7 +460,7 @@
   <string name="reasoning_in_progress">正在思考…</string>
   <string name="reasoning_completed">思考已完成</string>
   <plurals name="reasoning_completed_seconds">
-      <item quantity="other">思考已完成 · 用时 %d 秒</item>
+      <item quantity="other">本轮耗时 %d 秒</item>
   </plurals>
   <string name="reasoning_collapse">收起思考过程</string>
   <string name="reasoning_expand">展开思考过程</string>
