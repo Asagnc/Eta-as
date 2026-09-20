@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.provider.Settings
 import android.widget.Toast
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.AccessibilityNew
@@ -46,10 +45,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -68,16 +66,20 @@ import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.PreferenceIcon
 import io.github.asagnc.sta.ui.navigation.AppRoute
+import io.github.asagnc.sta.ui.components.SettingsArrowPreference
+import io.github.asagnc.sta.ui.components.SettingsDropdownPreference
+import io.github.asagnc.sta.ui.components.SettingsGroup
+import io.github.asagnc.sta.ui.components.SettingsGroupTitle
+import io.github.asagnc.sta.ui.components.SettingsIconColors
+import io.github.asagnc.sta.ui.components.SettingsItemDivider
+import io.github.asagnc.sta.ui.components.SettingsPageTheme
+import io.github.asagnc.sta.ui.components.SettingsPreferenceIcon
+import io.github.asagnc.sta.ui.components.SettingsSwitchPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.DropdownItem
-import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.preference.ArrowPreference
-import top.yukonga.miuix.kmp.preference.SwitchPreference
-import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
 
@@ -89,6 +91,17 @@ import top.yukonga.miuix.kmp.window.WindowDialog
  */
 @Composable
 internal fun SettingsScreen(
+    context: Context,
+    onNavigate: (AppRoute) -> Unit,
+    onBack: () -> Unit,
+) {
+    SettingsPageTheme {
+        SettingsPageContent(context = context, onNavigate = onNavigate, onBack = onBack)
+    }
+}
+
+@Composable
+private fun SettingsPageContent(
     context: Context,
     onNavigate: (AppRoute) -> Unit,
     onBack: () -> Unit,
@@ -192,68 +205,78 @@ internal fun SettingsScreen(
     ) {
             // ── LLM 提供商 ──────────────────────────────────────────────
             item(key = "section_agent") {
-                SmallTitle(stringResource(R.string.settings_llm_providers))
-                Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
-                    ArrowPreference(
+                SettingsGroupTitle(stringResource(R.string.settings_llm_providers))
+                SettingsGroup {
+                    SettingsArrowPreference(
                         title = stringResource(R.string.ui_model_provider_e8c7f5),
                         summary = providerSummary,
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.Rounded.Memory,
+                                tint = SettingsIconColors.Blue,
                             )
                         },
                         onClick = { onNavigate(AppRoute.ModelProviders) },
                     )
 
+                    SettingsItemDivider()
                     SwitchPref(
                         context = context,
                         prefs = agentPrefs,
                         title = stringResource(R.string.ui_deep_thinking_enabled_by_default_c032d6),
                         key = Prefs.Keys.AGENT_THINKING_ENABLED,
                         icon = Icons.Rounded.Psychology,
+                        iconTint = SettingsIconColors.Blue,
                     )
                 }
             }
 
             // ── 上下文与扩展 ────────────────────────────────────────────
             item(key = "section_context_extensions") {
-                SmallTitle(stringResource(R.string.settings_context_extensions))
-                Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
-                    ArrowPreference(
+                SettingsGroupTitle(stringResource(R.string.settings_context_extensions))
+                SettingsGroup {
+                    SettingsArrowPreference(
                         title = stringResource(R.string.ui_memory_b55ff5),
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.AutoMirrored.Rounded.MenuBook,
+                                tint = SettingsIconColors.Orange,
                             )
                         },
                         onClick = { onNavigate(AppRoute.Memory) },
                     )
 
-                    ArrowPreference(
+                    SettingsItemDivider()
+                    SettingsArrowPreference(
                         title = stringResource(R.string.route_skills),
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.Rounded.Extension,
+                                tint = SettingsIconColors.Green,
                             )
                         },
                         onClick = { onNavigate(AppRoute.Skills) },
                     )
 
-                    ArrowPreference(
+                    SettingsItemDivider()
+                    SettingsArrowPreference(
                         title = stringResource(R.string.route_mcp_servers),
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.Rounded.AccountTree,
+                                tint = SettingsIconColors.Blue,
                             )
                         },
                         onClick = { onNavigate(AppRoute.McpServers) },
                     )
 
-                    ArrowPreference(
+                    SettingsItemDivider()
+                    SettingsArrowPreference(
                         title = "角色",
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.Rounded.TheaterComedy,
+                                tint = SettingsIconColors.Orange,
                             )
                         },
                         onClick = { onNavigate(AppRoute.Characters) },
@@ -263,59 +286,71 @@ internal fun SettingsScreen(
 
             // ── 工具 ───────────────────────────────────────────────────
             item(key = "section_tools") {
-                SmallTitle(stringResource(R.string.ui_tool_a72ef1))
-                Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
-                    ArrowPreference(
+                SettingsGroupTitle(stringResource(R.string.ui_tool_a72ef1))
+                SettingsGroup {
+                    SettingsArrowPreference(
                         title = stringResource(R.string.settings_tools_list),
-                        startAction = { PreferenceIcon(Icons.Rounded.Dashboard) },
+                        startAction = { SettingsPreferenceIcon(Icons.Rounded.Dashboard, tint = SettingsIconColors.Green) },
                         onClick = { onNavigate(AppRoute.Tools) },
                     )
 
+                    SettingsItemDivider()
                     SwitchPref(
                         context = context,
                         prefs = agentPrefs,
                         title = stringResource(R.string.ui_enable_web_browsing_tools_8b6b03),
                         key = Prefs.Keys.AGENT_BROWSER_TOOLS,
                         icon = Icons.Rounded.Language,
+                        iconTint = SettingsIconColors.Blue,
                     )
 
+                    SettingsItemDivider()
                     SwitchPref(
                         context = context,
                         prefs = agentPrefs,
                         title = stringResource(R.string.ui_enable_device_direct_tools_e2d595),
                         key = Prefs.Keys.AGENT_DEVICE_DIRECT_TOOLS,
                         icon = Icons.Rounded.Smartphone,
+                        iconTint = SettingsIconColors.Green,
                     )
 
+                    SettingsItemDivider()
                     SwitchPref(
                         context = context,
                         prefs = agentPrefs,
                         title = stringResource(R.string.ui_allow_reading_of_sensitive_device_information_feaec0),
                         key = Prefs.Keys.AGENT_DEVICE_SENSITIVE_READ_TOOLS,
                         icon = Icons.Rounded.Visibility,
+                        iconTint = SettingsIconColors.Blue,
                     )
 
+                    SettingsItemDivider()
                     SwitchPref(
                         context = context,
                         prefs = agentPrefs,
                         title = stringResource(R.string.ui_allow_sensitive_device_operation_3d42ea),
                         key = Prefs.Keys.AGENT_DEVICE_SENSITIVE_ACTION_TOOLS,
                         icon = Icons.Rounded.GppMaybe,
+                        iconTint = SettingsIconColors.Orange,
                     )
 
+                    SettingsItemDivider()
                     SwitchPref(
                         context = context,
                         prefs = agentPrefs,
                         title = stringResource(R.string.ui_enable_terminal_file_tools_18bb43),
                         key = Prefs.Keys.AGENT_TERMINAL_TOOLS,
                         icon = Icons.Rounded.Terminal,
+                        iconTint = SettingsIconColors.Green,
                     )
 
-                    ArrowPreference(
+                    SettingsItemDivider()
+                    SettingsArrowPreference(
                         title = stringResource(R.string.ui_linux_tool_environment_314d22),
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.Rounded.Inventory2,
+                                tint = SettingsIconColors.Orange,
                             )
                         },
                         onClick = { onNavigate(AppRoute.LinuxEnvironment) },
@@ -324,10 +359,10 @@ internal fun SettingsScreen(
             }
 
             item(key = "system_enhancements") {
-                Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
-                    ArrowPreference(
+                SettingsGroup {
+                    SettingsArrowPreference(
                         title = stringResource(R.string.capability_enhancements),
-                        startAction = { PreferenceIcon(Icons.Rounded.Security) },
+                        startAction = { SettingsPreferenceIcon(Icons.Rounded.Security, tint = SettingsIconColors.Blue) },
                         onClick = { onNavigate(AppRoute.SystemEnhance) },
                     )
                 }
@@ -335,26 +370,28 @@ internal fun SettingsScreen(
 
             // ── 系统助手接管 ──────────────────────────────────────────────
             item(key = "section_assistant_takeover") {
-                SmallTitle(stringResource(R.string.ui_system_assistant_takes_over_f46043))
-                Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
-                    ArrowPreference(
+                SettingsGroupTitle(stringResource(R.string.ui_system_assistant_takes_over_f46043))
+                SettingsGroup {
+                    SettingsArrowPreference(
                         title = stringResource(R.string.ui_eta_system_assistant_003e9b),
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.Rounded.SupportAgent,
+                                tint = SettingsIconColors.Green,
                             )
                         },
                         onClick = openAssistantSettings,
                     )
                     if (prefs != null || hasConnectedFramework) {
-                        WindowSpinnerPreference(
+                        SettingsItemDivider()
+                        SettingsDropdownPreference(
                             title = stringResource(R.string.ui_long_press_the_power_button_1958d0),
                             items = powerAssistantItems,
                             selectedIndex = powerAssistantTargets.indexOf(powerAssistantTarget),
                             onSelectedIndexChange = { index ->
                                 val target = powerAssistantTargets.getOrNull(index)
-                                    ?: return@WindowSpinnerPreference
-                                val targetPrefs = prefs ?: return@WindowSpinnerPreference
+                                    ?: return@SettingsDropdownPreference
+                                val targetPrefs = prefs ?: return@SettingsDropdownPreference
                                 if (putStringSync(
                                         prefs = targetPrefs,
                                         key = Prefs.Keys.POWER_KEY_ASSISTANT_TARGET,
@@ -372,20 +409,23 @@ internal fun SettingsScreen(
                                 }
                             },
                             startAction = {
-                                PreferenceIcon(
+                                SettingsPreferenceIcon(
                                     icon = Icons.Rounded.PowerSettingsNew,
+                                    tint = SettingsIconColors.Yellow,
                                     enabled = prefs != null,
                                 )
                             },
                             enabled = prefs != null,
                         )
 
+                        SettingsItemDivider()
                         SwitchPref(
                             context = context,
                             prefs = prefs,
                             title = stringResource(R.string.ui_automatically_set_default_assistant_f86963),
                             key = Prefs.Keys.ASSISTANT_AUTO_CONFIG,
                             icon = Icons.Rounded.Settings,
+                            iconTint = SettingsIconColors.Green,
                         )
                     }
                 }
@@ -394,22 +434,25 @@ internal fun SettingsScreen(
             if (prefs != null || hasConnectedFramework) {
                 // ── 厂商助手兼容入口 ──────────────────────────────────────────
                 item(key = "section_oem_assistant_compatibility") {
-                    SmallTitle(stringResource(R.string.ui_xiaobu_xiaoai_compatible_entrance_ae918a))
-                    Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
+                    SettingsGroupTitle(stringResource(R.string.ui_xiaobu_xiaoai_compatible_entrance_ae918a))
+                    SettingsGroup {
                         SwitchPref(
                             context = context,
                             prefs = prefs,
                             title = stringResource(R.string.ui_enable_vendor_assistant_custom_models_c8e465),
                             key = Prefs.Keys.AGENT_CUSTOM_MODEL,
                             icon = Icons.Rounded.Memory,
+                            iconTint = SettingsIconColors.Blue,
                         )
 
+                        SettingsItemDivider()
                         SwitchPref(
                             context = context,
                             prefs = prefs,
                             title = stringResource(R.string.ui_only_take_over_with_agent_prefix_d17556),
                             key = Prefs.Keys.AGENT_REQUIRE_PREFIX,
                             icon = Icons.Rounded.Code,
+                            iconTint = SettingsIconColors.Blue,
                         )
                     }
                 }
@@ -417,25 +460,29 @@ internal fun SettingsScreen(
 
             // ── 通用 ────────────────────────────────────────────────────
             item(key = "section_general") {
-                SmallTitle(stringResource(R.string.settings_general))
-                Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
-                    ArrowPreference(
+                SettingsGroupTitle(stringResource(R.string.settings_general))
+                SettingsGroup {
+                    SettingsArrowPreference(
                         title = stringResource(R.string.appearance_title),
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.Rounded.Palette,
+                                tint = SettingsIconColors.Orange,
                             )
                         },
                         onClick = { onNavigate(AppRoute.AppearanceSettings) },
                     )
 
-                    LanguagePreference()
+                    SettingsItemDivider()
+                    LanguagePreference(iconTint = SettingsIconColors.Blue)
 
-                    ArrowPreference(
+                    SettingsItemDivider()
+                    SettingsArrowPreference(
                         title = stringResource(R.string.data_backup_title),
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.Rounded.Description,
+                                tint = SettingsIconColors.Blue,
                             )
                         },
                         onClick = { onNavigate(AppRoute.DataBackup) },
@@ -445,13 +492,14 @@ internal fun SettingsScreen(
 
             // ── 权限 ────────────────────────────────────────────────────
             item(key = "section_permissions") {
-                SmallTitle(stringResource(R.string.ui_permissions_560165))
-                Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
-                    ArrowPreference(
+                SettingsGroupTitle(stringResource(R.string.ui_permissions_560165))
+                SettingsGroup {
+                    SettingsArrowPreference(
                         title = stringResource(R.string.ui_floating_window_permissions_076b77),
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.Rounded.Layers,
+                                tint = SettingsIconColors.Blue,
                             )
                         },
                         endActions = {
@@ -481,11 +529,13 @@ internal fun SettingsScreen(
                         },
                     )
 
-                    ArrowPreference(
+                    SettingsItemDivider()
+                    SettingsArrowPreference(
                         title = stringResource(R.string.ui_accessibility_enhancement_tools_8fd257),
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.Rounded.AccessibilityNew,
+                                tint = SettingsIconColors.Blue,
                             )
                         },
                         endActions = {
@@ -511,12 +561,13 @@ internal fun SettingsScreen(
                         },
                     )
                     if (prefs != null || hasConnectedFramework) {
-                        SwitchPreference(
+                        SettingsItemDivider()
+                        SettingsSwitchPreference(
                             title = stringResource(R.string.ui_enforce_accessibility_55e838),
                             checked = accessibilityProtectionEnabled,
                             onCheckedChange = { enabled ->
                                 if (accessibilityProtectionPending) {
-                                    return@SwitchPreference
+                                    return@SettingsSwitchPreference
                                 }
                                 accessibilityProtectionPending = true
                                 AccessibilityProtectionClient.setEnabled(
@@ -543,8 +594,9 @@ internal fun SettingsScreen(
                                 }
                             },
                             startAction = {
-                                PreferenceIcon(
+                                SettingsPreferenceIcon(
                                     icon = Icons.Rounded.VerifiedUser,
+                                    tint = SettingsIconColors.Blue,
                                     enabled = prefs != null && !accessibilityProtectionPending,
                                 )
                             },
@@ -556,13 +608,14 @@ internal fun SettingsScreen(
 
             // ── 关于 ────────────────────────────────────────────────────
             item(key = "section_about") {
-                SmallTitle(stringResource(R.string.ui_about_bed172))
-                Card(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
-                    ArrowPreference(
+                SettingsGroupTitle(stringResource(R.string.ui_about_bed172))
+                SettingsGroup {
+                    SettingsArrowPreference(
                         title = stringResource(R.string.ui_source_code_740296),
                         startAction = {
-                            PreferenceIcon(
+                            SettingsPreferenceIcon(
                                 icon = Icons.Rounded.Code,
+                                tint = SettingsIconColors.Blue,
                             )
                         },
                         endActions = {
@@ -602,6 +655,7 @@ private fun SwitchPref(
     summary: String? = null,
     key: String,
     icon: ImageVector,
+    iconTint: Color,
 ) {
     val enabled = prefs != null
     val history = remember(context.applicationContext) { EnhancementSettingsHistory(context) }
@@ -619,14 +673,14 @@ private fun SwitchPref(
         targetPrefs.registerOnSharedPreferenceChangeListener(listener)
         onDispose { targetPrefs.unregisterOnSharedPreferenceChangeListener(listener) }
     }
-    SwitchPreference(
+    SettingsSwitchPreference(
         title = title,
         summary = summary,
         checked = checked,
         onCheckedChange = { value ->
             // 同步提交；RemotePreferences.commit() 失败（binder 提交失败）时回滚 UI 状态，
             // 避免 UI 显示已切换而 hook 进程实际未收到。
-            val targetPrefs = prefs ?: return@SwitchPreference
+            val targetPrefs = prefs ?: return@SettingsSwitchPreference
             if (putBooleanSync(targetPrefs, key, value)) {
                 checked = value
                 history.recordCommittedBoolean(key, value)
@@ -642,7 +696,7 @@ private fun SwitchPref(
             }
         },
         startAction = {
-            PreferenceIcon(icon = icon, enabled = enabled)
+            SettingsPreferenceIcon(icon = icon, enabled = enabled, tint = iconTint)
         },
         enabled = enabled,
     )
