@@ -59,6 +59,26 @@ internal class RootShellTerminalController(
     /** 设备上静态 ripgrep 的绝对路径；空串表示已探测过但不存在。 */
     private var ripgrepPathCache: String? = null
 
+    /**
+     * 在指定环境里跑一条命令，返回原始退出码与输出。
+     *
+     * 与 [runCommand] 的区别：不走工具层（不做 exit 前缀与错误码包装），
+     * 供内部调用方按自己的方式处理失败——例如 worktree 创建要拿退出码判断成败。
+     */
+    fun execRaw(
+        command: String,
+        cwd: String?,
+        environment: TerminalEnvironment,
+        timeoutSeconds: Int,
+    ): RawCommandResult = runCommandRaw(
+        command = command,
+        cwd = cwd,
+        timeoutSeconds = timeoutSeconds.coerceIn(1, MAX_TIMEOUT_SECONDS),
+        identity = defaultIdentity(environment),
+        environment = environment,
+        mergeStderr = false,
+    )
+
     fun runCommand(command: String, cwd: String?, timeoutSeconds: Int): String {
         return runCommand(
             command = command,
@@ -1596,6 +1616,60 @@ internal class RootShellTerminalController(
     private fun rootfsPathFor(environment: TerminalEnvironment): String? =
         linuxRootfsPathProvider?.invoke(environment) ?: linuxRootfsPath
 
+    /**
+     * 原始执行：不加工具层的包装，直接给出退出码与输出。
+     *
+     * 与 [runCommand] 共用同一套环境预检与 cwd 归一，保证"内部调用"和"模型调用"
+     * 走的是同一条路径，不会因为绕开工具层而绕过安全约束。
+     */
+    private fun runCommandRaw(
+        command: String,
+        cwd: String?,
+        timeoutSeconds: Int,
+        identity: String,
+        environment: TerminalEnvironment,
+        mergeStderr: Boolean,
+    ): RawCommandResult {
+        val trimmed = command.trim()
+        if (trimmed.isBlank()) {
+            return RawCommandResult(exitCode = -1, stdout = "", stderr = "command 不能为空")
+        }
+        if (trimmed.length > MAX_COMMAND_CHARS) {
+            return RawCommandResult(
+                exitCode = -1,
+                stdout = "",
+                stderr = "command 过长：${trimmed.length} > $MAX_COMMAND_CHARS",
+            )
+        }
+        val normalizedIdentity = normalizeIdentity(identity)
+        environmentPreflight(normalizedIdentity, environment)?.let { failure ->
+            return RawCommandResult(exitCode = -1, stdout = "", stderr = failure)
+        }
+        val safeCwd = normalizeCwd(cwd, environment, normalizedIdentity)
+        val setup = if (safeCwd == TerminalRuntime.workspace(normalizedIdentity)) {
+            "mkdir -p ${shellQuote(safeCwd)} && "
+        } else {
+            ""
+        }
+        val fullCommand = "${setup}cd ${shellQuote(safeCwd)} && export TERM=dumb NO_COLOR=1 && $trimmed"
+        val result = runText(
+            identity = normalizedIdentity,
+            command = fullCommand,
+            timeoutSeconds = timeoutSeconds.coerceIn(1, MAX_TIMEOUT_SECONDS).toLong(),
+            environment = environment,
+        )
+        val output = if (mergeStderr && result.stderr.isNotBlank()) {
+            result.output + "\n[stderr]\n" + result.stderr
+        } else {
+            result.output
+        }
+        return RawCommandResult(
+            exitCode = result.exitCode,
+            stdout = output,
+            stderr = if (mergeStderr) "" else result.stderr,
+        )
+    }
+
     private fun runText(
         identity: String,
         command: String,
@@ -1824,6 +1898,9 @@ internal class RootShellTerminalController(
     }
 
     private data class ShellTextResult(val exitCode: Int, val output: String, val stderr: String)
+
+    /** 内部调用用的原始执行结果；不做 JSON 包装，由调用方决定怎么用。 */
+    data class RawCommandResult(val exitCode: Int, val stdout: String, val stderr: String)
     private data class ShellBytesResult(val exitCode: Int, val output: ByteArray, val stderr: String)
     private data class SessionCommandResult(
         val exitCode: Int,

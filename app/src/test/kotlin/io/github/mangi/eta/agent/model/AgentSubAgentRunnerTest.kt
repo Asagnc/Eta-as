@@ -84,10 +84,74 @@ class AgentSubAgentRunnerTest {
         assertFalse("角色之间不能互相看到对方的提示", firstMessageOfDefence.contains("攻击视角"))
     }
 
+    @Test
+    fun writeModeOffersWriteToolsAndInjectsIsolatedWorkspace() {
+        val provider = FakeProvider(mutableListOf(finalMessage("改完了，编译通过。")))
+        val events = Collections.synchronizedList(mutableListOf<AgentEvent>())
+        val commands = Collections.synchronizedList(mutableListOf<String>())
+        val workspace = SubAgentWorkspace(
+            repoPath = "/workspace/Eta-src",
+            worktreePath = "/workspace/eta-worktree-x",
+        )
+
+        val outcome = runner(provider, events) { command ->
+            commands += command
+            if (command.contains("diff --stat")) "1 file changed, 2 insertions(+)" else ""
+        }.run(
+            AgentSubAgentRunner.Request(
+                role = "实现",
+                brief = "把并发上限改成 4",
+                workspace = workspace,
+            ),
+        )
+
+        val offered = toolNames(provider.requests.first().tools)
+        assertEquals(
+            setOf("read_file", "search_code", "list_directory", "write_file", "edit_file", "terminal"),
+            offered,
+        )
+        val system = provider.requests.first().messages.getJSONObject(0).getString("content")
+        assertTrue("系统提示要写明隔离目录", system.contains("/workspace/eta-worktree-x"))
+        assertTrue("系统提示要要求自验证", system.contains("必须自己验证"))
+        assertTrue(outcome.ok)
+        assertEquals(1, outcome.changedFiles)
+        assertTrue(outcome.diffStat.contains("1 file changed"))
+        assertTrue("收尾要取 diff 统计", commands.any { it.contains("diff --stat") })
+    }
+
+    @Test
+    fun readModeDoesNotOfferWriteTools() {
+        val provider = FakeProvider(mutableListOf(finalMessage("查到了")))
+        runner(provider, mutableListOf()).run(
+            AgentSubAgentRunner.Request(role = "检索", brief = "找常量"),
+        )
+        assertEquals(
+            setOf("read_file", "search_code", "list_directory"),
+            toolNames(provider.requests.first().tools),
+        )
+    }
+
+    @Test
+    fun writeModeWithoutDiffOutputStillSucceeds() {
+        // 取不到 diff 不算失败：摘要是主产出，diff 只是给主 loop 的合并线索。
+        val provider = FakeProvider(mutableListOf(finalMessage("结论")))
+        val outcome = runner(provider, mutableListOf()) { "" }.run(
+            AgentSubAgentRunner.Request(
+                role = "实现",
+                brief = "改点东西",
+                workspace = SubAgentWorkspace("/repo", "/repo-wt"),
+            ),
+        )
+        assertTrue(outcome.ok)
+        assertEquals(0, outcome.changedFiles)
+        assertEquals("", outcome.diffStat)
+    }
+
     private fun runner(
         provider: AgentProviderClient,
         events: MutableList<AgentEvent>,
         tokenBudget: Int = 30_000,
+        worktreeShell: ((String) -> String)? = null,
     ): AgentSubAgentRunner = AgentSubAgentRunner(
         config = AgentModelClient.ModelConfig(
             baseUrl = "https://example.invalid/v1",
@@ -111,6 +175,7 @@ class AgentSubAgentRunnerTest {
             }
         },
         tokenBudget = tokenBudget,
+        worktreeShellExecutor = worktreeShell,
     )
 }
 
@@ -145,6 +210,8 @@ private fun parentTools(): JSONArray = JSONArray()
     .put(tool("read_file"))
     .put(tool("search_code"))
     .put(tool("list_directory"))
+    .put(tool("write_file"))
+    .put(tool("edit_file"))
     .put(tool("terminal"))
 
 private fun tool(name: String): JSONObject = AgentToolSchema.function(

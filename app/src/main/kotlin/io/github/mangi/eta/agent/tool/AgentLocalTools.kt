@@ -20,9 +20,13 @@ import io.github.mangi.eta.agent.model.AgentSubAgentBudget
 import io.github.mangi.eta.agent.model.AgentSubAgentRoles
 import io.github.mangi.eta.agent.model.AgentSubAgentRunner
 import io.github.mangi.eta.agent.model.AgentSubAgentToolCatalog
+import io.github.mangi.eta.agent.model.AgentWorktreeManager
 import io.github.mangi.eta.agent.model.SUB_AGENT_INVOCATION_LIMIT
+import io.github.mangi.eta.agent.model.SubAgentPlan
 import io.github.mangi.eta.agent.model.SubAgentSample
 import io.github.mangi.eta.agent.model.SubAgentScope
+import io.github.mangi.eta.agent.model.SubAgentWorkspace
+import io.github.mangi.eta.agent.terminal.RootShellTerminalController.RawCommandResult
 import io.github.mangi.eta.agent.overlay.AgentHapticFeedback
 import io.github.mangi.eta.agent.overlay.GestureIndicator
 import io.github.mangi.eta.agent.runtime.AgentAppContext
@@ -101,6 +105,14 @@ internal class AgentLocalTools(
     private val runStatsSummary: (() -> String)? = null,
     /** 受限子智能体；未开启时工具回报自己未启用。 */
     private val subAgentRunner: AgentSubAgentRunner? = null,
+    /**
+     * worktree 命令执行器，由宿主注入。
+     *
+     * 缺省时回落到 [runLinuxCommandRaw]（用本类自己的 terminal 控制器与用户所选发行版），
+     * 传 null 的场景是单测；两者都不可用时写入模式直接回报不可用，
+     * 而不是偷偷退化成在主工作区里改——隔离失效比功能不可用危险得多。
+     */
+    private val worktreeShellExecutor: ((String) -> String)? = null,
     private val beforeToolExecution: (String) -> ToolExecutionDecision = {
         ToolExecutionDecision.Allow
     },
@@ -149,6 +161,27 @@ internal class AgentLocalTools(
             LinuxEnvironmentSettingsRepository.current(context).terminalEnvironment
         },
     )
+    /**
+     * 在所选 Linux 发行版里跑一条命令，返回原始退出码与输出。
+     *
+     * worktree 生命周期靠它执行；环境跟用户选的一致，别写死某个发行版——
+     * 用户没装 Debian 时写死会让写入模式直接不可用。
+     */
+    internal fun runLinuxCommandRaw(command: String, timeoutSeconds: Int): RawCommandResult {
+        val environment = LinuxEnvironmentSettingsRepository.current(context).terminalEnvironment
+        val result = terminalController.execRaw(
+            command = command,
+            cwd = null,
+            environment = environment,
+            timeoutSeconds = timeoutSeconds,
+        )
+        return RawCommandResult(
+            exitCode = result.exitCode,
+            stdout = result.stdout,
+            stderr = result.stderr,
+        )
+    }
+
     private val publishedObservation = AtomicReference(PublishedObservation())
     private val runAvailableSkillIds = runAvailableSkillIds
         .mapTo(mutableSetOf(), SkillParser::normalizeSkillLookup)
@@ -1946,21 +1979,113 @@ internal class AgentLocalTools(
             )
         }
         val context = args.optString("context").trim().take(MAX_SUB_AGENT_CONTEXT_CHARS)
-        val requests = roles.map { role ->
-            AgentSubAgentRunner.Request(
-                role = role,
-                brief = task.take(MAX_SUB_AGENT_TASK_CHARS),
-                context = context,
-                plan = plan,
+        val writeMode = args.optString("mode").trim().equals(AgentSubAgentToolCatalog.MODE_WRITE, ignoreCase = true)
+        if (!writeMode) {
+            val requests = roles.map { role ->
+                AgentSubAgentRunner.Request(
+                    role = role,
+                    brief = task.take(MAX_SUB_AGENT_TASK_CHARS),
+                    context = context,
+                    plan = plan,
+                )
+            }
+            val outcomes = if (requests.size == 1) {
+                listOf(runner.run(requests.single()))
+            } else {
+                runner.runAll(requests)
+            }
+            recordSubAgentRuns(outcomes)
+            return subAgentResult(outcomes)
+        }
+        // 写入模式只允许单角色：多个子智能体同时改同一份代码，合并冲突是必然的，
+        // 与其事后解冲突，不如从一开始就串行。
+        if (roles.size > 1) {
+            return errorResult(
+                "INVALID_ARGUMENT",
+                "mode=write 时只能派一个角色（roles 最多 1 个）：多个子智能体同时改代码会在合并时冲突；" +
+                    "需要多角色协作时请用 mode=read 取证，再单独派一个角色落地改动",
             )
         }
-        val outcomes = if (requests.size == 1) {
-            listOf(runner.run(requests.single()))
-        } else {
-            runner.runAll(requests)
+        val repoPath = args.optString("repo_path").trim().ifBlank { DEFAULT_SUB_AGENT_REPO }
+        if (roles.size != 1) {
+            return errorResult("INVALID_ARGUMENT", "mode=write 需要恰好一个角色")
         }
-        recordSubAgentRuns(outcomes)
-        return subAgentResult(outcomes)
+        return delegateWrite(runner, roles.single(), task, context, plan, repoPath)
+    }
+
+    /**
+     * 写入模式的完整生命周期：建 worktree → 派发 → 取 diff → 回收。
+     *
+     * 回收放在 `finally` 里：子智能体失败、超时、抛异常都不能把 worktree 留在磁盘上。
+     * 合并由主智能体决定，这里只把 diff 统计交回去——自动合并会把"先隔离"的意义抹掉。
+     */
+    private fun delegateWrite(
+        runner: AgentSubAgentRunner,
+        role: String,
+        task: String,
+        context: String,
+        plan: SubAgentPlan,
+        repoPath: String,
+    ): String {
+        val shell: (String) -> String = worktreeShellExecutor ?: { command ->
+            val result = runLinuxCommandRaw(command, WORKTREE_COMMAND_TIMEOUT_SECONDS)
+            if (result.exitCode == 0) result.stdout
+            else "[exit ${result.exitCode}] ${result.stderr.ifBlank { result.stdout }}"
+        }
+        val token = AgentWorktreeManager.sanitizeToken("$role-${System.currentTimeMillis()}")
+        val worktreePath = AgentWorktreeManager.worktreePath(repoPath, token)
+        val workspace = SubAgentWorkspace(repoPath = repoPath, worktreePath = worktreePath)
+
+        val created = AgentWorktreeManager.createCommands(repoPath, worktreePath, "HEAD")
+            .map { command -> shell(command) }
+        val createFailure = created.firstOrNull { output -> output.contains(CREATE_FAILURE_MARKER) }
+        if (createFailure != null) {
+            runCatching { AgentWorktreeManager.removeCommands(repoPath, worktreePath).forEach { command -> shell(command) } }
+            return errorResult(
+                "SUB_AGENT_WORKTREE_FAILED",
+                "无法在 $repoPath 上创建隔离工作区：${createFailure.take(SUB_AGENT_SHELL_OUTPUT_CHARS)}",
+            )
+        }
+        return try {
+            AgentWorktreeManager.bootstrapCommands(repoPath, worktreePath).forEach { command -> shell(command) }
+            val outcome = runner.run(
+                AgentSubAgentRunner.Request(
+                    role = role,
+                    brief = task.take(MAX_SUB_AGENT_TASK_CHARS),
+                    context = context,
+                    plan = plan,
+                    workspace = workspace,
+                ),
+            )
+            recordSubAgentRuns(listOf(outcome))
+            subAgentWriteResult(outcome, workspace)
+        } finally {
+            runCatching { AgentWorktreeManager.removeCommands(repoPath, worktreePath).forEach { command -> shell(command) } }
+        }
+    }
+
+    /** 写入模式的结果：摘要 + diff 统计 + 明确的合并提示（怎么合由主智能体决定）。 */
+    private fun subAgentWriteResult(
+        outcome: AgentSubAgentRunner.Outcome,
+        workspace: SubAgentWorkspace,
+    ): String {
+        val payload = JSONObject(subAgentResult(listOf(outcome)))
+            .put("mode", AgentSubAgentToolCatalog.MODE_WRITE)
+            .put("worktree", workspace.worktreePath)
+            .put("changed_files", outcome.changedFiles)
+            .put("diff_stat", outcome.diffStat.ifBlank { JSONObject.NULL as Any })
+            .put(
+                "merge_hint",
+                if (outcome.changedFiles > 0) {
+                    "改动还在隔离工作区里，没有进主工作区。要合并就自己用 terminal 执行：" +
+                        "git -C ${workspace.worktreePath} --no-pager diff HEAD | " +
+                        "git -C ${workspace.repoPath} apply --3way" +
+                        "（先看 diff 确认改动符合预期；worktree 随后会被自动回收，需要细看就先取 diff）。"
+                } else {
+                    "子智能体没有产生文件改动，无需合并。"
+                },
+            )
+        return payload.toString()
     }
 
     /**
@@ -2296,6 +2421,18 @@ private const val MAX_SUB_AGENT_ROLES = 3
  */
 private const val SUB_AGENT_TOTAL_TOKEN_CAP = 120_000
 private const val DEFAULT_SUB_AGENT_ROLE = AgentSubAgentRoles.DEFAULT
+
+/** 写入模式缺省的目标仓库；实际使用时主智能体应按当前任务传 repo_path。 */
+private const val DEFAULT_SUB_AGENT_REPO = "/workspace/Eta-src"
+
+/** worktree 命令的失败标记：宿主执行器在非零退出时会在输出里带上它。 */
+private const val CREATE_FAILURE_MARKER = "[exit "
+
+/** 回给模型的命令输出上限：够看清失败原因，又不至于把整段日志搬进上下文。 */
+private const val SUB_AGENT_SHELL_OUTPUT_CHARS = 600
+
+/** worktree 命令超时：建 worktree 要检出全仓库，给足余量。 */
+private const val WORKTREE_COMMAND_TIMEOUT_SECONDS = 120
 
 /** 预算评估取最近多少条同档位样本；太多会让旧习惯拖住新任务。 */
 private const val SUB_AGENT_HISTORY_SAMPLES = 12

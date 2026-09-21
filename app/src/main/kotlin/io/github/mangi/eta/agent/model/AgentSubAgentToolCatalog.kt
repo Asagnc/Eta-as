@@ -16,18 +16,24 @@ import org.json.JSONObject
 internal object AgentSubAgentToolCatalog {
     const val DELEGATE = "delegate"
 
+    /** `mode` 取值：只读取证（默认）与在隔离 worktree 里改代码。 */
+    const val MODE_READ = "read"
+    const val MODE_WRITE = "write"
+
     fun appendTo(tools: JSONArray) {
         tools.put(
             AgentToolSchema.function(
                 name = DELEGATE,
-                description = "把可以独立完成的工作交给受限子智能体：它有自己的上下文，只能用只读检索工具，" +
-                    "只回一份摘要，过程与工具输出都不进入当前上下文。它的价值是隔离上下文与并行取证，不是加速。" +
+                description = "把可以独立完成的工作交给受限子智能体：它有自己的上下文，只回一份摘要，" +
+                    "过程与工具输出都不进入当前上下文。它的价值是隔离上下文与并行取证，不是加速。" +
                     "roles 只给一个时是单角色子任务，任务要窄到能直接回答（例如“某个常量定义在哪个文件哪一行”）；" +
                     "给多个角色时它们各自独立作答、由你汇总对照，适合需要不同立场交叉验证的判断类问题" +
                     "（例如 攻击/防御/合规、正确性/性能/可维护性）——此时必须在 task 里写清统一输出格式，" +
                     "否则各角色无法逐条对照。内置角色 检索、审查、验证 各自带专门的取证要求，优先用它们。" +
-                    "写文件、跑命令、操作设备这类改动型工作不要派发：子智能体没有写权限，并行改动只会互相冲突。" +
-                    "任务写宽了，子智能体会把预算耗在探索上，最后拿不出结论。",
+                    "mode=read（默认）时子智能体只能用只读检索工具，适合查证与判断类工作；" +
+                    "mode=write 时它会在独立 worktree 里改文件、跑命令自验证，产出以 diff 形式交回，" +
+                    "由你决定是否合并——改动型工作只在这一模式下派发，且一次只派一个角色。" +
+                    "操作设备这类不能隔离的工作两种模式都别派发。任务写宽了，子智能体会把预算耗在探索上，最后拿不出结论。",
                 parameters = JSONObject()
                     .put("type", "object")
                     .put(
@@ -56,7 +62,31 @@ internal object AgentSubAgentToolCatalog {
                                         "角色列表，最多 3 个（与并行上限一致）。省略或只给一个 = 单角色子任务，" +
                                             "默认角色 检索；给 2-3 个时并行派发、各自独立取证。" +
                                             "内置角色：检索（定位取证）、审查（找问题与风险）、验证（独立复核找反例）；" +
-                                            "也可以用自定义角色名，但自定义角色没有额外的取证要求。",
+                                            "也可以用自定义角色名，但自定义角色没有额外的取证要求。" +
+                                            "mode=write 时只能给一个角色。",
+                                    )
+                            )
+                            .put(
+                                "mode",
+                                JSONObject()
+                                    .put("type", "string")
+                                    .put("enum", JSONArray().put(MODE_READ).put(MODE_WRITE))
+                                    .put(
+                                        "description",
+                                        "read（默认）只读检索，子智能体不碰任何文件；" +
+                                            "write 在独立 worktree 里改文件并可跑命令自验证，" +
+                                            "需要子智能体真正落地改动时用。",
+                                    )
+                            )
+                            .put(
+                                "repo_path",
+                                JSONObject()
+                                    .put("type", "string")
+                                    .put("maxLength", 500)
+                                    .put(
+                                        "description",
+                                        "mode=write 时的目标仓库根目录（例如 /workspace/Eta-src）。" +
+                                            "隔离 worktree 建在它同级目录下；省略时用 /workspace/Eta-src。",
                                     )
                             )
                             .put(
