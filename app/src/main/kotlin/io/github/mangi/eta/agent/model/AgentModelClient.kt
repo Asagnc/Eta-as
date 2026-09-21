@@ -104,6 +104,8 @@ internal object AgentModelClient {
         rewriteReply: Boolean = false,
         /** 当前任务清单（task_plan 快照）：每轮请求附在最后一条消息上，压缩后计划也不会丢。 */
         taskPlanSnapshot: (() -> String?)? = null,
+        /** 当前方案（submit_plan 快照）：与清单一同注入，注入的是 digest 而不是正文。 */
+        planSnapshot: (() -> String?)? = null,
         onContextSnapshot: (AgentContextSnapshot) -> Unit = {},
         onTranscript: (List<ConversationMessage>) -> Unit = {},
         runStats: AgentRunStats? = null,
@@ -186,6 +188,7 @@ internal object AgentModelClient {
             purpose = if (rewriteReply) ProviderRequestPurpose.REPLY_REWRITE else ProviderRequestPurpose.CHAT,
             roleplayContext = roleplayContext,
             taskPlanSnapshot = taskPlanSnapshot,
+            planSnapshot = planSnapshot,
             initialSupplementIndex = initialSupplementIndex,
             runStats = runStats,
             maxParallelToolCalls = config.maxParallelToolCalls,

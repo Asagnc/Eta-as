@@ -92,7 +92,7 @@ class AgentToolRequirementsTest {
         assertTrue(AgentToolRequirements.isParallelSafe("find_files"))
         assertTrue(AgentToolRequirements.isParallelSafe("run_stats"))
         listOf(
-            "observe_screen", "browser_use", "memory_write", "task_plan",
+            "observe_screen", "browser_use", "memory_write", "task_plan", "submit_plan",
             "write_file", "edit_file", "skills_install_from_github", "read_image", "set_setting",
         ).forEach { name ->
             assertFalse("$name 不能进并发通道", AgentToolRequirements.isParallelSafe(name))

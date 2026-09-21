@@ -27,6 +27,8 @@ internal data class AgentChatUiState(
     val roleplayMessages: RoleplayMessageState = RoleplayMessageState(),
     /** 当前会话的任务清单；由 task_plan 工具事件覆盖更新。 */
     val taskPlan: List<AgentTaskPlanItemUi> = emptyList(),
+    /** 当前方案文档；null 表示这个会话还没提交过方案。 */
+    val plan: AgentPlanUi? = null,
 ) {
     val canCompactContext: Boolean get() = !isStreaming && messageEdit == null && history.any {
         !it.contextSummary && (it.role == "assistant" || it.role == "tool")

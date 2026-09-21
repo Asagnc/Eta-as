@@ -21,6 +21,7 @@ internal class AgentTraceFormatter {
             "find_files" -> summarizeFirstArgument("查找文件", toolCall.argumentsJson, listOf("glob", "pattern"))
             "search_code" -> summarizeFirstArgument("检索内容", toolCall.argumentsJson, listOf("pattern", "glob"))
             "task_plan" -> "更新任务计划"
+            "submit_plan" -> "提交方案"
             "run_stats" -> "查看运行统计"
             "run_sequence" -> "执行操作序列"
             "save_flow" -> "保存流程"

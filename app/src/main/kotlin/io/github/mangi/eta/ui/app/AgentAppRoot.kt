@@ -286,6 +286,7 @@ fun AgentAppRoot(
                                 is AgentHomeAction.CompactContextUntilHere ->
                                     agentState.compactCurrentContext(action.messageId)
                                 is AgentHomeAction.ModelSelected -> agentState.selectModel(action.modelId)
+                                is AgentHomeAction.ApprovePlan -> agentState.approvePlan()
                                 is AgentHomeAction.SubmitMessage -> { requestExecutionNotifications(); agentState.sendCurrentMessage(action.text) }
                                 AgentHomeAction.StopRun -> agentState.stopCurrentRun()
                                 is AgentHomeAction.ImageAttached -> agentState.attachImage(action.uri)
@@ -339,6 +340,7 @@ fun AgentAppRoot(
                                 is AgentChatAction.CompactContextUntilHere ->
                                     agentState.compactCurrentContext(action.messageId)
                                 is AgentChatAction.ModelSelected -> agentState.selectModel(action.modelId)
+                                is AgentChatAction.ApprovePlan -> agentState.approvePlan()
                                 is AgentChatAction.SubmitMessage -> { requestExecutionNotifications(); agentState.sendCurrentMessage(action.text) }
                                 AgentChatAction.StopRun -> agentState.stopCurrentRun()
                                 AgentChatAction.OpenBrowser -> pushRoute(AppRoute.Browser)

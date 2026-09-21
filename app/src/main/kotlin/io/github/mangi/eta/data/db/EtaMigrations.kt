@@ -22,7 +22,7 @@ internal object EtaMigrations {
      * `@Database(version = ...)` 取这里，所以"改版本号"与"改迁移链"不可能分头进行：
      * 只要 [ALL] 没跟着接到新版本，`EtaMigrationsChainTest` 就会失败。
      */
-    const val CURRENT_VERSION = 28
+    const val CURRENT_VERSION = 29
 
     /** 子智能体的消耗样本：用于按历史分位数评估后续委派的 token 预算。 */
     internal val MIGRATION_24_25 = Migration(24, 25) { database ->
@@ -72,6 +72,18 @@ internal object EtaMigrations {
         database.execSQL(
             "CREATE INDEX IF NOT EXISTS `index_sub_agent_mailbox_run_id_created_at` " +
                 "ON `sub_agent_mailbox` (`run_id`, `created_at`)",
+        )
+    }
+
+    /**
+     * 方案文档（submit_plan 的产出）。
+     *
+     * 挂在会话行上而不是落成工作区文件：方案的消费者是手机上的聊天界面，它得跟对话一起
+     * 出现、一起消失；需要归档时再由用户显式导出。历史数据留空串，解码时视为「没有方案」。
+     */
+    internal val MIGRATION_28_29 = Migration(28, 29) { database ->
+        database.execSQL(
+            "ALTER TABLE `conversations` ADD COLUMN `plan_json` TEXT NOT NULL DEFAULT ''",
         )
     }
 
@@ -313,6 +325,7 @@ internal object EtaMigrations {
         MIGRATION_25_26,
         MIGRATION_26_27,
         MIGRATION_27_28,
+        MIGRATION_28_29,
         MIGRATION_19_20,
         MIGRATION_20_21,
         MIGRATION_23_24,

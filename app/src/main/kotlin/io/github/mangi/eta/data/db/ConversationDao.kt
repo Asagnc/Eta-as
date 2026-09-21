@@ -13,7 +13,7 @@ internal interface ConversationDao : ChunkedTextDao {
     @Query(
         "SELECT id, title, thinking_enabled, reasoning_effort, " +
             "applied_runtime_run_ids_json, roleplay_json, revisions_json, task_plan_json, " +
-            "created_at, updated_at " +
+            "plan_json, created_at, updated_at " +
             "FROM conversations ORDER BY updated_at DESC"
     )
     suspend fun conversationMetadataRows(): List<ConversationMetadata>
@@ -24,7 +24,7 @@ internal interface ConversationDao : ChunkedTextDao {
     @Query(
         "SELECT id, title, thinking_enabled, reasoning_effort, " +
             "applied_runtime_run_ids_json, roleplay_json, revisions_json, task_plan_json, " +
-            "created_at, updated_at " +
+            "plan_json, created_at, updated_at " +
             "FROM conversations ORDER BY updated_at DESC LIMIT :limit OFFSET :offset"
     )
     suspend fun conversationMetadataPage(limit: Int, offset: Int): List<ConversationMetadata>
@@ -50,6 +50,10 @@ internal interface ConversationDao : ChunkedTextDao {
     /** 任务清单快照（task_plan）：本轮开始时要把它注入请求，压缩或跨轮之后模型才不会丢计划。 */
     @Query("SELECT task_plan_json FROM conversations WHERE id = :conversationId")
     suspend fun taskPlanJson(conversationId: String): String?
+
+    /** 方案文档（submit_plan）：与清单一同注入，但注入的是它的 digest 而不是全文。 */
+    @Query("SELECT plan_json FROM conversations WHERE id = :conversationId")
+    suspend fun planJson(conversationId: String): String?
 
     @Query("SELECT * FROM conversation_messages ORDER BY conversation_id ASC, sort_index ASC")
     suspend fun messageRows(): List<ConversationMessageEntity>

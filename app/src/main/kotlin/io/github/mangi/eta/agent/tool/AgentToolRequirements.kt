@@ -63,7 +63,7 @@ internal object AgentToolRequirements {
             "wait", "wait_for_text", "wait_for_package", "open_system_panel",
             "set_alarm", "set_timer", "media_control", "set_volume",
             "memory_write", "character_memory_write",
-            "skills_install_from_github", "task_plan",
+            "skills_install_from_github", "task_plan", "submit_plan",
             "delegate",
             "compact_context",
         )

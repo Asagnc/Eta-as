@@ -28,7 +28,7 @@ class AgentRequestContextTest {
     fun `plan block is prepended above the clock line`() {
         val messages = textMessages("原始内容")
 
-        AgentRequestContext.attach(messages, plan, now)
+        AgentRequestContext.attach(messages, taskPlanJson = plan, planJson = null, now = now)
 
         val content = messages.getJSONObject(0).getString("content")
         assertTrue(content, content.startsWith("当前任务清单（0/1 完成，1 项未完成）："))
@@ -41,8 +41,8 @@ class AgentRequestContextTest {
     fun `attaching twice does not duplicate either block`() {
         val messages = textMessages("原始内容")
 
-        AgentRequestContext.attach(messages, plan, now)
-        AgentRequestContext.attach(messages, plan, now)
+        AgentRequestContext.attach(messages, taskPlanJson = plan, planJson = null, now = now)
+        AgentRequestContext.attach(messages, taskPlanJson = plan, planJson = null, now = now)
 
         val lines = messages.getJSONObject(0).getString("content").lines()
         assertEquals(1, lines.count { it.startsWith(AgentTaskPlanFormat.HEADER_PREFIX) })
@@ -56,7 +56,7 @@ class AgentRequestContextTest {
     fun `without a plan only the clock line is added`() {
         val messages = textMessages("原始内容")
 
-        AgentRequestContext.attach(messages, null, now)
+        AgentRequestContext.attach(messages, taskPlanJson = null, planJson = null, now = now)
 
         val content = messages.getJSONObject(0).getString("content")
         assertFalse(content, content.contains(AgentTaskPlanFormat.ITEM_PREFIX))
@@ -67,8 +67,8 @@ class AgentRequestContextTest {
     fun `part content keeps the plan after the clock part`() {
         val messages = partMessages("原始内容")
 
-        AgentRequestContext.attach(messages, plan, now)
-        AgentRequestContext.attach(messages, plan, now)
+        AgentRequestContext.attach(messages, taskPlanJson = plan, planJson = null, now = now)
+        AgentRequestContext.attach(messages, taskPlanJson = plan, planJson = null, now = now)
 
         val parts = messages.getJSONObject(0).getJSONArray("content")
         assertEquals(3, parts.length())
@@ -81,7 +81,7 @@ class AgentRequestContextTest {
     fun `messages without content are left alone`() {
         val messages = JSONArray().put(JSONObject().put("role", "user"))
 
-        AgentRequestContext.attach(messages, plan, now)
+        AgentRequestContext.attach(messages, taskPlanJson = plan, planJson = null, now = now)
 
         assertFalse(messages.getJSONObject(0).has("content"))
     }

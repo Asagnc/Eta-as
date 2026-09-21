@@ -258,6 +258,10 @@ internal class AgentRuntimeRunExecutor(
             var latestTaskPlan: String? = conversationId?.let { id ->
                 runBlocking { EtaDatabase.get(appContext).conversationDao().taskPlanJson(id) }
             }
+            // 方案同理：存在会话行上，本轮开始时读进来注入，之后由 submit_plan 的回调保持最新。
+            var latestPlan: String? = conversationId?.let { id ->
+                runBlocking { EtaDatabase.get(appContext).conversationDao().planJson(id) }
+            }
             val executor = AgentLocalTools(
                 context = appContext,
                 logger = AndroidAgentLogger,
@@ -336,6 +340,16 @@ internal class AgentRuntimeRunExecutor(
                         checkpointRecorder,
                     )
                 },
+                onPlanUpdated = { planJson ->
+                    latestPlan = planJson
+                    acceptEvent(
+                        session,
+                        AgentEvent.PlanUpdated(planJson),
+                        archivedEvents,
+                        entrySurfaceGuard,
+                        checkpointRecorder,
+                    )
+                },
             )
             val routingExecutor = RoutingToolExecutor(
                 local = executor,
@@ -382,6 +396,7 @@ internal class AgentRuntimeRunExecutor(
                 initialSupplementIndex = uiPayload?.lastSupplementIndex ?: 0,
                 roleplayContext = roleplayContext,
                 taskPlanSnapshot = { latestTaskPlan },
+                planSnapshot = { latestPlan },
                 rewriteReply = request.operation == AgentRuntimeWire.OP_REWRITE_REPLY,
                 compactOnly = request.operation == AgentRuntimeWire.OP_COMPACT,
                 compactUntilMessageId = request.compactUntilMessageId,

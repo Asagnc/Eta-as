@@ -471,8 +471,9 @@ internal class EtaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
         var status = state.status
         var phase = state.phase
         when (event) {
-            // 任务清单只在会话页展示，语音悬浮窗不展示该进度。
+            // 任务清单与方案只在会话页展示，语音悬浮窗不展示这些。
             is AgentEvent.TaskPlanUpdated -> Unit
+            is AgentEvent.PlanUpdated -> Unit
             is AgentEvent.RunStatsReported -> Unit
             is AgentEvent.SelfReview -> Unit
             // 语音浮窗只报当前状态，子智能体的过程细节留给会话页事件流。

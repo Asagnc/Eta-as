@@ -754,6 +754,11 @@ internal object AgentRuntimeWire {
                 putString("plan_json", event.planJson)
             }
 
+            is AgentEvent.PlanUpdated -> {
+                putString(KEY_TYPE, "plan_updated")
+                putString("plan_json", event.planJson)
+            }
+
             is AgentEvent.RunStatsReported -> {
                 putString(KEY_TYPE, "run_stats_reported")
                 putString("stats_json", event.statsJson)
@@ -916,6 +921,10 @@ internal object AgentRuntimeWire {
         )
 
         "task_plan_updated" -> AgentEvent.TaskPlanUpdated(
+            planJson = bundle.getString("plan_json").orEmpty(),
+        )
+
+        "plan_updated" -> AgentEvent.PlanUpdated(
             planJson = bundle.getString("plan_json").orEmpty(),
         )
 

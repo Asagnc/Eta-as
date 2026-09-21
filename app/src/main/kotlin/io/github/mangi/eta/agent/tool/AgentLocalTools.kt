@@ -103,6 +103,8 @@ internal class AgentLocalTools(
         (AgentScreenObservationContract.Options) -> RootShellDeviceController.Observation
     )? = null,
     private val onTaskPlanUpdated: ((String) -> Unit)? = null,
+    /** 方案提交回调：把快照交给运行时存档并发事件，界面据此显示方案卡片。 */
+    private val onPlanUpdated: ((String) -> Unit)? = null,
     /** 本次 run 的度量摘要，由 Runtime 侧的执行循环提供；缺失时工具回报自己不可用。 */
     private val runStatsSummary: (() -> String)? = null,
     /** 受限子智能体；未开启时工具回报自己未启用。 */
@@ -222,6 +224,17 @@ internal class AgentLocalTools(
             deviceToolPermissionError(toolCall.name)?.let { return@runCatching it }
             credentialPathError(toolCall.name, args)?.let { return@runCatching it }
             memoryToolPermissionError(toolCall.name)?.let { return@runCatching it }
+            // 方案待确认期间的硬约束：拦在这里而不是靠系统提示，是因为「先出方案再动手」一旦
+            // 只靠自觉，模型经常直接开干，用户就失去了确认的机会。
+            if (pendingPlan != null && toolCall.name in planGatedToolNames) {
+                return@runCatching textResult(
+                    errorResult(
+                        code = "PLAN_PENDING",
+                        message = "方案已提交，正等用户确认，这一步不要改动任何东西；" +
+                            "本轮到此为止，用一两句话说明方案要点并等用户回复。",
+                    ),
+                )
+            }
             when (val decision = beforeToolExecution(toolCall.name)) {
                 ToolExecutionDecision.Allow -> Unit
                 is ToolExecutionDecision.Reject -> {
@@ -279,6 +292,7 @@ internal class AgentLocalTools(
                 "list_directory" -> textResult(terminalTool { listDirectory(args) })
                 "find_files" -> textResult(terminalTool { findFiles(args) })
                 "task_plan" -> textResult(taskPlan(args))
+                "submit_plan" -> textResult(submitPlan(args))
                 AgentRunStatsToolCatalog.NAME -> textResult(
                     runStatsSummary?.invoke()
                         ?: errorResult("RUN_STATS_UNAVAILABLE", "本次 run 没有可用的度量数据"),
@@ -398,6 +412,39 @@ internal class AgentLocalTools(
     /** 当前 run 的任务清单；只在本次 run 内有效，事件把它同步给界面。 */
     private var currentTaskPlan: String = ""
 
+    /**
+     * 本次 run 已提交、尚未确认的方案快照；非空即表示「正等用户确认」。
+     *
+     * 只在本轮内有效：新一轮的 run 会重建 [AgentLocalTools]，用户在确认后发的那条消息走的就是
+     * 新一轮，不会被上一轮的等待状态挡住。
+     */
+    @Volatile
+    private var pendingPlan: String? = null
+
+    /**
+     * 方案待确认期间会被拦下的工具：凡是会写文件或改变设备状态的都算。
+     *
+     * 列的是「写类」而不是反过来列只读白名单，因为两者的失误代价不对称——新增工具时漏加
+     * 这里的后果是「没拦住」，漏加只读白名单的后果是「连调研都被拦死」。
+     * 浏览类动作（scroll / swipe / wait / observe_screen）不在此列：搞清楚细节本来就要看。
+     */
+    private val planGatedToolNames = setOf(
+        // 写文件
+        "write_file", "edit_file", "edit_files",
+        // 任意命令：能写文件，也能改系统
+        "terminal", "run_command", "skills_run", "skills_install_from_github",
+        // 写长期记忆
+        "memory_write", "character_memory_write",
+        // 改变设备状态
+        "launch_app", "open_uri", "run_sequence", "use_flow", "save_flow",
+        "tap", "tap_area", "tap_element", "long_press", "long_press_element",
+        "input_text", "replace_text", "clear_text", "paste_text", "press_key",
+        "drag", "set_clipboard", "open_system_panel", "set_alarm", "set_timer",
+        "media_control", "set_volume",
+        // 派生出去干活
+        "delegate",
+    )
+
     /** 本次运行已经委派过多少次子智能体；护栏值见 SUB_AGENT_INVOCATION_LIMIT。 */
     private val subAgentInvocations = java.util.concurrent.atomic.AtomicInteger(0)
 
@@ -504,6 +551,87 @@ internal class AgentLocalTools(
             .put("tool", "task_plan")
             .put("items", normalized.length())
             .put("plan", renderTaskPlan(normalized))
+            .toString()
+    }
+
+    /**
+     * 提交方案：校验通过后本轮到此为止，等用户确认。
+     *
+     * 全部校验通过才落状态——方案卡片的「按此执行」会直接用 steps 初始化任务清单，允许半成品
+     * 通过等于把脏数据塞进清单。提交后 [pendingPlan] 非空，[planGatedToolNames] 里的工具会被
+     * [execute] 拦下，这条约束不依赖模型自觉。
+     */
+    private fun submitPlan(args: JSONObject): String {
+        val title = args.optString("title").trim()
+        if (title.isEmpty()) return errorResult("INVALID_ARGUMENT", "title 不能为空")
+        val digest = args.optString("digest").trim()
+        if (digest.isEmpty()) {
+            return errorResult(
+                "INVALID_ARGUMENT",
+                "digest 不能为空：它是后续每轮注入给模型的方向摘要（目标、约束、关键决策）；" +
+                    "正文可以很长，digest 必须精简。",
+            )
+        }
+        val content = args.optString("content").trim()
+        if (content.isEmpty()) return errorResult("INVALID_ARGUMENT", "content 不能为空")
+
+        val rawSteps = args.optJSONArray("steps")
+            ?: return errorResult("INVALID_ARGUMENT", "steps 必须是数组")
+        if (rawSteps.length() == 0) {
+            return errorResult(
+                "INVALID_ARGUMENT",
+                "steps 至少要有一步：用户点「按此执行」时会用它们初始化任务清单",
+            )
+        }
+        val steps = JSONArray()
+        val seen = mutableSetOf<String>()
+        for (index in 0 until rawSteps.length()) {
+            val item = rawSteps.optJSONObject(index)
+                ?: return errorResult("INVALID_ARGUMENT", "第 ${index + 1} 步不是对象")
+            val id = item.optString("id").trim()
+            val stepContent = item.optString("content").trim()
+            if (id.isEmpty()) return errorResult("INVALID_ARGUMENT", "第 ${index + 1} 步缺少 id")
+            if (!seen.add(id)) return errorResult("INVALID_ARGUMENT", "步骤 id 重复：$id")
+            if (stepContent.isEmpty()) {
+                return errorResult("INVALID_ARGUMENT", "第 ${index + 1} 步缺少 content")
+            }
+            steps.put(JSONObject().put("id", id).put("content", stepContent))
+        }
+
+        val plan = JSONObject()
+            .put("title", title)
+            .put("digest", digest)
+            .put("content", content)
+            .put("steps", steps)
+            .put("status", "pending")
+        args.optJSONArray("alternatives")?.let { raw ->
+            val alternatives = JSONArray()
+            for (index in 0 until raw.length()) {
+                val item = raw.optJSONObject(index) ?: continue
+                val alternativeTitle = item.optString("title").trim()
+                if (alternativeTitle.isEmpty()) continue
+                alternatives.put(
+                    JSONObject()
+                        .put("title", alternativeTitle)
+                        .put("summary", item.optString("summary").trim())
+                        .put("tradeoff", item.optString("tradeoff").trim()),
+                )
+            }
+            if (alternatives.length() > 0) plan.put("alternatives", alternatives)
+        }
+
+        val snapshot = plan.toString()
+        pendingPlan = snapshot
+        onPlanUpdated?.invoke(snapshot)
+        return JSONObject()
+            .put("ok", true)
+            .put("tool", "submit_plan")
+            .put("title", title)
+            .put("steps", steps.length())
+            .put(
+                "message",
+                "方案已提交，本轮到此为止：不要再调用任何工具，用一两句话说明方案要点并等用户确认。",
+            )
             .toString()
     }
 

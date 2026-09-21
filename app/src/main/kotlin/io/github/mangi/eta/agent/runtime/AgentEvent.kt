@@ -238,6 +238,14 @@ internal sealed interface AgentEvent {
                 "images=$imageCount, image_bytes=$imageBytes"
     }
 
+    /** 方案文档快照（submit_plan 的产出）。 */
+    data class PlanUpdated(
+        /** 方案快照 JSON：title、digest、content、steps、alternatives、status。 */
+        val planJson: String,
+    ) : AgentEvent {
+        override fun toLogLine(): String = "plan_updated title=${planJson.toSafeLogToken()}"
+    }
+
     data class TaskPlanUpdated(
         /** 完整清单快照的 JSON 数组，每项含 id、content、status。 */
         val planJson: String,

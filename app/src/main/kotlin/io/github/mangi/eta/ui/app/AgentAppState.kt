@@ -60,7 +60,12 @@ import io.github.mangi.eta.data.repository.UsageStatsRepository
 import io.github.mangi.eta.data.repository.RuntimeConfigRepository
 import io.github.mangi.eta.ui.model.AgentChatHomeUiState
 import io.github.mangi.eta.ui.model.AgentSubAgentProjector
+import io.github.mangi.eta.ui.model.AgentPlanCodec
+import io.github.mangi.eta.ui.model.AgentPlanStatus
+import io.github.mangi.eta.ui.model.AgentPlanUi
 import io.github.mangi.eta.ui.model.AgentTaskPlanCodec
+import io.github.mangi.eta.ui.model.AgentTaskPlanItemUi
+import io.github.mangi.eta.ui.model.AgentTaskPlanStatus
 import io.github.mangi.eta.ui.model.AgentChatMessageUi
 import io.github.mangi.eta.ui.model.AgentMemoryUiState
 import io.github.mangi.eta.ui.model.AgentMessageUi
@@ -1015,6 +1020,42 @@ internal class AgentAppState(
             SystemNoticeCode.SelfReview -> R.string.system_notice_self_review
         },
     )
+
+    /**
+     * 「按此执行」：把方案标为已确认，并用它的 steps 直接初始化任务清单，然后照常发一条消息
+     * 触发新一轮。
+     *
+     * 清单在这里由方案派生，而不是等模型自己转写：两处状态各写一遍迟早对不上，而方案里的
+     * steps 本来就是结构化的。派生只做这一次，之后清单自由增删，方案保持不动。
+     */
+    fun approvePlan() {
+        val conversationId = selectedConversationId ?: return
+        val state = conversationsById[conversationId] ?: return
+        val plan = state.plan?.takeIf { it.status == AgentPlanStatus.PENDING } ?: return
+        val todos = plan.steps.mapIndexed { index, step ->
+            AgentTaskPlanItemUi(
+                id = step.id,
+                content = step.content,
+                status = if (index == 0) {
+                    AgentTaskPlanStatus.IN_PROGRESS
+                } else {
+                    AgentTaskPlanStatus.PENDING
+                },
+            )
+        }
+        updateConversation(
+            conversationId = conversationId,
+            state = state.copy(
+                plan = plan.copy(status = AgentPlanStatus.APPROVED),
+                taskPlan = todos,
+            ),
+            updateTimestamp = false,
+        )
+        sendCurrentMessage(
+            "方案「${plan.title}」已确认，按它执行。任务清单已经按方案步骤建好（第 1 步已标为进行中），" +
+                "不要重建清单，直接往下做。",
+        )
+    }
 
     fun sendCurrentMessage(submittedText: String? = null) {
         if (homeState.isCompacting) return
@@ -2088,6 +2129,19 @@ internal class AgentAppState(
                         updateConversation(
                             conversationId = conversationId,
                             state = state.copy(taskPlan = AgentTaskPlanCodec.decode(event.planJson)),
+                            updateTimestamp = false,
+                        )
+                    }
+                }
+            }
+
+            // 方案与清单分开投影：方案换了一份，清单该不该重建由用户点「按此执行」决定，事件不擅自改。
+            is AgentEvent.PlanUpdated -> {
+                conversationIdForRun(runId)?.let { conversationId ->
+                    conversationsById[conversationId]?.let { state ->
+                        updateConversation(
+                            conversationId = conversationId,
+                            state = state.copy(plan = AgentPlanCodec.decode(event.planJson)),
                             updateTimestamp = false,
                         )
                     }

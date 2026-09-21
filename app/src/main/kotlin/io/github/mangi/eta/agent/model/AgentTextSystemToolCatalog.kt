@@ -312,5 +312,123 @@ internal object AgentTextSystemToolCatalog {
                         .put("required", JSONArray().put("todos")),
                 )
             )
+            .put(
+                AgentToolSchema.function(
+                    name = "submit_plan",
+                    description = "在动手之前提交一份方案，等用户确认。复杂任务（多文件改动、需求有" +
+                        "歧义、要动系统设置、方案有多种走法）先用它：先派子智能体检索、把细节搞清楚，" +
+                        "再把方案写清楚提交。提交后本轮就结束了，写类和改设备的工具会被拦下，" +
+                        "所以不要提交完还接着干活。方案与任务清单分工不同：方案回答「做什么、为什么」" +
+                        "（一次产出、确认后固定），清单回答「做到哪」（每轮更新）。" +
+                        "digest 是给后续轮次注入的方向摘要，必须精简；content 是给人看的完整正文，" +
+                        "可以详细，支持 markdown。",
+                    parameters = JSONObject()
+                        .put("type", "object")
+                        .put(
+                            "properties",
+                            JSONObject()
+                                .put(
+                                    "title",
+                                    JSONObject()
+                                        .put("type", "string")
+                                        .put("description", "一句话说清要做什么。"),
+                                )
+                                .put(
+                                    "digest",
+                                    JSONObject()
+                                        .put("type", "string")
+                                        .put(
+                                            "description",
+                                            "方向摘要（建议 200 字以内）：目标、约束、关键决策。" +
+                                                "后续每轮都靠它注入，正文再长也不影响。",
+                                        ),
+                                )
+                                .put(
+                                    "content",
+                                    JSONObject()
+                                        .put("type", "string")
+                                        .put(
+                                            "description",
+                                            "完整方案正文（markdown）：背景、调研结论、方案对比与选择" +
+                                                "理由、实施步骤、风险与回退。",
+                                        ),
+                                )
+                                .put(
+                                    "steps",
+                                    JSONObject()
+                                        .put("type", "array")
+                                        .put(
+                                            "description",
+                                            "结构化步骤，每项一句话。用户点「按此执行」时直接用它们" +
+                                                "初始化任务清单，所以要和正文里的步骤一致。",
+                                        )
+                                        .put(
+                                            "items",
+                                            JSONObject()
+                                                .put("type", "object")
+                                                .put(
+                                                    "properties",
+                                                    JSONObject()
+                                                        .put(
+                                                            "id",
+                                                            JSONObject()
+                                                                .put("type", "string")
+                                                                .put("description", "稳定标识，例如 step-1。"),
+                                                        )
+                                                        .put(
+                                                            "content",
+                                                            JSONObject()
+                                                                .put("type", "string")
+                                                                .put("description", "这一步要做什么。"),
+                                                        ),
+                                                )
+                                                .put("required", JSONArray().put("id").put("content")),
+                                        ),
+                                )
+                                .put(
+                                    "alternatives",
+                                    JSONObject()
+                                        .put("type", "array")
+                                        .put(
+                                            "description",
+                                            "备选方案（可选）：只写思路与取舍，完整正文只对推荐方案写。" +
+                                                "用户想换思路时会照它重新规划。",
+                                        )
+                                        .put(
+                                            "items",
+                                            JSONObject()
+                                                .put("type", "object")
+                                                .put(
+                                                    "properties",
+                                                    JSONObject()
+                                                        .put(
+                                                            "title",
+                                                            JSONObject()
+                                                                .put("type", "string")
+                                                                .put("description", "备选方案名。"),
+                                                        )
+                                                        .put(
+                                                            "summary",
+                                                            JSONObject()
+                                                                .put("type", "string")
+                                                                .put("description", "一句话思路。"),
+                                                        )
+                                                        .put(
+                                                            "tradeoff",
+                                                            JSONObject()
+                                                                .put("type", "string")
+                                                                .put("description", "取舍：好在哪、代价是什么。"),
+                                                        ),
+                                                )
+                                                .put("required", JSONArray().put("title").put("summary")),
+                                        ),
+                                ),
+                        )
+                        .put(
+                            "required",
+                            JSONArray().put("title").put("digest").put("content").put("steps"),
+                        ),
+                )
+            )
     }
 }

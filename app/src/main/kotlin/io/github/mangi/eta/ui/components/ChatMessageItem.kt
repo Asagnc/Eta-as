@@ -1028,6 +1028,14 @@ private fun AgentMessageBlock(
 }
 
 @Composable
+internal fun StaticMarkdown(
+    content: String,
+    modifier: Modifier = Modifier,
+) {
+    StableMarkdown(content = content, modifier = modifier)
+}
+
+@Composable
 private fun StableMarkdown(
     content: String,
     modifier: Modifier = Modifier,
