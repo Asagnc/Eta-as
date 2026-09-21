@@ -268,6 +268,11 @@ internal sealed interface AgentEvent {
         val phase: String,
         val summaryChars: Int,
         val errorCode: String = "",
+        /**
+         * 触发这次委派的 delegate 工具调用 id。
+         * 界面据此把进度挂到对话流里那一步上，而不是另开一张全局面板。
+         */
+        val toolCallId: String = "",
     ) : AgentEvent {
         val displayMessage: String
             get() = when (phase) {

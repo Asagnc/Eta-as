@@ -303,7 +303,7 @@ internal class AgentLocalTools(
                             ),
                         )
                     } else {
-                        textResult(delegate(args))
+                        textResult(delegate(args, toolCall.id))
                     }
                 }
                 else -> textResult(
@@ -1995,7 +1995,7 @@ internal class AgentLocalTools(
      * 由主 loop 汇总对照。子智能体的上下文与工具输出都不进入当前 run，所以这里的返回值
      * 就是它交给主 loop 的全部信息；主 loop 需要自己校验摘要，不能直接把它当结论。
      */
-    private fun delegate(args: JSONObject): String {
+    private fun delegate(args: JSONObject, toolCallId: String): String {
         val runner = subAgentRunner ?: return errorResult("SUB_AGENT_DISABLED", "子智能体未开启")
         val task = args.optString("task").trim()
         if (task.isBlank()) return errorResult("MISSING_PARAM", "缺少 task")
@@ -2036,6 +2036,7 @@ internal class AgentLocalTools(
                     plan = plan,
                     mailboxRunId = sharedMailboxRunId,
                     allowWebRead = allowWebRead,
+                    toolCallId = toolCallId,
                 )
             }
             val outcomes = if (requests.size == 1) {
@@ -2059,7 +2060,7 @@ internal class AgentLocalTools(
         if (roles.size != 1) {
             return errorResult("INVALID_ARGUMENT", "mode=write 需要恰好一个角色")
         }
-        return delegateWrite(runner, roles.single(), task, context, plan, repoPath)
+        return delegateWrite(runner, roles.single(), task, context, plan, repoPath, toolCallId)
     }
 
     /**
@@ -2075,6 +2076,7 @@ internal class AgentLocalTools(
         context: String,
         plan: SubAgentPlan,
         repoPath: String,
+        toolCallId: String,
     ): String {
         val shell: (String) -> String = worktreeShellExecutor ?: { command ->
             val result = runLinuxCommandRaw(command, WORKTREE_COMMAND_TIMEOUT_SECONDS)
@@ -2105,6 +2107,7 @@ internal class AgentLocalTools(
                 workspace = workspace,
                 // 写入模式本来就是单角色（多角色会在合并时冲突），不存在抢页面，给只读联网。
                 allowWebRead = true,
+                toolCallId = toolCallId,
             ),
         )
         recordSubAgentRuns(listOf(outcome))

@@ -5,11 +5,15 @@ import io.github.mangi.eta.agent.runtime.AgentEvent
 
 /** 子智能体的运行阶段；与事件里的 phase 字符串一一对应。 */
 @Immutable
-internal enum class AgentSubAgentPhase { RUNNING, FINISHED, FAILED }
+enum class AgentSubAgentPhase { RUNNING, FINISHED, FAILED }
 
-/** 并行子智能体的一项进度，由 [AgentEvent.SubAgentUpdated] 投影而来。 */
+/**
+ * 并行子智能体的一项进度，由 [AgentEvent.SubAgentUpdated] 投影而来。
+ *
+ * public：它作为 `ToolActivityMessageUi.subAgents` 的字段类型出现，而那个消息类是 public。
+ */
 @Immutable
-internal data class AgentSubAgentItemUi(
+data class AgentSubAgentItemUi(
     val id: String,
     val role: String,
     val phase: AgentSubAgentPhase,

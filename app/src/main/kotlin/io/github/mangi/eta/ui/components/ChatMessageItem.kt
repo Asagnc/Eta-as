@@ -153,6 +153,8 @@ import io.github.mangi.eta.ui.model.RunTraceMessageUi
 import io.github.mangi.eta.ui.model.SuggestionChipsMessageUi
 import io.github.mangi.eta.ui.model.SystemNoticeCode
 import io.github.mangi.eta.ui.model.SystemNoticeMessageUi
+import io.github.mangi.eta.ui.model.AgentSubAgentItemUi
+import io.github.mangi.eta.ui.model.AgentSubAgentPhase
 import io.github.mangi.eta.ui.model.ThinkingMessageUi
 import io.github.mangi.eta.ui.model.ToolActivityMessageUi
 import io.github.mangi.eta.ui.model.ToolActivityStatusUi
@@ -2388,6 +2390,59 @@ private fun ThinkingRow(
 
 // ── 工具调用：优雅极简时间线 ─────────────────────────────────────────
 
+/** delegate 条目折叠行上的子智能体摘要：只在真有进度时出现。 */
+private fun subAgentSubtitle(items: List<AgentSubAgentItemUi>): String? {
+    if (items.isEmpty()) return null
+    val running = items.count { it.phase == AgentSubAgentPhase.RUNNING }
+    val failed = items.count { it.phase == AgentSubAgentPhase.FAILED }
+    return buildString {
+        append("${items.size} 个子智能体")
+        if (running > 0) append(" · $running 进行中")
+        if (failed > 0) append(" · $failed 失败")
+    }
+}
+
+/** 展开区里的一行子智能体进度：状态点 + 角色 + 结论规模（失败时给错误码）。 */
+@Composable
+private fun SubAgentProgressRow(agent: AgentSubAgentItemUi) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(
+                    when (agent.phase) {
+                        AgentSubAgentPhase.RUNNING -> MiuixTheme.colorScheme.primary
+                        AgentSubAgentPhase.FAILED -> StatusError
+                        AgentSubAgentPhase.FINISHED ->
+                            MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.7f)
+                    },
+                ),
+        )
+        Text(
+            text = agent.role,
+            style = MiuixTheme.textStyles.footnote2,
+            color = MiuixTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = when (agent.phase) {
+                AgentSubAgentPhase.RUNNING -> "进行中"
+                AgentSubAgentPhase.FINISHED -> "${agent.summaryChars} 字结论"
+                AgentSubAgentPhase.FAILED -> agent.errorCode.ifBlank { "失败" }
+            },
+            style = MiuixTheme.textStyles.footnote2,
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.8f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
 @Composable
 private fun ToolActivityInline(
     message: ToolActivityMessageUi,
@@ -2472,7 +2527,7 @@ private fun ToolActivityInline(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                val subtitle = failureSubtitle ?: browserSubtitle
+                val subtitle = failureSubtitle ?: browserSubtitle ?: subAgentSubtitle(message.subAgents)
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
@@ -2553,6 +2608,12 @@ private fun ToolActivityInline(
                     )
                     .padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
+                if (message.subAgents.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        message.subAgents.forEach { agent -> SubAgentProgressRow(agent) }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 if (!message.command.isNullOrBlank()) {
                     ToolCommandBlock(
                         command = message.command,

@@ -2097,20 +2097,22 @@ internal class AgentAppState(
             // 运行度量随事件流进入归档，会话页不单独渲染。
             is AgentEvent.RunStatsReported -> Unit
 
-            // 子智能体的进度进会话状态（顶部面板展示）；归档事件里仍保留原始记录用于事后核查。
+            // 子智能体的进度挂在触发它的那一步（delegate 工具条目）上，不再另开面板：
+            // 进度描述的就是这一步的执行情况，挂在条目上会随对话流留在原地。
             is AgentEvent.SubAgentUpdated -> {
                 val item = AgentSubAgentProjector.fromEvent(event)
-                if (item != null) {
-                    val conversationId = conversationIdForRun(runId)
-                    val state = conversationId?.let { conversationsById[it] }
-                    if (conversationId != null && state != null) {
-                        updateConversation(
-                            conversationId = conversationId,
-                            state = state.copy(
-                                subAgents = AgentSubAgentProjector.upsert(state.subAgents, item),
-                            ),
-                            updateTimestamp = false,
-                        )
+                val toolCallId = event.toolCallId.trim()
+                if (item != null && toolCallId.isNotEmpty()) {
+                    updateRunTrace(runId) { messages ->
+                        messages.map { message ->
+                            if (message is ToolActivityMessageUi && message.id.endsWith("-$toolCallId")) {
+                                message.copy(
+                                    subAgents = AgentSubAgentProjector.upsert(message.subAgents, item),
+                                )
+                            } else {
+                                message
+                            }
+                        }
                     }
                 }
             }
@@ -2278,18 +2280,6 @@ internal class AgentAppState(
             is AgentEvent.RunStarted -> {
                 if (runId in stopRequestedRunIds) scope.launch(Dispatchers.IO) {
                     AgentRuntimeClient(appContext, AndroidAgentLogger).cancelRun(runId)
-                }
-                // 上一轮的子智能体进度不能留到本轮：那会让人误以为是本次的运行情况。
-                conversationIdForRun(runId)?.let { conversationId ->
-                    conversationsById[conversationId]?.let { state ->
-                        if (state.subAgents.isNotEmpty()) {
-                            updateConversation(
-                                conversationId = conversationId,
-                                state = state.copy(subAgents = emptyList()),
-                                updateTimestamp = false,
-                            )
-                        }
-                    }
                 }
             }
             is AgentEvent.ProviderRequestStarted,

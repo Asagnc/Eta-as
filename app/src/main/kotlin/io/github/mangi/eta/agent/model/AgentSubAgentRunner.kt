@@ -65,6 +65,8 @@ internal class AgentSubAgentRunner(
          * （单角色委派）时，调用方才显式打开。
          */
         val allowWebRead: Boolean = false,
+        /** 触发这次委派的 delegate 工具调用 id；事件带着它，界面才能把进度挂到对应那一步。 */
+        val toolCallId: String = "",
     )
 
     data class Outcome(
@@ -91,7 +93,16 @@ internal class AgentSubAgentRunner(
         val plan = request.plan
             ?: SubAgentPlan(SubAgentScope.COMPARE, maxRounds, tokenBudget, 0, fromHistory = false)
         val id = "sub-$role-${sequence.incrementAndGet()}"
-        onEvent(AgentEvent.SubAgentUpdated(id = id, role = role, phase = PHASE_STARTED, summaryChars = 0))
+        val toolCallId = request.toolCallId.trim()
+        onEvent(
+            AgentEvent.SubAgentUpdated(
+                id = id,
+                role = role,
+                phase = PHASE_STARTED,
+                summaryChars = 0,
+                toolCallId = toolCallId,
+            ),
+        )
 
         val workspace = request.workspace
         val writable = workspace != null
@@ -243,6 +254,7 @@ internal class AgentSubAgentRunner(
                 phase = if (ok) PHASE_FINISHED else PHASE_FAILED,
                 summaryChars = content.length,
                 errorCode = errorCode,
+                toolCallId = toolCallId,
             ),
         )
         return Outcome(

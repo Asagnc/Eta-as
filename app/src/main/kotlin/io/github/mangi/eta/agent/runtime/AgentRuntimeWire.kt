@@ -771,6 +771,7 @@ internal object AgentRuntimeWire {
                 putString("phase", event.phase)
                 putInt("summary_chars", event.summaryChars)
                 putString("error_code", event.errorCode)
+                putString("tool_call_id", event.toolCallId)
             }
 
             is AgentEvent.RunFinished -> {
@@ -932,6 +933,7 @@ internal object AgentRuntimeWire {
             phase = bundle.getString("phase").orEmpty(),
             summaryChars = bundle.getInt("summary_chars"),
             errorCode = bundle.getString("error_code").orEmpty(),
+            toolCallId = bundle.getString("tool_call_id").orEmpty(),
         )
 
         "run_finished" -> AgentEvent.RunFinished(
