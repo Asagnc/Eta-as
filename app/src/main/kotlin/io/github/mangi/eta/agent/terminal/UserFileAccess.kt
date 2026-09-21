@@ -180,8 +180,10 @@ internal object UserFileAccess {
                 .put(
                     "message",
                     buildString {
-                        append("old_text 命中 ${outcome.lines.size} 处（行 ${outcome.lines.joinToString("、")}）；")
-                        append("请补足上下文使其唯一，或设置 replace_all=true。各命中处上下文（> 为命中行）：\n")
+                        append("old_text 命中 ${outcome.lines.size} 处（行 ${outcome.lines.joinToString("、")}）。")
+                        append("二选一：① 在 old_text 里带上相邻行，让它在文件中只出现一次；")
+                        append("② 若这 ${outcome.lines.size} 处都该改，就显式传 replace_all=true（会把 ${outcome.lines.size} 处全部替换）。")
+                        append("各命中处上下文（> 为命中行）：\n")
                         append(FileTextOperations.ambiguitySnippet(original, outcome.lines))
                     },
                 )
@@ -197,6 +199,162 @@ internal object UserFileAccess {
                     .put("diff", FileTextOperations.diffPreview(original, outcome.content))
             }
         }
+    }
+
+    /**
+     * 免 Root 通道的 read_files：与 root 通道返回同一份结构，逐个文件按行读、共享字符预算。
+     *
+     * 单个文件读不到（不存在、是目录、越权）只记进 failures，不影响其余文件。
+     */
+    fun readFiles(paths: List<String>, maxChars: Int): String = operation {
+        val budget = maxChars.coerceIn(200, FileToolLimits.MAX_OUTPUT_CHARS)
+        val sections = mutableListOf<Pair<String, FileTextOperations.LineSlice>>()
+        val failures = mutableListOf<JSONObject>()
+        for (raw in paths) {
+            val single = readLines(raw, startLine = 1, endLine = null, maxChars = budget)
+            val parsed = runCatching { JSONObject(single) }.getOrNull()
+            if (parsed == null || !parsed.optBoolean("ok")) {
+                failures += JSONObject()
+                    .put("path", raw)
+                    .put("code", parsed?.optString("code")?.takeIf { it.isNotBlank() } ?: "READ_FAILED")
+                    .put("message", parsed?.optString("message").orEmpty().ifBlank { "读取失败" })
+                continue
+            }
+            val content = parsed.optString("content")
+            val start = parsed.optInt("start_line", 1)
+            sections += parsed.optString("path", raw) to FileTextOperations.LineSlice(
+                text = content,
+                totalLines = parsed.optInt("total_lines"),
+                firstLine = start,
+                lastLine = start + content.split('\n').let { if (content.isEmpty()) 0 else it.size } - 1,
+                truncated = parsed.optBoolean("truncated"),
+            )
+        }
+        val (text, emitted) = FileTextOperations.joinSections(sections, budget)
+        val json = JSONObject()
+            .put("ok", true)
+            .put("tool", "read_files")
+            .put("requested", paths.size)
+            .put("loaded", emitted.size)
+            .put("content", text)
+        val sectionArray = JSONArray()
+        for (section in emitted) {
+            sectionArray.put(
+                JSONObject()
+                    .put("path", section.path)
+                    .put("total_lines", section.totalLines)
+                    .put("first_line", section.firstLine)
+                    .put("last_line", section.lastLine)
+                    .put("truncated", section.truncated)
+                    .put("next_start_line", section.nextStartLine ?: JSONObject.NULL),
+            )
+        }
+        json.put("sections", sectionArray)
+        if (failures.isNotEmpty()) {
+            json.put("failures", JSONArray(failures))
+            json.put(
+                "hint",
+                "有 ${failures.size} 个路径没读到（见 failures）：路径写错或超出普通身份可访问范围，" +
+                    "不影响其余文件。被截断的段可传 next_start_line 单独续读。",
+            )
+        }
+        json
+    }
+
+    /**
+     * 免 Root 通道的 edit_files：与 root 通道同一份契约——先全量校验，全部通过才写盘。
+     *
+     * 免 Root 身份下文件本来就是可写的普通文件，不需要 su，因此这里直接用 Kotlin 原子写。
+     */
+    fun editFiles(requests: List<FileTextOperations.EditRequest>): String = operation {
+        val contents = linkedMapOf<String, String>()
+        val loadFailures = mutableMapOf<String, FileTextOperations.EditFailure>()
+        val resolved = linkedMapOf<String, File>()
+        for (request in requests) {
+            val key = runCatching { resolve(request.path).absolutePath }.getOrElse { request.path }
+            if (contents.containsKey(key) || loadFailures.containsKey(key)) continue
+            val file = runCatching { resolve(request.path) }.getOrElse {
+                loadFailures[key] = FileTextOperations.EditFailure(
+                    request.path,
+                    "PATH_NOT_FOUND",
+                    it.message ?: "路径不在普通终端可访问范围内",
+                )
+                continue
+            }
+            if (!file.isFile || !file.canRead()) {
+                loadFailures[key] = FileTextOperations.EditFailure(
+                    file.absolutePath,
+                    "PATH_NOT_FOUND",
+                    PathHints.missingPathMessage(file) ?: "文件不可读：${file.absolutePath}",
+                )
+                continue
+            }
+            if (file.length() > FileTextOperations.MAX_EDIT_BYTES) {
+                loadFailures[key] = FileTextOperations.EditFailure(
+                    file.absolutePath,
+                    "FILE_TOO_LARGE",
+                    "文件 ${file.length()} 字节，超过定点替换上限 ${FileTextOperations.MAX_EDIT_BYTES} 字节；请改用 terminal 通道处理",
+                )
+                continue
+            }
+            resolved[key] = file
+            contents[key] = file.readText()
+        }
+        val normalized = requests.map { request ->
+            val key = runCatching { resolve(request.path).absolutePath }.getOrElse { request.path }
+            request.copy(path = key)
+        }
+        val plan = FileTextOperations.planEdits(
+            requests = normalized,
+            contents = contents,
+            loadFailure = { loadFailures[it.path] },
+        )
+        if (!plan.isComplete) {
+            return@operation JSONObject()
+                .put("ok", false)
+                .put("tool", "edit_files")
+                .put("code", "BATCH_ABORTED")
+                .put("written", 0)
+                .put(
+                    "message",
+                    "批量替换未执行：${plan.failures.size} 条校验失败，已写入 0 个文件（整批要么全改要么全不改）。" +
+                        "按下面的失败原因修正后重试。",
+                )
+                .put(
+                    "failures",
+                    JSONArray(
+                        plan.failures.map {
+                            JSONObject().put("path", it.path).put("code", it.code).put("message", it.message)
+                        },
+                    ),
+                )
+        }
+        val written = mutableListOf<JSONObject>()
+        for (edit in plan.plan) {
+            val file = resolved[edit.request.path]
+                ?: return@operation JSONObject().put("ok", false).put("tool", "edit_files")
+                    .put("code", "PATH_NOT_FOUND").put("written", written.size)
+                    .put("message", "校验通过后找不到文件：${edit.request.path}")
+            val bytes = edit.content.toByteArray()
+            if (bytes.size > FileToolLimits.MAX_WRITE_BYTES) {
+                return@operation JSONObject().put("ok", false).put("tool", "edit_files")
+                    .put("code", "FILE_TOO_LARGE").put("written", written.size)
+                    .put("message", "替换后 ${edit.request.path} 为 ${bytes.size} 字节，超过写入上限 ${FileToolLimits.MAX_WRITE_BYTES} 字节")
+            }
+            replaceAtomically(file, bytes)
+            written += JSONObject()
+                .put("path", file.absolutePath)
+                .put("replacements", edit.occurrences)
+                .put("first_line", edit.firstLine)
+                .put("bytes_written", bytes.size)
+                .put("verified", true)
+        }
+        JSONObject()
+            .put("ok", true)
+            .put("tool", "edit_files")
+            .put("requested", requests.size)
+            .put("written", written.size)
+            .put("results", JSONArray(written))
     }
 
     fun searchCode(

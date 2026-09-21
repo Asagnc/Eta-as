@@ -286,6 +286,153 @@ internal object FileTextOperations {
         return index
     }
 
+    /** 一次批量替换里针对单个文件的编辑请求。 */
+    data class EditRequest(val path: String, val oldText: String, val newText: String, val replaceAll: Boolean)
+
+    /** 单文件校验失败：带文件路径、错误码与可直接回给调用方的说明。 */
+    data class EditFailure(val path: String, val code: String, val message: String)
+
+    /** 批量替换的校验结果：全部通过时 [plan] 才非空。 */
+    data class EditPlan(val plan: List<PlannedEdit>, val failures: List<EditFailure>) {
+        val isComplete: Boolean get() = failures.isEmpty()
+    }
+
+    /** 校验通过的单文件改动，[content] 是替换后的全文。 */
+    data class PlannedEdit(val request: EditRequest, val content: String, val occurrences: Int, val firstLine: Int)
+
+    /**
+     * 批量替换的校验阶段：只读全文、只判定，不写盘。
+     *
+     * 返回的 [EditPlan.isComplete] 为 false 时调用方必须整体放弃，一个文件都不写——
+     * 批量改动里写一半留下的中间状态，比整批失败更难排查：调用方看到的是"部分成功"，
+     * 却拿不到"哪些已经生效"的可靠依据。同一路径在一次请求里出现多次时按顺序叠加，
+     * 让后一条基于前一条的结果继续匹配。
+     *
+     * @param contents 按 [EditRequest.path] 取到的原文；取不到（不存在、不可读、超限）由调用方
+     *   预先记成 [EditFailure]，这里只处理已成功取到内容的路径。
+     */
+    fun planEdits(
+        requests: List<EditRequest>,
+        contents: Map<String, String>,
+        loadFailure: (EditRequest) -> EditFailure?,
+    ): EditPlan {
+        val failures = mutableListOf<EditFailure>()
+        val planned = linkedMapOf<String, PlannedEdit>()
+        for (request in requests) {
+            loadFailure(request)?.let {
+                failures += it
+                continue
+            }
+            val original = planned[request.path]?.content ?: contents[request.path]
+            if (original == null) {
+                failures += EditFailure(request.path, "PATH_NOT_FOUND", "读取不到文件内容：${request.path}")
+                continue
+            }
+            if (request.oldText.isEmpty()) {
+                failures += EditFailure(request.path, "INVALID_ARGUMENT", "old_text 不能为空")
+                continue
+            }
+            when (val outcome = replace(original, request.oldText, request.newText, request.replaceAll)) {
+                is ReplaceOutcome.NotFound -> failures += EditFailure(
+                    request.path,
+                    "EDIT_NOT_FOUND",
+                    buildString {
+                        append("没有匹配 old_text 的文本（文件共 ${outcome.totalLines} 行）")
+                        val snippet = nearestSnippet(original, request.oldText)
+                        if (snippet.isBlank()) {
+                            append("；文件为空，或 old_text 与任何一行都没有公共前缀，请用 read_file 核对")
+                        } else {
+                            append("。最接近的原文（L 开头是行号）：\n")
+                            append(snippet)
+                            val difference = describeFirstDifference(original, request.oldText)
+                            if (difference.isNotBlank()) append("\n").append(difference)
+                            append("\n请按上面的原文修正 old_text 后重试")
+                        }
+                    },
+                )
+                is ReplaceOutcome.Ambiguous -> failures += EditFailure(
+                    request.path,
+                    "EDIT_NOT_UNIQUE",
+                    buildString {
+                        append("old_text 命中 ${outcome.lines.size} 处（行 ${outcome.lines.joinToString("、")}）。")
+                        append("二选一：① 在 old_text 里带上相邻行，让它在文件中只出现一次；")
+                        append("② 若这 ${outcome.lines.size} 处都该改，就显式传 replace_all=true（会把 ${outcome.lines.size} 处全部替换）。")
+                        append("各命中处上下文（> 为命中行）：\n")
+                        append(ambiguitySnippet(original, outcome.lines))
+                    },
+                )
+                is ReplaceOutcome.Applied -> planned[request.path] = PlannedEdit(
+                    request = request,
+                    content = outcome.content,
+                    occurrences = outcome.occurrences,
+                    firstLine = outcome.firstLine,
+                )
+            }
+        }
+        // 有一条失败就整批作废：调用方只看 plan 也不该看到"可以写"的条目。
+        if (failures.isNotEmpty()) return EditPlan(plan = emptyList(), failures = failures)
+        return EditPlan(plan = planned.values.toList(), failures = failures)
+    }
+
+    /**
+     * 批量读取的分节拼接：每个文件占一段，段头带路径与总行数，段内行号沿用真实行号。
+     *
+     * 总字符预算在文件之间共享（不像单文件读取那样每个文件各自 16k），单文件超出剩余预算时
+     * 只给头部若干行并标记 [FileSection.truncated]，由调用方按 next_start_line 续读——
+     * 一次读五个文件本该是一轮，但把五个文件的全文都塞进一轮就等于用上下文换往返，
+     * 这里的取舍是宁可少给几行。
+     */
+    data class FileSection(
+        val path: String,
+        val text: String,
+        val totalLines: Int,
+        val firstLine: Int,
+        val lastLine: Int,
+        val truncated: Boolean,
+        val nextStartLine: Int?,
+    )
+
+    fun joinSections(
+        sections: List<Pair<String, LineSlice>>,
+        budget: Int,
+    ): Pair<String, List<FileSection>> {
+        val builder = StringBuilder()
+        val emitted = mutableListOf<FileSection>()
+        for ((path, slice) in sections) {
+            val lines = if (slice.text.isEmpty()) emptyList() else slice.text.split('\n')
+            val header = "=== $path（共 ${slice.totalLines} 行）===\n"
+            if (builder.length + header.length > budget) {
+                emitted += FileSection(path, "", slice.totalLines, 0, 0, true, 1)
+                continue
+            }
+            builder.append(header)
+            var written = 0
+            for (line in lines) {
+                val rendered = "$line\n"
+                if (builder.length + rendered.length > budget) break
+                builder.append(rendered)
+                written++
+            }
+            val sectionTruncated = slice.truncated || written < lines.size
+            emitted += FileSection(
+                path = path,
+                text = lines.take(written).joinToString("\n"),
+                totalLines = slice.totalLines,
+                firstLine = if (written == 0) 0 else slice.firstLine,
+                lastLine = if (written == 0) slice.firstLine - 1 else slice.firstLine + written - 1,
+                truncated = sectionTruncated,
+                nextStartLine = if (!sectionTruncated) {
+                    null
+                } else if (written == 0) {
+                    slice.firstLine
+                } else {
+                    slice.firstLine + written
+                },
+            )
+        }
+        return builder.toString().trimEnd('\n') to emitted
+    }
+
     fun replace(content: String, oldText: String, newText: String, replaceAll: Boolean): ReplaceOutcome {
         val totalLines = linesOf(content).size
         if (oldText.isEmpty()) return ReplaceOutcome.NotFound(totalLines)

@@ -48,6 +48,7 @@ import io.github.mangi.eta.agent.skill.GitHubSkillSourceException
 import io.github.mangi.eta.agent.skill.PublicGitHubSkillSource
 import io.github.mangi.eta.agent.terminal.DetachedTaskSupervisor
 import io.github.mangi.eta.agent.terminal.FileTextOperations
+import io.github.mangi.eta.agent.terminal.FileToolLimits
 import io.github.mangi.eta.agent.terminal.LinuxDistribution
 import io.github.mangi.eta.agent.terminal.LinuxEnvironmentPaths
 import io.github.mangi.eta.agent.terminal.terminalEnvironment
@@ -270,8 +271,10 @@ internal class AgentLocalTools(
                 "terminal" -> textResult(terminalTool { terminal(args) })
                 "run_command" -> textResult(terminalTool { runCommand(args) })
                 "read_file" -> textResult(terminalTool { readFile(args) })
+                "read_files" -> textResult(terminalTool { readFiles(args) })
                 "write_file" -> textResult(terminalTool { writeFile(args) })
                 "edit_file" -> textResult(terminalTool { editFile(args) })
+                "edit_files" -> textResult(terminalTool { editFiles(args) })
                 "search_code" -> textResult(terminalTool { searchCode(args) })
                 "list_directory" -> textResult(terminalTool { listDirectory(args) })
                 "find_files" -> textResult(terminalTool { findFiles(args) })
@@ -1192,6 +1195,18 @@ internal class AgentLocalTools(
         )
     }
 
+    private fun readFiles(args: JSONObject): String {
+        val raw = args.optJSONArray("paths") ?: return errorResult("INVALID_ARGUMENT", "paths 必须是数组")
+        val paths = (0 until raw.length()).mapNotNull { index ->
+            raw.optString(index).takeIf { it.isNotBlank() }
+        }
+        if (paths.isEmpty()) return errorResult("INVALID_ARGUMENT", "paths 不能为空")
+        return terminalController.readFiles(
+            paths = paths,
+            maxChars = args.optInt("max_chars", FileToolLimits.MAX_OUTPUT_CHARS),
+        )
+    }
+
     private fun editFile(args: JSONObject): String =
         terminalController.editFile(
             path = args.optString("path"),
@@ -1199,6 +1214,24 @@ internal class AgentLocalTools(
             newText = args.optString("new_text"),
             replaceAll = args.optBoolean("replace_all", false)
         )
+
+    private fun editFiles(args: JSONObject): String {
+        val raw = args.optJSONArray("edits") ?: return errorResult("INVALID_ARGUMENT", "edits 必须是数组")
+        if (raw.length() == 0) return errorResult("INVALID_ARGUMENT", "edits 不能为空")
+        val requests = (0 until raw.length()).mapNotNull { index ->
+            val entry = raw.optJSONObject(index) ?: return@mapNotNull null
+            val path = entry.optString("path")
+            if (path.isBlank()) return@mapNotNull null
+            FileTextOperations.EditRequest(
+                path = path,
+                oldText = entry.optString("old_text"),
+                newText = entry.optString("new_text"),
+                replaceAll = entry.optBoolean("replace_all", false),
+            )
+        }
+        if (requests.isEmpty()) return errorResult("INVALID_ARGUMENT", "edits 里没有有效的 path")
+        return terminalController.editFiles(requests)
+    }
 
     private fun searchCode(args: JSONObject): String {
         val requested = args.optString("pattern")
@@ -2386,7 +2419,8 @@ internal class AgentLocalTools(
         val SUPPORTED_SKILL_REQUIREMENTS = setOf("root", "linux")
         /** 会按路径读取内容的工具；凭据路径在这些工具上直接拒绝。 */
         val CREDENTIAL_PATH_TOOL_NAMES = setOf(
-            "read_file", "read_image", "list_directory", "search_code", "edit_file", "write_file",
+            "read_file", "read_files", "read_image", "list_directory", "search_code",
+            "edit_file", "edit_files", "write_file",
         )
     }
 }

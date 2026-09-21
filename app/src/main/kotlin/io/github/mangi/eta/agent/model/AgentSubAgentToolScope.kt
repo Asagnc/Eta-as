@@ -35,11 +35,24 @@ internal object AgentSubAgentToolScope {
         "find_files",
     )
 
+    /**
+     * 这些工具用**数组**参数指向多个目标：[pathsField] 是要读的路径列表，
+     * [entriesField] 是每条带 `path` 的编辑条目。数组型参数必须单独收口——
+     * 若只把它们塞进 [PATH_TOOLS]，`optString("path")` 取到空串，映射静默失效，
+     * 隔离就形同虚设。
+     */
+    private val MULTI_PATH_TOOLS = mapOf(
+        "read_files" to MultiPathSpec(pathsField = "paths", entriesField = null),
+        "edit_files" to MultiPathSpec(pathsField = null, entriesField = "edits"),
+    )
+
     /** 这些工具用 `cwd` 表示工作目录，并且能执行任意命令。 */
     private val COMMAND_TOOLS = setOf("terminal", "run_command")
 
     /** 写入类工具：解析后的路径必须落在 worktree 内，否则拒绝。 */
-    private val WRITE_TOOLS = setOf("write_file", "edit_file")
+    private val WRITE_TOOLS = setOf("write_file", "edit_file", "edit_files")
+
+    private data class MultiPathSpec(val pathsField: String?, val entriesField: String?)
 
     const val CODE_ESCAPE = "SUB_AGENT_WORKSPACE_ESCAPE"
     const val CODE_BAD_ARGUMENTS = "SUB_AGENT_BAD_ARGUMENTS"
@@ -53,9 +66,12 @@ internal object AgentSubAgentToolScope {
     }
 
     fun scope(name: String, argumentsJson: String, workspace: SubAgentWorkspace): Scoped {
-        if (name !in PATH_TOOLS && name !in COMMAND_TOOLS) return Scoped.Ok(argumentsJson)
+        if (name !in PATH_TOOLS && name !in COMMAND_TOOLS && name !in MULTI_PATH_TOOLS) {
+            return Scoped.Ok(argumentsJson)
+        }
         val args = runCatching { JSONObject(argumentsJson.ifBlank { "{}" }) }.getOrNull()
             ?: return Scoped.Rejected(CODE_BAD_ARGUMENTS, "工具参数不是合法 JSON")
+        MULTI_PATH_TOOLS[name]?.let { return scopeMultiPath(name, args, it, workspace) }
         if (name in PATH_TOOLS) {
             val raw = args.optString("path")
             val mapped = mapPath(raw, workspace)
@@ -86,6 +102,60 @@ internal object AgentSubAgentToolScope {
         }
         args.put("cwd", if (rawCwd.isEmpty()) workspace.worktreePath else mapPath(rawCwd, workspace))
         return Scoped.Ok(args.toString())
+    }
+
+    /**
+     * 数组型路径参数的收口：逐条映射路径，写类工具逐条校验是否落在 worktree 内。
+     *
+     * 逐条校验而不是只查第一条：一条越界就必须整批拒绝，否则子智能体可以用
+     * 「第一条合法 + 第二条越界」把改动落到主工作区。
+     */
+    private fun scopeMultiPath(
+        name: String,
+        args: JSONObject,
+        spec: MultiPathSpec,
+        workspace: SubAgentWorkspace,
+    ): Scoped {
+        spec.pathsField?.let { field ->
+            val array = args.optJSONArray(field)
+                ?: return Scoped.Rejected(CODE_BAD_ARGUMENTS, "$field 必须是数组")
+            for (index in 0 until array.length()) {
+                val raw = array.optString(index)
+                val mapped = mapPath(raw, workspace)
+                if (name in WRITE_TOOLS && !isInsideWorktree(mapped, workspace)) {
+                    return Scoped.Rejected(
+                        CODE_ESCAPE,
+                        "$field[$index] 指向主工作区 ${workspace.repoPath}，不接受改动；" +
+                            "你的工作区是 ${workspace.worktreePath}。当前路径：$raw",
+                    )
+                }
+                array.put(index, mapped)
+            }
+            args.put(field, array)
+            return Scoped.Ok(args.toString())
+        }
+        spec.entriesField?.let { field ->
+            val array = args.optJSONArray(field)
+                ?: return Scoped.Rejected(CODE_BAD_ARGUMENTS, "$field 必须是数组")
+            for (index in 0 until array.length()) {
+                val entry = array.optJSONObject(index)
+                    ?: return Scoped.Rejected(CODE_BAD_ARGUMENTS, "$field[$index] 必须是对象")
+                val raw = entry.optString("path")
+                val mapped = mapPath(raw, workspace)
+                if (name in WRITE_TOOLS && !isInsideWorktree(mapped, workspace)) {
+                    return Scoped.Rejected(
+                        CODE_ESCAPE,
+                        "$field[$index].path 指向主工作区 ${workspace.repoPath}，不接受改动；" +
+                            "你的工作区是 ${workspace.worktreePath}。当前路径：$raw",
+                    )
+                }
+                entry.put("path", mapped)
+                array.put(index, entry)
+            }
+            args.put(field, array)
+            return Scoped.Ok(args.toString())
+        }
+        return Scoped.Rejected(CODE_BAD_ARGUMENTS, "工具 $name 缺少路径参数定义")
     }
 
     /**

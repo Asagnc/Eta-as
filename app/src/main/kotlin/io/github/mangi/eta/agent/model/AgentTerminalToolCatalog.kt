@@ -306,6 +306,69 @@ internal object AgentTerminalToolCatalog {
                         .put("required", JSONArray().put("path").put("old_text").put("new_text"))
                 )
             )
+            .put(
+                AgentToolSchema.function(
+                    name = "read_files",
+                    description = "一次读取多个文件：需要同时看若干个文件时用它，比连续多次 read_file 少很多轮往返。" +
+                        "总字符预算在文件之间共享（不像 read_file 每个文件各自一份），每个文件占一段，段头是「=== 路径（共 N 行）===」，段内行号是真实行号。" +
+                        "某个路径读不到只记进 failures，不影响其余文件；某段被截断时它的 next_start_line 给出续读位置，可再用 read_file 单独续读。",
+                    parameters = JSONObject()
+                        .put("type", "object")
+                        .put(
+                            "properties",
+                            JSONObject()
+                                .put(
+                                    "paths",
+                                    JSONObject()
+                                        .put("type", "array")
+                                        .put("items", JSONObject().put("type", "string"))
+                                        .put("description", "要读取的文件路径列表，建议不超过 8 个。"),
+                                )
+                                .put(
+                                    "max_chars",
+                                    JSONObject()
+                                        .put("type", "integer")
+                                        .put("description", "所有文件合计的最大字符数，200 到 32000，默认 16000；被截断的段会给 next_start_line。"),
+                                )
+                        )
+                        .put("required", JSONArray().put("paths"))
+                )
+            )
+            .put(
+                AgentToolSchema.function(
+                    name = "edit_files",
+                    description = "一次对多个文件做定点替换（跨文件重命名、改同一个常量等）。" +
+                        "先对全部条目做校验，全部通过才写盘；任一条失败就整批放弃、一个字节都不写，并在 failures 里给出每条失败的原因（未命中会给最接近的原文与首处差异字符，多处命中会列出各行上下文）。" +
+                        "同一路径可以出现多次，按顺序叠加；不提供整文件 content，整文件重写请用 write_file。",
+                    parameters = JSONObject()
+                        .put("type", "object")
+                        .put(
+                            "properties",
+                            JSONObject()
+                                .put(
+                                    "edits",
+                                    JSONObject()
+                                        .put("type", "array")
+                                        .put("description", "替换条目列表，按给定顺序校验与写入。")
+                                        .put(
+                                            "items",
+                                            JSONObject()
+                                                .put("type", "object")
+                                                .put(
+                                                    "properties",
+                                                    JSONObject()
+                                                        .put("path", JSONObject().put("type", "string"))
+                                                        .put("old_text", JSONObject().put("type", "string").put("description", "待替换的原文，需与文件中文本完全一致，含缩进。"))
+                                                        .put("new_text", JSONObject().put("type", "string").put("description", "替换后的文本；传空字符串表示删除该段。"))
+                                                        .put("replace_all", JSONObject().put("type", "boolean").put("description", "true 时替换该文件里全部命中；默认 false，只允许唯一命中。")),
+                                                )
+                                                .put("required", JSONArray().put("path").put("old_text").put("new_text")),
+                                        ),
+                                )
+                        )
+                        .put("required", JSONArray().put("edits"))
+                )
+            )
     }
 
 }

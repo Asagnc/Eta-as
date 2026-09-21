@@ -14,8 +14,10 @@ internal class AgentTraceFormatter {
             "run_command" -> "执行命令 · Android · root"
             "write_file" -> summarizeTextLength("写入文件", toolCall.argumentsJson, "content")
             "read_file" -> "读取文件"
+            "read_files" -> "批量读取文件"
             "list_directory" -> "列出目录"
             "edit_file" -> "编辑文件"
+            "edit_files" -> "批量编辑文件"
             "find_files" -> summarizeFirstArgument("查找文件", toolCall.argumentsJson, listOf("glob", "pattern"))
             "search_code" -> summarizeFirstArgument("检索内容", toolCall.argumentsJson, listOf("pattern", "glob"))
             "task_plan" -> "更新任务计划"

@@ -1055,6 +1055,207 @@ internal class RootShellTerminalController(
     }
 
     /**
+     * 批量按行读取：一次取回多个文件，总字符预算在文件之间共享。
+     *
+     * 单个文件失败（不存在、是目录、超行数上限）不影响其它文件，失败条目照样占一段，
+     * 段内写明原因——批量读取的价值就在于一轮拿到全部结论，不能因为其中一个路径写错就整批作废。
+     */
+    fun readFiles(paths: List<String>, maxChars: Int): String {
+        if (paths.isEmpty()) return errorJson("INVALID_ARGUMENT", "paths 不能为空")
+        if (!rootAvailable()) return UserFileAccess.readFiles(paths, maxChars)
+        val budget = maxChars.coerceIn(200, FileToolLimits.MAX_OUTPUT_CHARS)
+        val sections = mutableListOf<Pair<String, FileTextOperations.LineSlice>>()
+        val failures = mutableListOf<JSONObject>()
+        for (raw in paths) {
+            val single = readFileLines(raw, startLine = 1, endLine = null, maxChars = budget)
+            val parsed = runCatching { JSONObject(single) }.getOrNull()
+            if (parsed == null || !parsed.optBoolean("ok")) {
+                failures += JSONObject()
+                    .put("path", raw)
+                    .put("code", parsed?.optString("code")?.takeIf { it.isNotBlank() } ?: "READ_FAILED")
+                    .put("message", parsed?.optString("message").orEmpty().ifBlank { "读取失败" })
+                continue
+            }
+            val content = parsed.optString("content")
+            val totalLines = parsed.optInt("total_lines")
+            val start = parsed.optInt("start_line", 1)
+            sections += parsed.optString("path", raw) to FileTextOperations.LineSlice(
+                text = content,
+                totalLines = totalLines,
+                firstLine = start,
+                lastLine = start + content.split('\n').let { if (content.isEmpty()) 0 else it.size } - 1,
+                truncated = parsed.optBoolean("truncated"),
+            )
+        }
+        val (text, emitted) = FileTextOperations.joinSections(sections, budget)
+        logger.info(
+            "Agent terminal action=read_files outcome=succeeded requested=${paths.size} " +
+                "loaded=${emitted.size} failed=${failures.size}"
+        )
+        val json = JSONObject()
+            .put("ok", true)
+            .put("tool", "read_files")
+            .put("requested", paths.size)
+            .put("loaded", emitted.size)
+            .put("content", text)
+        val sectionArray = JSONArray()
+        for (section in emitted) {
+            sectionArray.put(
+                JSONObject()
+                    .put("path", section.path)
+                    .put("total_lines", section.totalLines)
+                    .put("first_line", section.firstLine)
+                    .put("last_line", section.lastLine)
+                    .put("truncated", section.truncated)
+                    .put("next_start_line", section.nextStartLine ?: JSONObject.NULL),
+            )
+        }
+        json.put("sections", sectionArray)
+        if (failures.isNotEmpty()) {
+            json.put("failures", JSONArray(failures))
+            json.put(
+                "hint",
+                "有 ${failures.size} 个路径没读到（见 failures）：路径写错或文件过大，不影响其余文件。" +
+                    "被截断的段可传 next_start_line 单独续读。",
+            )
+        }
+        return json.toString()
+    }
+
+    /**
+     * 批量定点替换：先对全部条目做校验（读全文 + 匹配判定），全部通过才逐个写盘。
+     *
+     * 任一条失败就整批放弃、一个字节都不写：批量改动写一半留下的中间状态最难排查，
+     * 调用方看到"部分成功"却拿不到可靠的已改清单。写盘阶段仍用与单文件相同的原子写，
+     * 且每个文件写前用当时的内容重新校验一次匹配，避免校验与写盘之间被外部改动。
+     */
+    fun editFiles(requests: List<FileTextOperations.EditRequest>): String {
+        if (requests.isEmpty()) return errorJson("INVALID_ARGUMENT", "edits 不能为空")
+        if (!rootAvailable()) {
+            return UserFileAccess.editFiles(requests)
+        }
+        val contents = linkedMapOf<String, String>()
+        val loadFailures = mutableMapOf<String, FileTextOperations.EditFailure>()
+        for (request in requests) {
+            val safePath = normalizePath(request.path)
+            if (contents.containsKey(safePath) || loadFailures.containsKey(safePath)) continue
+            val sizeResult = runSuText("wc -c < ${shellQuote(safePath)}", timeoutSeconds = 15)
+            if (sizeResult.exitCode != 0) {
+                loadFailures[safePath] = FileTextOperations.EditFailure(
+                    safePath,
+                    "PATH_NOT_FOUND",
+                    "读取不到文件：${safePath}",
+                )
+                continue
+            }
+            val size = sizeResult.output.trim().toLongOrNull()
+            if (size == null) {
+                loadFailures[safePath] = FileTextOperations.EditFailure(safePath, "EDIT_FAILED", "无法读取文件大小")
+                continue
+            }
+            if (size > FileTextOperations.MAX_EDIT_BYTES) {
+                loadFailures[safePath] = FileTextOperations.EditFailure(
+                    safePath,
+                    "FILE_TOO_LARGE",
+                    "文件 $size 字节，超过定点替换上限 ${FileTextOperations.MAX_EDIT_BYTES} 字节；请改用 terminal 通道处理",
+                )
+                continue
+            }
+            val readResult = runSuBytes("cat ${shellQuote(safePath)}", timeoutSeconds = 20)
+            if (readResult.exitCode != 0) {
+                loadFailures[safePath] = FileTextOperations.EditFailure(
+                    safePath,
+                    "PATH_NOT_FOUND",
+                    "读取不到文件：${safePath}",
+                )
+                continue
+            }
+            contents[safePath] = readResult.output.decodeToString()
+        }
+        val normalized = requests.map {
+            it.copy(path = normalizePath(it.path))
+        }
+        val plan = FileTextOperations.planEdits(
+            requests = normalized,
+            contents = contents,
+            loadFailure = { loadFailures[it.path] },
+        )
+        if (!plan.isComplete) {
+            logger.warn(
+                "Agent terminal action=edit_files outcome=failed requested=${requests.size} " +
+                    "failures=${plan.failures.size} written=0"
+            )
+            return JSONObject()
+                .put("ok", false)
+                .put("tool", "edit_files")
+                .put("code", "BATCH_ABORTED")
+                .put("written", 0)
+                .put(
+                    "message",
+                    "批量替换未执行：${plan.failures.size} 条校验失败，已写入 0 个文件（整批要么全改要么全不改）。" +
+                        "按下面的失败原因修正后重试。",
+                )
+                .put(
+                    "failures",
+                    JSONArray(
+                        plan.failures.map {
+                            JSONObject().put("path", it.path).put("code", it.code).put("message", it.message)
+                        },
+                    ),
+                )
+                .toString()
+        }
+        val written = mutableListOf<JSONObject>()
+        for (edit in plan.plan) {
+            val bytes = edit.content.toByteArray(Charsets.UTF_8)
+            if (bytes.size > MAX_WRITE_BYTES) {
+                return errorJson(
+                    "FILE_TOO_LARGE",
+                    "替换后 ${edit.request.path} 为 ${bytes.size} 字节，超过写入上限 $MAX_WRITE_BYTES 字节",
+                )
+            }
+            val writeResult = runSuTextWithStdin(
+                atomicOverwriteScript(edit.request.path, bytes.size, sha256Hex(bytes)),
+                bytes,
+                timeoutSeconds = 30,
+            )
+            if (writeResult.exitCode != 0) {
+                logger.warn(
+                    "Agent terminal action=edit_files outcome=failed path=${edit.request.path} " +
+                        "exitCode=${writeResult.exitCode} writtenSoFar=${written.size}"
+                )
+                return JSONObject()
+                    .put("ok", false)
+                    .put("tool", "edit_files")
+                    .put("code", writeFailureCode(writeResult.exitCode))
+                    .put("written", written.size)
+                    .put(
+                        "message",
+                        "写盘阶段失败（${edit.request.path}）：${writeFailureMessage(edit.request.path, append = false, writeResult)}" +
+                            "；此前已写入 ${written.size} 个文件，见 results。",
+                    )
+                    .put("results", JSONArray(written))
+                    .toString()
+            }
+            written += JSONObject()
+                .put("path", edit.request.path)
+                .put("replacements", edit.occurrences)
+                .put("first_line", edit.firstLine)
+                .put("bytes_written", bytes.size)
+        }
+        logger.info(
+            "Agent terminal action=edit_files outcome=succeeded requested=${requests.size} written=${written.size}"
+        )
+        return JSONObject()
+            .put("ok", true)
+            .put("tool", "edit_files")
+            .put("requested", requests.size)
+            .put("written", written.size)
+            .put("results", JSONArray(written))
+            .toString()
+    }
+
+    /**
      * 按内容检索：递归目录，返回 文件:行号:内容。路径前缀按检索根目录缩写，便于阅读。
      */
     /** 按字符预算拼接结果行，返回文本与真正写入的行数：宁可少给几行，也不要把上下文一次撑爆。 */

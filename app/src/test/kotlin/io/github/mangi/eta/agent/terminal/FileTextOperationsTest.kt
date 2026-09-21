@@ -231,4 +231,162 @@ class FileTextOperationsTest {
         assertTrue(page.lines.isEmpty())
         assertFalse(page.hasMore)
     }
+
+    // ---- planEdits：批量替换的「全成功才写」契约 ----
+
+    @Test
+    fun `plan edits accepts a batch where every entry matches`() {
+        val plan = FileTextOperations.planEdits(
+            requests = listOf(
+                edit("a.kt", "foo()", "bar()"),
+                edit("b.kt", "foo()", "bar()"),
+            ),
+            contents = mapOf("a.kt" to "val x = foo()\n", "b.kt" to "val y = foo()\n"),
+            loadFailure = { null },
+        )
+
+        assertTrue(plan.isComplete)
+        assertEquals(2, plan.plan.size)
+        assertEquals("val x = bar()\n", plan.plan.first { it.request.path == "a.kt" }.content)
+    }
+
+    @Test
+    fun `plan edits fails the whole batch when one entry does not match`() {
+        val plan = FileTextOperations.planEdits(
+            requests = listOf(
+                edit("a.kt", "foo()", "bar()"),
+                edit("b.kt", "missing()", "bar()"),
+            ),
+            contents = mapOf("a.kt" to "val x = foo()\n", "b.kt" to "val y = foo()\n"),
+            loadFailure = { null },
+        )
+
+        assertFalse(plan.isComplete)
+        assertEquals(listOf("b.kt"), plan.failures.map { it.path })
+        assertEquals("EDIT_NOT_FOUND", plan.failures.single().code)
+        // 失败即整批放弃：即便 a.kt 本身校验通过，也不能留下待写条目。
+        assertTrue(plan.plan.isEmpty())
+    }
+
+    @Test
+    fun `plan edits reports ambiguous hits with the replace all hint`() {
+        val plan = FileTextOperations.planEdits(
+            requests = listOf(edit("a.kt", "foo()", "bar()")),
+            contents = mapOf("a.kt" to "foo()\nfoo()\n"),
+            loadFailure = { null },
+        )
+
+        val failure = plan.failures.single()
+        assertEquals("EDIT_NOT_UNIQUE", failure.code)
+        assertTrue(failure.message.contains("replace_all=true"))
+        assertTrue(failure.message.contains("2 处"))
+    }
+
+    @Test
+    fun `plan edits stacks repeated edits on the same path`() {
+        val plan = FileTextOperations.planEdits(
+            requests = listOf(
+                edit("a.kt", "one", "two"),
+                edit("a.kt", "two", "three"),
+            ),
+            contents = mapOf("a.kt" to "one\n"),
+            loadFailure = { null },
+        )
+
+        assertTrue(plan.isComplete)
+        assertEquals(1, plan.plan.size)
+        assertEquals("three\n", plan.plan.single().content)
+    }
+
+    @Test
+    fun `plan edits surfaces a load failure as a batch failure`() {
+        val plan = FileTextOperations.planEdits(
+            requests = listOf(edit("missing.kt", "a", "b")),
+            contents = emptyMap(),
+            loadFailure = { FileTextOperations.EditFailure(it.path, "PATH_NOT_FOUND", "读取不到文件") },
+        )
+
+        assertFalse(plan.isComplete)
+        assertEquals("PATH_NOT_FOUND", plan.failures.single().code)
+    }
+
+    @Test
+    fun `plan edits rejects an empty old text`() {
+        val plan = FileTextOperations.planEdits(
+            requests = listOf(edit("a.kt", "", "b")),
+            contents = mapOf("a.kt" to "content\n"),
+            loadFailure = { null },
+        )
+
+        assertFalse(plan.isComplete)
+        assertEquals("INVALID_ARGUMENT", plan.failures.single().code)
+    }
+
+    // ---- joinSections：批量读取的分节与预算共享 ----
+
+    @Test
+    fun `join sections labels every file with its path and line count`() {
+        val (text, sections) = FileTextOperations.joinSections(
+            sections = listOf(
+                "a.kt" to slice("1\n2\n", totalLines = 2),
+                "b.kt" to slice("3\n", totalLines = 1),
+            ),
+            budget = 1_000,
+        )
+
+        assertTrue(text.contains("=== a.kt（共 2 行）==="))
+        assertTrue(text.contains("=== b.kt（共 1 行）==="))
+        assertEquals(2, sections.size)
+        assertFalse(sections.any { it.truncated })
+    }
+
+    @Test
+    fun `join sections shares one budget across files`() {
+        // 预算只够第一个文件：第二个文件必须被标记截断并给出续读位置，
+        // 而不是各自拿到一份完整预算（那等于总量随文件数线性膨胀）。
+        val (text, sections) = FileTextOperations.joinSections(
+            sections = listOf(
+                "a.kt" to slice("first\nsecond\n", totalLines = 2),
+                "b.kt" to slice("third\n", totalLines = 1),
+            ),
+            // A 段头 18 字符 + 首行 6 字符 = 24；再加第二行 7 字符就到 31，会把 B 段头挤掉。
+            budget = 30,
+        )
+
+        assertTrue(text.contains("=== a.kt"))
+        assertTrue(sections[0].truncated)
+        assertEquals(2, sections[0].nextStartLine)
+        assertTrue(sections[1].truncated)
+        assertEquals(1, sections[1].nextStartLine)
+    }
+
+    @Test
+    fun `join sections marks an unreadable file without dropping the rest`() {
+        val (text, sections) = FileTextOperations.joinSections(
+            sections = listOf(
+                "ok.kt" to slice("body\n", totalLines = 1),
+                "huge.kt" to slice("", totalLines = 900_000, truncated = true),
+            ),
+            budget = 1_000,
+        )
+
+        assertTrue(text.contains("=== ok.kt"))
+        val huge = sections.single { it.path == "huge.kt" }
+        assertTrue(huge.truncated)
+        assertEquals(900_000, huge.totalLines)
+    }
+
+    private fun edit(path: String, oldText: String, newText: String) =
+        FileTextOperations.EditRequest(path = path, oldText = oldText, newText = newText, replaceAll = false)
+
+    private fun slice(text: String, totalLines: Int, truncated: Boolean = false): FileTextOperations.LineSlice {
+        val lines = if (text.isEmpty()) emptyList() else text.trimEnd('\n').split('\n')
+        return FileTextOperations.LineSlice(
+            text = text,
+            totalLines = totalLines,
+            firstLine = 1,
+            lastLine = lines.size,
+            truncated = truncated,
+        )
+    }
 }

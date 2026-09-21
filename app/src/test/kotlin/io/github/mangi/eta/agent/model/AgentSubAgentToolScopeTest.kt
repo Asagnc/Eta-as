@@ -174,4 +174,79 @@ class AgentSubAgentToolScopeTest {
         val args = ok("read_file", "")
         assertEquals("/workspace/eta-worktree-a", args.getString("path"))
     }
+
+    // ---- 数组型路径参数（read_files / edit_files）----
+
+    @Test
+    fun `read_files 的 paths 逐条映射到 worktree`() {
+        val args = ok("read_files", """{"paths":["app/src/A.kt","/workspace/Eta-src/B.kt"]}""")
+        val paths = args.getJSONArray("paths")
+
+        assertEquals("/workspace/eta-worktree-a/app/src/A.kt", paths.getString(0))
+        assertEquals("/workspace/eta-worktree-a/B.kt", paths.getString(1))
+    }
+
+    @Test
+    fun `read_files 允许读 worktree 之外的绝对路径`() {
+        // 读别处无害，只有写才需要收口；这条守住「不要顺手把读也锁死」。
+        val args = ok("read_files", """{"paths":["/etc/hosts"]}""")
+        assertEquals("/etc/hosts", args.getJSONArray("paths").getString(0))
+    }
+
+    @Test
+    fun `edit_files 的每条 edits 路径都映射到 worktree`() {
+        val args = ok(
+            "edit_files",
+            """{"edits":[{"path":"app/src/A.kt","old_text":"a","new_text":"b"}]}""",
+        )
+        val entry = args.getJSONArray("edits").getJSONObject(0)
+
+        assertEquals("/workspace/eta-worktree-a/app/src/A.kt", entry.getString("path"))
+        assertEquals("a", entry.getString("old_text"))
+    }
+
+    @Test
+    fun `edit_files 任一条越界就整批拒绝`() {
+        // 主工作区路径会被映射进 worktree（这是期望行为），所以真正的越界是
+        // 映射后仍落在 worktree 外的路径——那种一条都不能放过。
+        val failure = rejected(
+            "edit_files",
+            """{"edits":[
+                {"path":"app/src/A.kt","old_text":"a","new_text":"b"},
+                {"path":"/etc/passwd","old_text":"a","new_text":"b"}
+            ]}""",
+        )
+
+        assertEquals(AgentSubAgentToolScope.CODE_ESCAPE, failure.code)
+        assertTrue(failure.message.contains("edits[1].path"))
+    }
+
+    @Test
+    fun `edit_files 把主工作区路径映射进 worktree 而不是拒绝`() {
+        val args = ok(
+            "edit_files",
+            """{"edits":[{"path":"/workspace/Eta-src/app/src/B.kt","old_text":"a","new_text":"b"}]}""",
+        )
+
+        assertEquals(
+            "/workspace/eta-worktree-a/app/src/B.kt",
+            args.getJSONArray("edits").getJSONObject(0).getString("path"),
+        )
+    }
+
+    @Test
+    fun `edit_files 的 edits 不是数组时明确报错`() {
+        assertEquals(
+            AgentSubAgentToolScope.CODE_BAD_ARGUMENTS,
+            rejected("edit_files", """{"edits":"nope"}""").code,
+        )
+    }
+
+    @Test
+    fun `read_files 的 paths 不是数组时明确报错`() {
+        assertEquals(
+            AgentSubAgentToolScope.CODE_BAD_ARGUMENTS,
+            rejected("read_files", """{"paths":"app/src/A.kt"}""").code,
+        )
+    }
 }

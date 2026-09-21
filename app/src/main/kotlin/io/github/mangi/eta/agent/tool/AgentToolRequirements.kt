@@ -78,13 +78,14 @@ internal object AgentToolRequirements {
         )
         register(
             RootRequirement.PARTIAL,
-            "press_key", "run_command", "write_file", "edit_file", "read_image",
+            "press_key", "run_command", "write_file", "edit_file", "edit_files", "read_image",
             "skills_run",
         )
         registerParallelSafe(
             RootRequirement.PARTIAL,
             "terminal", "network_info", "get_setting", "recent_notifications",
-            "search_personal_orders", "read_file", "search_code", "list_directory", "find_files",
+            "search_personal_orders", "read_file", "read_files", "search_code", "list_directory",
+            "find_files",
         )
         register(
             RootRequirement.REQUIRED,
