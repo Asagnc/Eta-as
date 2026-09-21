@@ -137,6 +137,8 @@ internal fun iconForTool(toolId: String): ImageVector = when (toolId) {
     "drag" -> Icons.Rounded.OpenWith
     "task_plan" -> Icons.Rounded.Schedule
     "submit_plan" -> Icons.AutoMirrored.Rounded.StickyNote2
+    "world_recall" -> Icons.AutoMirrored.Rounded.ManageSearch
+    "world_trace" -> Icons.Rounded.Insights
     "skills_run" -> Icons.Rounded.Extension
     else -> if (toolId.startsWith("mcp_")) Icons.Rounded.Extension else Icons.Rounded.Build
 }
