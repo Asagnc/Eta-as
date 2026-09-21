@@ -896,7 +896,7 @@ internal object AgentBrowserSession {
             if (failure.code != "SCRIPT_FAILED") throw failure
             retryAsWrappedStatements(view, expression, resultKey, maxChars, timeout, urlAtStart, failure)
         }
-        return scriptResult(payload)
+        return scriptResult(payload, expression)
     }
 
     private fun runScript(
@@ -938,8 +938,15 @@ internal object AgentBrowserSession {
         }
         throw BrowserFailure(
             "SCRIPT_FAILED",
-            "expression 无法执行（${cause.message}）。这里要的是单个表达式：" +
-                "多条语句请包成 (async () => { ... })()，并用 return 交出结果。",
+            buildString {
+                append("expression 无法执行：").append(cause.message).append("。")
+                append("这里要的是单个表达式——多条语句请包成 (async () => { ... })()，并用 return 交出结果。")
+                append("常见两种写法错误：① 直接写一串语句（如 const a = 1; return a;），")
+                append("没有包成函数体；② 包了函数体但没写 return，结果拿到 null。")
+                append("\n实际收到的 expression（前 160 字符）：\n")
+                append(expression.take(160))
+                if (expression.length > 160) append("…（共 ${expression.length} 字符）")
+            },
         )
     }
 
@@ -1028,7 +1035,7 @@ internal object AgentBrowserSession {
         }
     }
 
-    private fun scriptResult(payloadRaw: String): BrowserToolResult {
+    private fun scriptResult(payloadRaw: String, expression: String = ""): BrowserToolResult {
         val payload = runCatching { JSONObject(payloadRaw) }.getOrNull()
             ?: throw BrowserFailure("SCRIPT_FAILED", "脚本返回的结果格式无效")
         if (!payload.optBoolean("ok")) {
@@ -1039,7 +1046,14 @@ internal object AgentBrowserSession {
             }
             throw BrowserFailure(
                 "SCRIPT_ERROR",
-                error.take(400).ifBlank { "脚本执行失败" },
+                buildString {
+                    append(error.take(400).ifBlank { "脚本执行失败" })
+                    if (expression.isNotBlank()) {
+                        append("\n出错的 expression（前 160 字符）：\n")
+                        append(expression.take(160))
+                        if (expression.length > 160) append("…（共 ${expression.length} 字符）")
+                    }
+                },
             )
         }
         val kind = payload.optString("kind").ifBlank { "value" }
