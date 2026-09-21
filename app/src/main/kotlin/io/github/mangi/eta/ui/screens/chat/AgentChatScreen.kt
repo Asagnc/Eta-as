@@ -34,6 +34,7 @@ internal fun AgentChatScreen(
             pendingFileReferences = state.pendingFileReferences,
             messageEdit = state.messageEdit,
             taskPlan = state.taskPlan,
+            subAgents = state.subAgents,
             characterName = state.roleplay?.characterName,
             onReasoningEffortChange = { onAction(AgentChatAction.ReasoningEffortChanged(it)) },
             onCompactContext = { onAction(AgentChatAction.CompactContext) },

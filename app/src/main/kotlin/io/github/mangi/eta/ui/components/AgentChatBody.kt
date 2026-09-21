@@ -77,6 +77,7 @@ import io.github.mangi.eta.agent.browser.AgentBrowserSession
 import io.github.mangi.eta.data.model.ReasoningEffort
 import io.github.mangi.eta.ui.app.AgentConversationRevisionReducer
 import io.github.mangi.eta.ui.app.LocalBlurEnabled
+import io.github.mangi.eta.ui.model.AgentSubAgentItemUi
 import io.github.mangi.eta.ui.model.AgentTaskPlanItemUi
 import io.github.mangi.eta.ui.model.AgentChatMessageUi
 import io.github.mangi.eta.ui.model.AgentContextUsageUi
@@ -155,6 +156,7 @@ internal fun AgentChatBody(
     onRunTraceClick: () -> Unit,
     onOpenBrowser: () -> Unit,
     taskPlan: List<AgentTaskPlanItemUi> = emptyList(),
+    subAgents: List<AgentSubAgentItemUi> = emptyList(),
     characterName: String? = null,
     isDrawerOpen: Boolean = false,
     modifier: Modifier = Modifier,
@@ -215,6 +217,7 @@ internal fun AgentChatBody(
     AgentChatScaffold(
         visibleMessages = visibleMessages,
         taskPlan = taskPlan,
+        subAgents = subAgents,
         hasMessages = visibleMessages.isNotEmpty(),
         scrollState = scrollState,
         input = input,
@@ -268,6 +271,7 @@ internal fun AgentChatBody(
 private fun AgentChatScaffold(
     visibleMessages: List<AgentChatMessageUi>,
     taskPlan: List<AgentTaskPlanItemUi>,
+    subAgents: List<AgentSubAgentItemUi>,
     hasMessages: Boolean,
     scrollState: LazyListState,
     input: String,
@@ -326,8 +330,9 @@ private fun AgentChatScaffold(
             bottom = 0.dp,
         ),
         topBar = {
-            // 清单为空时面板自身不渲染，因此这里始终挂载不会占位。
+            // 两个面板都在列表为空时自身不渲染，因此这里始终挂载不会占位。
             AgentTaskPlanPanel(items = taskPlan, onResume = onSubmit)
+            AgentSubAgentPanel(items = subAgents)
         },
         bottomBar = {
             AgentChatBottomBar(

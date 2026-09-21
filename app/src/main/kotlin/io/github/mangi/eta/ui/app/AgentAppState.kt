@@ -59,6 +59,7 @@ import io.github.mangi.eta.data.repository.ModelUsageDelta
 import io.github.mangi.eta.data.repository.UsageStatsRepository
 import io.github.mangi.eta.data.repository.RuntimeConfigRepository
 import io.github.mangi.eta.ui.model.AgentChatHomeUiState
+import io.github.mangi.eta.ui.model.AgentSubAgentProjector
 import io.github.mangi.eta.ui.model.AgentTaskPlanCodec
 import io.github.mangi.eta.ui.model.AgentChatMessageUi
 import io.github.mangi.eta.ui.model.AgentMemoryUiState
@@ -2096,8 +2097,23 @@ internal class AgentAppState(
             // 运行度量随事件流进入归档，会话页不单独渲染。
             is AgentEvent.RunStatsReported -> Unit
 
-            // 子智能体的启动与回收保留在归档事件里，用于事后核查并行检索的过程。
-            is AgentEvent.SubAgentUpdated -> Unit
+            // 子智能体的进度进会话状态（顶部面板展示）；归档事件里仍保留原始记录用于事后核查。
+            is AgentEvent.SubAgentUpdated -> {
+                val item = AgentSubAgentProjector.fromEvent(event)
+                if (item != null) {
+                    val conversationId = conversationIdForRun(runId)
+                    val state = conversationId?.let { conversationsById[it] }
+                    if (conversationId != null && state != null) {
+                        updateConversation(
+                            conversationId = conversationId,
+                            state = state.copy(
+                                subAgents = AgentSubAgentProjector.upsert(state.subAgents, item),
+                            ),
+                            updateTimestamp = false,
+                        )
+                    }
+                }
+            }
 
             is AgentEvent.AssistantBlockStart -> {
                 updateRunTrace(runId) { messages ->
@@ -2264,6 +2280,18 @@ internal class AgentAppState(
             is AgentEvent.RunStarted -> {
                 if (runId in stopRequestedRunIds) scope.launch(Dispatchers.IO) {
                     AgentRuntimeClient(appContext, AndroidAgentLogger).cancelRun(runId)
+                }
+                // 上一轮的子智能体进度不能留到本轮：那会让人误以为是本次的运行情况。
+                conversationIdForRun(runId)?.let { conversationId ->
+                    conversationsById[conversationId]?.let { state ->
+                        if (state.subAgents.isNotEmpty()) {
+                            updateConversation(
+                                conversationId = conversationId,
+                                state = state.copy(subAgents = emptyList()),
+                                updateTimestamp = false,
+                            )
+                        }
+                    }
                 }
             }
             is AgentEvent.ProviderRequestStarted,

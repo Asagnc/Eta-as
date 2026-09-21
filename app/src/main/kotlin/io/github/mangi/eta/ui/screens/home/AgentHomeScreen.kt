@@ -37,6 +37,7 @@ internal fun AgentHomeScreen(
             pendingFileReferences = state.pendingFileReferences,
             messageEdit = state.messageEdit,
             taskPlan = state.taskPlan,
+            subAgents = state.subAgents,
             characterName = state.roleplay?.characterName,
             onReasoningEffortChange = { onAction(AgentHomeAction.ReasoningEffortChanged(it)) },
             onCompactContext = { onAction(AgentHomeAction.CompactContext) },

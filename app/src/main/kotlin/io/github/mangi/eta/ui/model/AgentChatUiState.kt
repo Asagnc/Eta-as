@@ -27,6 +27,13 @@ internal data class AgentChatUiState(
     val roleplayMessages: RoleplayMessageState = RoleplayMessageState(),
     /** 当前会话的任务清单；由 task_plan 工具事件覆盖更新。 */
     val taskPlan: List<AgentTaskPlanItemUi> = emptyList(),
+    /**
+     * 本轮运行里并行子智能体的进度；随 SubAgentUpdated 事件增量更新。
+     *
+     * 每次运行开始时清空：上一轮的角色留在界面上会让人误以为是本次的运行情况。
+     * 不落库——它是过程信息，运行结束后没有回溯价值。
+     */
+    val subAgents: List<AgentSubAgentItemUi> = emptyList(),
 ) {
     val canCompactContext: Boolean get() = !isStreaming && messageEdit == null && history.any {
         !it.contextSummary && (it.role == "assistant" || it.role == "tool")
