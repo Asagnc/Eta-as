@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,6 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import io.github.mangi.eta.ui.model.AgentTaskPlanItemUi
 import io.github.mangi.eta.ui.model.AgentTaskPlanStatus
@@ -52,6 +56,8 @@ internal fun AgentTaskPlanPanel(
     if (items.isEmpty()) return
     var expanded by rememberSaveable { mutableStateOf(true) }
     var autoCollapsed by rememberSaveable { mutableStateOf(false) }
+    // 清单区限高：面板挂在会话顶部且自身不滚动，条目多时同样会把「继续」入口顶出屏幕。
+    val listMaxHeight = (LocalConfiguration.current.screenHeightDp * TASK_LIST_MAX_SCREEN_RATIO).dp
     val completed = items.count { it.status == AgentTaskPlanStatus.COMPLETED }
     // 停在某一步的那一项：运行结束后它就是「继续」的落点。
     val activeIndex = items.indexOfFirst { it.status == AgentTaskPlanStatus.IN_PROGRESS }
@@ -92,7 +98,13 @@ internal fun AgentTaskPlanPanel(
         }
         if (expanded) {
             Spacer(modifier = Modifier.height(6.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = listMaxHeight)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 items.forEach { item -> AgentTaskPlanRow(item) }
             }
             // 只有运行已经结束、且确实停在某一步时才给「继续」入口；跑的过程中点它没有意义。
@@ -179,3 +191,6 @@ private fun AgentTaskPlanRow(item: AgentTaskPlanItemUi) {
         }
     }
 }
+
+/** 任务清单区的最大高度占比：与方案卡片自上而下共存，两张卡一起占满整屏就再也点不到入口。 */
+private const val TASK_LIST_MAX_SCREEN_RATIO = 0.3f
