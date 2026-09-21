@@ -10,6 +10,7 @@ import io.github.mangi.eta.agent.model.AgentModelClient
 import io.github.mangi.eta.agent.model.AgentModelExecutionException
 import io.github.mangi.eta.agent.model.AgentRunStats
 import io.github.mangi.eta.agent.model.AgentSubAgentRunner
+import io.github.mangi.eta.agent.model.AgentSubAgentToolScope
 import io.github.mangi.eta.agent.model.AgentToolCatalog
 import io.github.mangi.eta.agent.model.ProviderClientFactory
 import io.github.mangi.eta.agent.model.AgentModelFailure
@@ -182,19 +183,39 @@ internal class AgentRuntimeRunExecutor(
                     memoryTools = false,
                     capabilities = AgentToolCapabilities.capture(appContext),
                 ),
-                toolExecutorFor = { allowed ->
+                toolExecutorFor = { allowed, workspace ->
                     AgentModelClient.ToolExecutor { call ->
                         val delegate = toolExecutorRef
-                        if (delegate == null || call.name !in allowed) {
-                            AgentModelClient.ToolResult(
+                        when {
+                            delegate == null || call.name !in allowed -> AgentModelClient.ToolResult(
                                 JSONObject()
                                     .put("ok", false)
                                     .put("code", "SUB_AGENT_TOOL_FORBIDDEN")
                                     .put("message", "子智能体不能使用 ${call.name}")
                                     .toString(),
                             )
-                        } else {
-                            delegate.execute(call)
+
+                            workspace == null -> delegate.execute(call)
+
+                            else -> {
+                                // 带写权限时必须把参数收进它的 worktree：模型天然会写相对路径，
+                                // 相对路径在宿主侧默认落到主工作区，光靠 system prompt 约束不住。
+                                when (
+                                    val scoped =
+                                        AgentSubAgentToolScope.scope(call.name, call.argumentsJson, workspace)
+                                ) {
+                                    is AgentSubAgentToolScope.Scoped.Ok ->
+                                        delegate.execute(call.copy(argumentsJson = scoped.argumentsJson))
+
+                                    is AgentSubAgentToolScope.Scoped.Rejected -> AgentModelClient.ToolResult(
+                                        JSONObject()
+                                            .put("ok", false)
+                                            .put("code", scoped.code)
+                                            .put("message", scoped.message)
+                                            .toString(),
+                                    )
+                                }
+                            }
                         }
                     }
                 },

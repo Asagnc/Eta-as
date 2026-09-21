@@ -1,0 +1,122 @@
+package io.github.mangi.eta.agent.model
+
+import java.io.File
+
+/**
+ * 写权限子智能体的隔离工作区（git worktree）。
+ *
+ * 为什么必须隔离：子智能体与主智能体各自基于同一份快照读、再各自写回，后写的会静默覆盖前者
+ * （TOCTOU）。worktree 让子智能体在自己的检出目录里改文件，主智能体先看 diff 再决定是否合并，
+ * 把"并发写"降级成"先隔离、后合并"。
+ *
+ * 这里只做命令拼装与路径校验，不直接执行——执行交给宿主已有的 terminal 能力
+ * （`RootShellTerminalController.runCommand(cwd = ..., environment = "linux")`），
+ * 这样 Android 侧不需要内置 git 二进制，每一行命令也能在单测里验证。
+ */
+internal object AgentWorktreeManager {
+
+    /** worktree 放在源仓库同级，名字带固定前缀，便于一眼看出归属、能安全批量清理。 */
+    const val DIRECTORY_PREFIX = "eta-worktree-"
+
+    /** 一次 run 内最多同时存在的 worktree 数；超了先回收最旧的，避免悄悄吃掉用户存储。 */
+    const val MAX_LIVE_WORKTREES = 3
+
+    /**
+     * 子智能体在 worktree 里要用的相对路径。`local.properties` 被 gitignore，
+     * 新 worktree 不会有它，缺了它 Gradle 找不到 SDK、子智能体就没法自验证。
+     */
+    const val LOCAL_PROPERTIES = "local.properties"
+
+    /**
+     * 把 worktree 名限制成安全字符：既防路径穿越，也防拼进 shell 时被当成参数。
+     * 保留中文会被 shell 引号处理，索性统一降级成 `-`。
+     */
+    fun sanitizeToken(raw: String): String {
+        val cleaned = raw.trim().lowercase().map { char ->
+            when {
+                char in 'a'..'z' || char in '0'..'9' -> char
+                char == '-' || char == '_' -> char
+                else -> '-'
+            }
+        }.joinToString("")
+        val collapsed = cleaned.replace(Regex("-{2,}"), "-").trim('-')
+        return collapsed.take(MAX_TOKEN_CHARS).ifBlank { DEFAULT_TOKEN }
+    }
+
+    /** worktree 绝对路径：`<仓库父目录>/eta-worktree-<token>`。 */
+    fun worktreePath(repoRoot: String, token: String): String {
+        val parent = File(repoRoot).absoluteFile.parentFile?.absolutePath
+            ?: error("无法解析仓库父目录：$repoRoot")
+        return "$parent/$DIRECTORY_PREFIX${sanitizeToken(token)}"
+    }
+
+    /**
+     * 创建 worktree。用 `--detach` 而不是分支：子智能体的产出通过 diff 交回，
+     * 不需要在仓库里留下分支引用，也就不会污染用户的分支列表。
+     *
+     * 分两步（`--no-checkout` 再 `checkout`）而不是一条 `worktree add`：
+     * 大仓库首次检出很慢，拆开后超时可以落在"检出"这一步，错误信息能指明是哪一步。
+     */
+    fun createCommands(repoRoot: String, worktreePath: String, baseRef: String): List<String> = listOf(
+        "git -C ${shellQuote(repoRoot)} worktree add --detach --no-checkout " +
+            "${shellQuote(worktreePath)} ${shellQuote(baseRef)}",
+        "git -C ${shellQuote(worktreePath)} checkout --detach ${shellQuote(baseRef)}",
+    )
+
+    /**
+     * 把被 gitignore 的本地配置复制进 worktree。`cp -n` 不覆盖已存在文件，
+     * 重复调用幂等；源文件不存在时 `|| true` 让流程继续（没有它也能跑，只是构建会报缺 SDK）。
+     */
+    fun bootstrapCommands(repoRoot: String, worktreePath: String): List<String> = listOf(
+        "cp -n ${shellQuote("$repoRoot/$LOCAL_PROPERTIES")} " +
+            "${shellQuote("$worktreePath/$LOCAL_PROPERTIES")} || true",
+    )
+
+    /**
+     * 改动摘要：只统计"改了哪些文件、增删多少行"。
+     * 不把整份 diff 塞进主上下文——那会把子智能体省下的 token 又还回去。
+     */
+    fun diffStatCommand(worktreePath: String): String =
+        "git -C ${shellQuote(worktreePath)} --no-pager diff --stat HEAD"
+
+    /** 完整补丁；只有主智能体明确要看细节时才取。 */
+    fun diffCommand(worktreePath: String): String =
+        "git -C ${shellQuote(worktreePath)} --no-pager diff HEAD"
+
+    /** 变更文件清单，一行一个，便于主智能体按文件决定合并策略。 */
+    fun changedFilesCommand(worktreePath: String): String =
+        "git -C ${shellQuote(worktreePath)} --no-pager diff --name-only HEAD"
+
+    /** 回收：先删 worktree 注册信息，再删目录（`--force` 处理"有未提交改动"的情况）。 */
+    fun removeCommands(repoRoot: String, worktreePath: String): List<String> = listOf(
+        "git -C ${shellQuote(repoRoot)} worktree remove --force ${shellQuote(worktreePath)}",
+        "git -C ${shellQuote(repoRoot)} worktree prune",
+    )
+
+    /**
+     * 把 worktree 里的改动应用到主工作区。
+     *
+     * 用 `git apply --3way` 而不是 `git merge`：worktree 是 detached、没有分支可合；
+     * 补丁应用失败时主工作区保持原样（不会产生半合并状态），失败信息也能原样交给主智能体。
+     */
+    fun applyCommand(repoRoot: String, worktreePath: String): String =
+        "git -C ${shellQuote(worktreePath)} --no-pager diff HEAD | " +
+            "git -C ${shellQuote(repoRoot)} apply --3way"
+
+    /** 路径校验：只接受 DIRECTORY_PREFIX 开头、且确实位于仓库父目录下的目录。 */
+    fun isManagedWorktree(repoRoot: String, candidate: String): Boolean {
+        val parent = File(repoRoot).absoluteFile.parentFile?.absolutePath ?: return false
+        val file = File(candidate).absoluteFile
+        return file.parent == parent && file.name.startsWith(DIRECTORY_PREFIX)
+    }
+
+    /**
+     * 单引号包裹，内部单引号用 `'\''` 转义——POSIX shell 通用写法，
+     * 避免路径里的空格、`$`、反引号被解释。
+     */
+    internal fun shellQuote(raw: String): String =
+        "'" + raw.replace("'", "'\\''") + "'"
+
+    private const val DEFAULT_TOKEN = "run"
+    private const val MAX_TOKEN_CHARS = 40
+}

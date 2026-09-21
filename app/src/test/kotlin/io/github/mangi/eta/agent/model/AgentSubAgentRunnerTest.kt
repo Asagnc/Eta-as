@@ -99,7 +99,7 @@ class AgentSubAgentRunnerTest {
         runController = AgentRunController(),
         onEvent = { event -> events += event },
         parentTools = parentTools(),
-        toolExecutorFor = { allowed ->
+        toolExecutorFor = { allowed, _ ->
             AgentModelClient.ToolExecutor { call ->
                 AgentModelClient.ToolResult(
                     JSONObject()

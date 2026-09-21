@@ -23,21 +23,30 @@ internal class AgentSubAgentRunner(
     private val runController: AgentRunController,
     private val onEvent: (AgentEvent) -> Unit,
     private val parentTools: JSONArray,
-    private val toolExecutorFor: (Set<String>) -> AgentModelClient.ToolExecutor,
+    private val toolExecutorFor: (Set<String>, SubAgentWorkspace?) -> AgentModelClient.ToolExecutor,
     private val modelRetry: AgentModelRetry = AgentModelRetry(),
     private val maxRounds: Int = MAX_SUB_AGENT_ROUNDS,
     private val tokenBudget: Int = SUB_AGENT_TOKEN_BUDGET,
     private val parallelLimit: Int = SUB_AGENT_PARALLEL_LIMIT,
+    /**
+     * worktree 命令执行器，由宿主注入（Android 侧接 `RootShellTerminalController`）。
+     * 缺省 null 时写入模式拿不到 diff 统计，但不会崩——单测与只读模式都不需要它。
+     */
+    private val worktreeShellExecutor: ((String) -> String)? = null,
 ) {
     /**
      * [plan] 由调用方按任务档位与历史消耗算好；缺省时按 compare 档默认值执行，
      * 保证单独调用 run() 也不会因为没传预算而失控。
+     *
+     * [workspace] 非空表示这次委派带写权限：子智能体在独立 worktree 里改文件，
+     * 产出以 diff 形式交回主 loop，由主 loop 决定是否合并。
      */
     data class Request(
         val role: String,
         val brief: String,
         val context: String = "",
         val plan: SubAgentPlan? = null,
+        val workspace: SubAgentWorkspace? = null,
     )
 
     data class Outcome(
@@ -51,6 +60,10 @@ internal class AgentSubAgentRunner(
         val scope: SubAgentScope = SubAgentScope.COMPARE,
         val tokenBudget: Int = 0,
         val budgetFromHistory: Boolean = false,
+        /** 写入模式下子智能体改动的文件数；只读模式恒为 0。 */
+        val changedFiles: Int = 0,
+        /** 改动摘要（`git diff --stat` 形式），主 loop 据此判断要不要合并。 */
+        val diffStat: String = "",
     )
 
     private val sequence = AtomicInteger()
@@ -62,11 +75,14 @@ internal class AgentSubAgentRunner(
         val id = "sub-$role-${sequence.incrementAndGet()}"
         onEvent(AgentEvent.SubAgentUpdated(id = id, role = role, phase = PHASE_STARTED, summaryChars = 0))
 
-        val tools = restrictedTools()
+        val workspace = request.workspace
+        val writable = workspace != null
+        val allowedTools = if (writable) READ_ONLY_TOOL_NAMES + WRITE_TOOL_NAMES else READ_ONLY_TOOL_NAMES
+        val tools = restrictedTools(allowedTools)
         val messages = JSONArray()
-            .put(systemMessage(role, request.context))
+            .put(systemMessage(role, request.context, workspace?.worktreePath.orEmpty()))
             .put(AgentConversationCodec.userTextMessage(request.brief))
-        val executor = toolExecutorFor(READ_ONLY_TOOL_NAMES)
+        val executor = toolExecutorFor(allowedTools, workspace)
 
         val summary = StringBuilder()
         var round = 1
@@ -166,6 +182,9 @@ internal class AgentSubAgentRunner(
         }
         val ok = errorCode.isEmpty()
         val content = summary.toString().trim().take(SUB_AGENT_SUMMARY_CHARS)
+        // 改动统计只在写入模式下取：它是一条 shell 命令，只读模式没有 worktree 可查。
+        // 取不到不算失败——摘要是主产出，diff 只是给主 loop 的合并线索。
+        val diffStat = if (workspace != null) collectDiffStat(workspace.worktreePath) else DiffStat(0, "")
         onEvent(
             AgentEvent.SubAgentUpdated(
                 id = id,
@@ -186,8 +205,26 @@ internal class AgentSubAgentRunner(
             scope = plan.scope,
             tokenBudget = plan.tokenBudget,
             budgetFromHistory = plan.fromHistory,
+            changedFiles = diffStat.changedFiles,
+            diffStat = diffStat.stat,
         )
     }
+
+    /**
+     * 统计 worktree 里的改动。`--stat` 的末行形如 `3 files changed, 42 insertions(+)`，
+     * 只解析这一行的文件数；解析不到就当 0，不去猜。
+     */
+    private fun collectDiffStat(worktree: String): DiffStat {
+        val command = AgentWorktreeManager.diffStatCommand(worktree)
+        val output = runCatching { worktreeShell(command) }.getOrNull()?.trim().orEmpty()
+        if (output.isBlank()) return DiffStat(0, "")
+        val files = FILE_COUNT_PATTERN.find(output)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+        return DiffStat(files, output.take(SUB_AGENT_DIFF_STAT_CHARS))
+    }
+
+    /** worktree 命令统一走宿主注入的执行器；没有注入时（单测）退化为不执行。 */
+    private fun worktreeShell(command: String): String =
+        worktreeShellExecutor?.invoke(command) ?: ""
 
     /** 角色之间不共享中间推理，否则多角色会退化成同一个噪声源的多次采样。 */
     fun runAll(requests: List<Request>): List<Outcome> {
@@ -233,15 +270,15 @@ internal class AgentSubAgentRunner(
         )
     }
 
-    private fun restrictedTools(): JSONArray = JSONArray().also { result ->
+    private fun restrictedTools(allowed: Set<String>): JSONArray = JSONArray().also { result ->
         for (index in 0 until parentTools.length()) {
             val tool = parentTools.getJSONObject(index)
             val name = tool.getJSONObject("function").getString("name")
-            if (name in READ_ONLY_TOOL_NAMES) result.put(tool)
+            if (name in allowed) result.put(tool)
         }
     }
 
-    private fun systemMessage(role: String, context: String): JSONObject = JSONObject()
+    private fun systemMessage(role: String, context: String, worktree: String = ""): JSONObject = JSONObject()
         .put("role", "system")
         .put(
             "content",
@@ -249,10 +286,24 @@ internal class AgentSubAgentRunner(
                 append("你是本次任务中的「").append(role).append("」角色，只处理交给你的这一部分。")
                 append("不要推测其它角色或主智能体的结论，也不要请求工具以外的能力。\n")
                 AgentSubAgentRoles.instructionFor(role)?.let { append(it).append('\n') }
+                if (worktree.isNotBlank()) append(worktreeInstruction(worktree))
                 append("结论写成可直接交给主智能体的摘要：先给结论，再给关键证据（文件路径与行号或命令输出要点），不要复述过程。\n")
                 if (context.isNotBlank()) append("\n背景：\n").append(context)
             },
         )
+
+    /**
+     * 写入模式的额外约束。三条都是硬要求，不是建议：
+     * 限定目录（避免改到主工作区或别的地方）、改完自验证（否则主 loop 还得重跑一遍）、
+     * 报告改了什么（主 loop 要按这份清单决定合并策略）。
+     */
+    private fun worktreeInstruction(worktree: String): String = buildString {
+        append("\n【隔离工作区】你这次带写权限，但只能改这一个目录里的文件：\n")
+        append("    ").append(worktree).append('\n')
+        append("主工作区不在这个目录里，改那里不会被接受；所有路径都写上面这个前缀。\n")
+        append("改完必须自己验证（编译、跑单测、或执行脚本），把验证命令与结果写进结论；没有验证的改动视为未完成。\n")
+        append("结论里要列出你改了哪些文件、每个文件改了什么，主智能体会按这份清单决定是否合并。\n")
+    }
 
     private fun failureCode(throwable: Throwable): String = when {
         throwable is AgentModelFailure && throwable.code.isNotBlank() -> throwable.code
@@ -269,11 +320,28 @@ internal class AgentSubAgentRunner(
         const val PHASE_FINISHED = "finished"
         const val PHASE_FAILED = "failed"
         const val DEFAULT_ROLE = AgentSubAgentRoles.DEFAULT
+
+        /** `3 files changed, 42 insertions(+)` 里的文件数；单文件时是 `1 file changed`。 */
+        val FILE_COUNT_PATTERN = Regex("""([0-9]+) files? changed""")
+
+        /** diff 统计进主上下文的长度上限：够看清改了哪些文件，又不至于把 diff 整个搬过去。 */
+        const val SUB_AGENT_DIFF_STAT_CHARS = 2_000
     }
 }
 
-/** 子智能体允许使用的工具：只检索、不写文件、不碰设备。 */
+/** worktree 改动统计。 */
+internal data class DiffStat(val changedFiles: Int, val stat: String)
+
+/**
+ * 子智能体允许使用的工具：只检索、不写文件、不碰设备。
+ *
+ * 写入模式下额外放行 [WRITE_TOOL_NAMES]，但那些工具只作用于子智能体自己的 worktree
+ * （由 [AgentWorktreeManager] 隔离），主工作区不会被直接改动。
+ */
 internal val READ_ONLY_TOOL_NAMES = setOf("read_file", "search_code", "list_directory")
+
+/** 写入模式下额外放行的工具。`terminal` 是子智能体自验证（编译、跑单测）的唯一途径。 */
+internal val WRITE_TOOL_NAMES = setOf("write_file", "edit_file", "terminal")
 
 /** 构造参数的兜底值：真实预算由 [AgentSubAgentBudget] 按档位与历史消耗算出。 */
 internal const val MAX_SUB_AGENT_ROUNDS = 6
