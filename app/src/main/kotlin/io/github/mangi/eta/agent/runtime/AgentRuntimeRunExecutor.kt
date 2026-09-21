@@ -75,6 +75,7 @@ internal class AgentRuntimeRunExecutor(
         val archivedEvents = mutableListOf<AgentEvent>()
         var entrySurfaceGuard: EntrySurfaceGuard? = null
         var toolExecutor: AutoCloseable? = null
+        var localTools: AgentLocalTools? = null
         var toolsBinding: AgentRunController.ResourceBinding? = null
         var response: AgentModelClient.ModelResponse.Text? = null
         var cancelled = false
@@ -308,6 +309,7 @@ internal class AgentRuntimeRunExecutor(
             )
             toolExecutor = routingExecutor
             toolExecutorRef = routingExecutor
+            localTools = executor
             toolsBinding = runController.register(routingExecutor::close)
             timing.preparationFinished(skillContext.installedSkills.size)
             val historyTool = conversationId?.let { id ->
@@ -437,6 +439,9 @@ internal class AgentRuntimeRunExecutor(
                 rewriteTargetMessageId = request.rewriteTargetMessageId,
             )
         } finally {
+            // 子智能体的隔离工作区保留到这一刻才回收：保留期间主智能体才能回去看改动细节。
+            // 清理失败不影响 run 结果——它是收尾动作，不该把成功的运行变成失败。
+            runCatching { localTools?.cleanupWorktrees() }
             runCatching { toolsBinding?.close() }
             runCatching { toolExecutor?.close() }
         }

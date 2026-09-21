@@ -84,6 +84,55 @@ class AgentWorktreeManagerTest {
     }
 
     @Test
+    fun `parseManagedWorktrees 只挑同级的托管目录`() {
+        val porcelain = """
+            worktree /workspace/Eta-src
+            HEAD abc
+            branch refs/heads/main
+
+            worktree /workspace/eta-worktree-a
+            HEAD def
+            detached
+
+            worktree /workspace/eta-worktree-b
+            HEAD 123
+            detached
+
+            worktree /elsewhere/eta-worktree-c
+            HEAD 456
+            detached
+        """.trimIndent()
+        assertEquals(
+            listOf("/workspace/eta-worktree-a", "/workspace/eta-worktree-b"),
+            AgentWorktreeManager.parseManagedWorktrees("/workspace/Eta-src", porcelain),
+        )
+    }
+
+    @Test
+    fun `parseManagedWorktrees 对空输出返回空列表`() {
+        assertTrue(AgentWorktreeManager.parseManagedWorktrees("/workspace/Eta-src", "").isEmpty())
+    }
+
+    @Test
+    fun `cleanupCommands 逐个移除后统一 prune`() {
+        val commands = AgentWorktreeManager.cleanupCommands(
+            "/workspace/Eta-src",
+            listOf("/workspace/eta-worktree-a", "/workspace/eta-worktree-b"),
+        )
+        assertEquals(3, commands.size)
+        assertTrue(commands[0].contains("worktree remove --force '/workspace/eta-worktree-a'"))
+        assertTrue(commands[1].contains("worktree remove --force '/workspace/eta-worktree-b'"))
+        assertTrue(commands[2].endsWith("worktree prune"))
+    }
+
+    @Test
+    fun `cleanupCommands 没有待清理项时只 prune`() {
+        val commands = AgentWorktreeManager.cleanupCommands("/workspace/Eta-src", emptyList())
+        assertEquals(1, commands.size)
+        assertTrue(commands.single().endsWith("worktree prune"))
+    }
+
+    @Test
     fun `shellQuote 转义单引号与特殊字符`() {
         assertEquals("'plain'", AgentWorktreeManager.shellQuote("plain"))
         assertEquals("'it'\\''s'", AgentWorktreeManager.shellQuote("it's"))

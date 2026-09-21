@@ -2046,21 +2046,37 @@ internal class AgentLocalTools(
                 "无法在 $repoPath 上创建隔离工作区：${createFailure.take(SUB_AGENT_SHELL_OUTPUT_CHARS)}",
             )
         }
-        return try {
-            AgentWorktreeManager.bootstrapCommands(repoPath, worktreePath).forEach { command -> shell(command) }
-            val outcome = runner.run(
-                AgentSubAgentRunner.Request(
-                    role = role,
-                    brief = task.take(MAX_SUB_AGENT_TASK_CHARS),
-                    context = context,
-                    plan = plan,
-                    workspace = workspace,
-                ),
-            )
-            recordSubAgentRuns(listOf(outcome))
-            subAgentWriteResult(outcome, workspace)
-        } finally {
-            runCatching { AgentWorktreeManager.removeCommands(repoPath, worktreePath).forEach { command -> shell(command) } }
+        AgentWorktreeManager.bootstrapCommands(repoPath, worktreePath).forEach { command -> shell(command) }
+        val outcome = runner.run(
+            AgentSubAgentRunner.Request(
+                role = role,
+                brief = task.take(MAX_SUB_AGENT_TASK_CHARS),
+                context = context,
+                plan = plan,
+                workspace = workspace,
+            ),
+        )
+        recordSubAgentRuns(listOf(outcome))
+        return subAgentWriteResult(outcome, workspace)
+    }
+
+    /**
+     * 清理本轮以及历史上遗留的托管 worktree。
+     *
+     * 在 run 结束时统一调用：保留到这一刻，主智能体才有机会回去看子智能体的改动细节。
+     * 清理本身失败不影响 run 结果——它是收尾动作，不该把已经成功的运行变成失败。
+     */
+    internal fun cleanupWorktrees(repoRoot: String = DEFAULT_SUB_AGENT_REPO) {
+        val shell: (String) -> String = worktreeShellExecutor ?: { command ->
+            val result = runLinuxCommandRaw(command, WORKTREE_COMMAND_TIMEOUT_SECONDS)
+            if (result.exitCode == 0) result.stdout
+            else "[exit ${result.exitCode}] ${result.stderr.ifBlank { result.stdout }}"
+        }
+        runCatching {
+            val listed = shell(AgentWorktreeManager.listManagedWorktreesCommand(repoRoot))
+            val paths = AgentWorktreeManager.parseManagedWorktrees(repoRoot, listed)
+            if (paths.isEmpty()) return
+            AgentWorktreeManager.cleanupCommands(repoRoot, paths).forEach { command -> shell(command) }
         }
     }
 
@@ -2080,7 +2096,8 @@ internal class AgentLocalTools(
                     "改动还在隔离工作区里，没有进主工作区。要合并就自己用 terminal 执行：" +
                         "git -C ${workspace.worktreePath} --no-pager diff HEAD | " +
                         "git -C ${workspace.repoPath} apply --3way" +
-                        "（先看 diff 确认改动符合预期；worktree 随后会被自动回收，需要细看就先取 diff）。"
+                        "。工作区会保留到本轮结束，期间你可以随时 `git -C ${workspace.worktreePath} diff` 看细节；" +
+                        "本轮结束后自动回收。"
                 } else {
                     "子智能体没有产生文件改动，无需合并。"
                 },

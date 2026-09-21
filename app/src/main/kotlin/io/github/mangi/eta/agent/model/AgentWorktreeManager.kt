@@ -64,6 +64,32 @@ internal object AgentWorktreeManager {
     )
 
     /**
+     * 清理所有托管 worktree。
+     *
+     * 放在 run 结束时统一调用（而不是子智能体一返回就删）：保留期间主智能体可以随时
+     * 回去看改动细节，否则刚回传的 `--stat` 指向的目录已经不存在，等于给了一个死链接。
+     *
+     * 用 `worktree list --porcelain` 拿准确路径再逐个 remove，而不是 `rm -rf` 通配：
+     * 万一前缀撞上用户自己的目录，删的是别人的东西。
+     */
+    fun listManagedWorktreesCommand(repoRoot: String): String =
+        "git -C ${shellQuote(repoRoot)} worktree list --porcelain"
+
+    /** 回收命令：逐个移除，最后一个 `prune` 收尾清掉注册信息。 */
+    fun cleanupCommands(repoRoot: String, worktreePaths: List<String>): List<String> =
+        worktreePaths.map { path ->
+            "git -C ${shellQuote(repoRoot)} worktree remove --force ${shellQuote(path)}"
+        } + "git -C ${shellQuote(repoRoot)} worktree prune"
+
+    /** 从 `worktree list --porcelain` 的输出里挑出托管的 worktree 路径。 */
+    fun parseManagedWorktrees(repoRoot: String, porcelainOutput: String): List<String> =
+        porcelainOutput.lineSequence()
+            .filter { line -> line.startsWith("worktree ") }
+            .map { line -> line.removePrefix("worktree ").trim() }
+            .filter { path -> isManagedWorktree(repoRoot, path) }
+            .toList()
+
+    /**
      * 把被 gitignore 的本地配置复制进 worktree。`cp -n` 不覆盖已存在文件，
      * 重复调用幂等；源文件不存在时 `|| true` 让流程继续（没有它也能跑，只是构建会报缺 SDK）。
      */
