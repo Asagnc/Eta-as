@@ -1214,7 +1214,8 @@ internal class RootShellDeviceController(
 
     private fun runRootProcess(command: String, timeoutSeconds: Long): ProcessBytesResult {
         val envelope = RootCommandEnvelope(command)
-        val result = runProcess(timeoutSeconds, "su", "-c", envelope.script)
+        // 绝对路径优先：KernelPatch 系 root 方案对未授权进程隐藏 su，走 PATH 查找会得到 ENOENT。
+        val result = runProcess(timeoutSeconds, SuBinary.resolve(), "-c", envelope.script)
         val rootOutput = envelope.inspect(result.stderr.decodeToString())
         val completed = result.exitCode >= 0 && result.stderrComplete
         if (rootOutput.denied(completed)) {

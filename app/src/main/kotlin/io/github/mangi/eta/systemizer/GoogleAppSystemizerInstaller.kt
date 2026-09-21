@@ -3,6 +3,7 @@ package io.github.mangi.eta.systemizer
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import io.github.mangi.eta.agent.device.SuBinary
 import io.github.mangi.eta.core.AndroidAgentLogger
 import io.github.mangi.eta.core.safeLogType
 import java.io.File
@@ -109,7 +110,7 @@ internal class GoogleAppSystemizerInstaller(
 
     private fun detectRootManager(): RootManager =
         detectRootManager(
-            suVersionProbe = runProcess(timeoutSeconds = 8, "su", "-v").toRootProbeResult(),
+            suVersionProbe = runProcess(timeoutSeconds = 8, SuBinary.resolve(), "-v").toRootProbeResult(),
         )
 
     private fun canRunRootCommands(): Boolean {
@@ -143,7 +144,8 @@ internal class GoogleAppSystemizerInstaller(
         }.getOrNull()
 
     private fun runSu(command: String, timeoutSeconds: Long): RootCommandResult {
-        return runProcess(timeoutSeconds, "su", "-c", command)
+        // 绝对路径优先：KernelPatch 系 root 方案对未授权进程隐藏 su，走 PATH 查找会得到 ENOENT。
+        return runProcess(timeoutSeconds, SuBinary.resolve(), "-c", command)
     }
 
     private fun runProcess(timeoutSeconds: Long, vararg command: String): RootCommandResult {

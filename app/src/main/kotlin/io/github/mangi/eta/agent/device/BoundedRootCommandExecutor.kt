@@ -30,7 +30,9 @@ internal class BoundedRootCommandExecutor(
         if (!rootAvailable()) return Result.failed("ROOT_REQUIRED")
         val envelope = RootCommandEnvelope(command)
         val process = runCatching {
-            ProcessBuilder("su", "-c", envelope.script)
+            // 绝对路径优先：KernelPatch 系 root 方案对未授权进程隐藏 su，
+            // 走 PATH 查找会得到 ENOENT，必须用绝对路径 execve。
+            ProcessBuilder(SuBinary.resolve(), "-c", envelope.script)
                 .redirectErrorStream(false)
                 .start()
         }.getOrElse {

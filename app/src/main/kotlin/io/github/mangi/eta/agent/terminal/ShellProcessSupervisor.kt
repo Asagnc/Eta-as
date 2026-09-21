@@ -1,5 +1,6 @@
 package io.github.mangi.eta.agent.terminal
 
+import io.github.mangi.eta.agent.device.SuBinary
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -80,7 +81,7 @@ internal class ShellProcessSupervisor(
         }
         val process = runCatching {
             val builder = if (identity == "root") {
-                ProcessBuilder("su", "-c", launcher)
+                ProcessBuilder(SuBinary.resolve(), "-c", launcher)
             } else {
                 ProcessBuilder("sh", "-c", launcher)
             }
@@ -481,7 +482,7 @@ internal class ShellProcessSupervisor(
         }
         val process = runCatching {
             val builder = if (metadata.identity == "root") {
-                ProcessBuilder("su", "-c", guardedCommand)
+                ProcessBuilder(SuBinary.resolve(), "-c", guardedCommand)
             } else {
                 ProcessBuilder("sh", "-c", guardedCommand)
             }
