@@ -291,13 +291,20 @@ internal object AgentConversationCodec {
         return target
     }
 
-    private fun sanitizeContentObject(source: JSONObject): JSONObject =
-        JSONObject(source.toString()).also { target ->
-            target.remove("image_url")
-            target.remove("source")
-            if (target.has("text")) {
-                target.put("text", target.optString("text"))
-            }
+    /**
+     * 去掉内容分片里的图片字段。
+     *
+     * 原地修改而不是 `JSONObject(source.toString())` 复制：入参来自 [sanitizeContentJson]
+     * 对原始字符串的解析（`JSONTokener(raw)`），本来就是独占的新对象，没有别处引用它，
+     * 复制一份纯属浪费——而这里在每次会话编解码时都会走到。
+     */
+    private fun sanitizeContentObject(source: JSONObject): JSONObject {
+        source.remove("image_url")
+        source.remove("source")
+        if (source.has("text")) {
+            source.put("text", source.optString("text"))
         }
+        return source
+    }
 
 }
