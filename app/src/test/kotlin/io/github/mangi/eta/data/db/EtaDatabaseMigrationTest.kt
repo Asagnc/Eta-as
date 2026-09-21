@@ -27,7 +27,7 @@ class EtaDatabaseMigrationTest {
         createVersion6Database(context, databaseName)
 
         val migration16To17WithMcpData = Migration(16, 17) { database ->
-            EtaDatabase.MIGRATION_16_17.migrate(database)
+            EtaMigrations.MIGRATION_16_17.migrate(database)
             database.execSQL(
                 "INSERT INTO mcp_servers (id, name, url, enabled, protocol_mode, " +
                     "authorization_type, tools_json, enabled_tool_names_json, created_at, " +
@@ -37,30 +37,13 @@ class EtaDatabaseMigrationTest {
             )
         }
 
+        // 从 EtaMigrations.ALL 取链，只把 16->17 换成带测试数据的版本：
+        // 这样以后新增迁移不必再改这个测试，也不会再出现"生产加了、测试清单没加"的漂移。
+        val migrations = EtaMigrations.ALL
+            .filterNot { it.startVersion == 16 && it.endVersion == 17 }
+            .plus(migration16To17WithMcpData)
         val database = Room.databaseBuilder(context, EtaDatabase::class.java, databaseName)
-            .addMigrations(
-                EtaDatabase.MIGRATION_6_7,
-                EtaDatabase.MIGRATION_7_8,
-                EtaDatabase.MIGRATION_8_9,
-                EtaDatabase.MIGRATION_9_10,
-                EtaDatabase.MIGRATION_10_11,
-                EtaDatabase.MIGRATION_11_12,
-                EtaDatabase.MIGRATION_12_13,
-                EtaDatabase.MIGRATION_13_14,
-                EtaDatabase.MIGRATION_14_15,
-                EtaDatabase.MIGRATION_15_16,
-                migration16To17WithMcpData,
-                EtaDatabase.MIGRATION_17_18,
-                EtaDatabase.MIGRATION_18_19,
-                EtaDatabase.MIGRATION_19_20,
-                EtaDatabase.MIGRATION_20_21,
-                EtaDatabase.MIGRATION_21_22,
-                EtaDatabase.MIGRATION_22_23,
-                EtaDatabase.MIGRATION_23_24,
-                EtaDatabase.MIGRATION_24_25,
-                EtaDatabase.MIGRATION_25_26,
-                EtaDatabase.MIGRATION_26_27,
-            )
+            .addMigrations(*migrations.toTypedArray())
             .build()
         try {
             val result = runBlocking(Dispatchers.IO) {
