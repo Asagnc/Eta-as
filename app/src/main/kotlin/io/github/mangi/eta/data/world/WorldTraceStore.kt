@@ -173,6 +173,54 @@ internal object WorldTraceStore {
     /** 正文文件所在目录。 */
     fun contentDir(context: Context): File = File(context.filesDir, CONTENT_DIR)
 
+    /**
+     * 把一棵委派树渲染成可读文本。
+     *
+     * 输出的是**结构**（谁派的谁、什么时候、结论是什么），不是正文：树可能很大，
+     * 一次把全部正文拉进上下文没有意义。需要细节时按节点 id 单独取正文（见 [contentOf]）。
+     *
+     * 缩进表达层级，父在子之前——顺序由查询保证（按 started_at 升序）。
+     */
+    fun renderTree(nodes: List<WorldTraceEntity>, nowMs: Long): String {
+        if (nodes.isEmpty()) return ""
+        val depthOf = mutableMapOf<String, Int>()
+        return nodes.joinToString("\n") { node ->
+            val depth = node.parentId.takeIf { it.isNotBlank() }
+                ?.let { parent -> (depthOf[parent] ?: 0) + 1 }
+                ?: 0
+            depthOf[node.id] = depth
+            buildString {
+                append("  ".repeat(depth))
+                append("- [").append(node.role).append("] ")
+                append(WorldKnowledgeLogic.humanAge(nowMs - node.startedAt)).append("前")
+                if (node.status != TRACE_STATUS_OK) append("，").append(node.status)
+                append("｜").append(node.id)
+                if (node.summary.isNotBlank()) {
+                    append("｜").append(oneLine(node.summary))
+                }
+                if (node.contentPath.isNotBlank()) {
+                    append("｜正文较大，已存文件")
+                } else if (node.content.isNotBlank()) {
+                    append("｜正文 ").append(node.contentBytes).append(" 字节")
+                }
+            }
+        }
+    }
+
+    private fun oneLine(value: String): String =
+        value.replace(Regex("\\s+"), " ").trim().take(MAX_TRACE_SUMMARY_CHARS)
+
+    /** 树里每条摘要渲染时的字符上限。 */
+    const val MAX_TRACE_SUMMARY_CHARS = 160
+
+    /**
+     * 节点正常结束的状态标记，与写入方（AgentSubAgentRunner）约定一致。
+     *
+     * 在这里重中一份而不是引用 agent 层的常量：数据层不该依赖模型层的类型，
+     * 两者只靠存进库里的字符串值约定。
+     */
+    const val TRACE_STATUS_OK = "ok"
+
     private fun writeContentFile(context: Context, id: String, content: String): String {
         val directory = contentDir(context)
         if (!directory.exists() && !directory.mkdirs()) return ""

@@ -219,6 +219,7 @@ internal object AgentModelClient {
         )
         loop.failureRecorder = failureRecorder(worldContext)
         loop.learningRecall = learningRecall(worldContext)
+        loop.recallLookup = recallLookup(worldContext)
         val result = try {
             if (compactOnly) loop.compactOnly(compactUntilMessageId) else loop.run()
         } catch (throwable: Throwable) {
@@ -453,6 +454,27 @@ internal object AgentModelClient {
 
     /** 观测库里失败教训的种类标记。 */
     private const val KIND_FAILURE = "failure"
+
+    /**
+     * 查一次历史结论，供启动注入。
+     *
+     * 只查最近少量（见 [WorldKnowledgeStore.DEFAULT_INJECT_LIMIT]）：注入的职责是让模型
+     * 知道「世界里有这些东西」，细节交给它自己用 world_recall 取——预先全量加载会挤占
+     * 注意力预算，而模型真正需要的往往只是其中一小部分。
+     */
+    private fun recallLookup(
+        context: android.content.Context?,
+    ): (() -> List<WorldKnowledgeStore.Recalled>)? {
+        if (context == null) return null
+        return {
+            WorldKnowledgeStore.recentFindings(
+                context = context,
+                readContent = { path ->
+                    runCatching { java.io.File(path).takeIf { it.isFile }?.readText() }.getOrNull()
+                },
+            )
+        }
+    }
 
 }
 

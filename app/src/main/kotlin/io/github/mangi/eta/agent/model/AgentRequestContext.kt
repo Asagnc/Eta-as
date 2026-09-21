@@ -2,18 +2,20 @@ package io.github.mangi.eta.agent.model
 
 import org.json.JSONArray
 import org.json.JSONObject
+import io.github.mangi.eta.data.world.WorldKnowledgeStore
 import java.time.ZonedDateTime
 
 /**
- * 请求尾部注入：当前时间 + 当前方案 + 当前任务清单。
+ * 请求尾部注入：当前时间 + 当前方案 + 当前任务清单 + 历史结论。
  *
  * 都放在消息序列的**最后一条**消息上，而不是系统提示里：服务端前缀缓存按前缀匹配，
  * 时间、方案与计划每轮都会变，写进系统提示会让整段历史失去缓存命中。传进来的是本轮请求的
  * 副本，历史消息本身不会被改写。
  *
- * 三段注入各自按自己的前缀去重：同一个消息对象被重复注入时不会叠加（时钟行由
- * [AgentRequestClock] 负责剥掉，方案与计划行在这里剥）。方案块在计划块之上——方向先于进度。
- * 纯文本消息里两个块都在时钟行之上；分片消息里都插在时钟分片**之后**——时钟是按「第 0 个
+ * 四段注入各自按自己的前缀去重：同一个消息对象被重复注入时不会叠加（时钟行由
+ * [AgentRequestClock] 负责剥掉，方案、计划与历史结论行在这里剥）。方案块在计划块之上——
+ * 方向先于进度；历史结论排最后，它是背景而不是本次任务的要求。
+ * 纯文本消息里三个块都在时钟行之上；分片消息里都插在时钟分片**之后**——时钟是按「第 0 个
  * 分片是不是自己」去重的，抢它的位置会让时钟行每轮重复注入。
  */
 internal object AgentRequestContext {
@@ -22,6 +24,7 @@ internal object AgentRequestContext {
         messages: JSONArray,
         taskPlanJson: String?,
         planJson: String?,
+        recallEntries: List<WorldKnowledgeStore.Recalled> = emptyList(),
         now: ZonedDateTime = ZonedDateTime.now(),
     ) {
         // 注入只改最后一条消息，所以这里只克隆那一条：视图的其余部分与历史共享对象，
@@ -32,9 +35,13 @@ internal object AgentRequestContext {
         val last = messages.optJSONObject(index) ?: return
         messages.put(index, cloneOf(last))
         AgentRequestClock.attach(messages, now)
+        // 注入顺序：方案（这次要做什么）→ 清单（做到哪了）→ 历史结论（以前做过什么）。
+        // 历史结论放最后：它是背景，不是本次任务的要求，压在方向与进度之上会误导模型。
         val blocks = listOfNotNull(
             AgentPlanFormat.injectedLines(planJson, taskPlanJson)?.joinToString("\n"),
             AgentTaskPlanFormat.injectedLines(taskPlanJson)?.joinToString("\n"),
+            AgentRecallFormat.injectedLines(recallEntries, now.toInstant().toEpochMilli())
+                ?.joinToString("\n"),
         )
         if (blocks.isEmpty()) return
         val message = messages.optJSONObject(index) ?: return
@@ -84,5 +91,7 @@ internal object AgentRequestContext {
         line.startsWith(AgentTaskPlanFormat.HEADER_PREFIX) ||
             line.startsWith(AgentTaskPlanFormat.ITEM_PREFIX) ||
             line.startsWith(AgentPlanFormat.HEADER_PREFIX) ||
-            line.startsWith(AgentPlanFormat.ITEM_PREFIX)
+            line.startsWith(AgentPlanFormat.ITEM_PREFIX) ||
+            line.startsWith(AgentRecallFormat.HEADER_PREFIX) ||
+            line.startsWith(AgentRecallFormat.ITEM_PREFIX)
 }

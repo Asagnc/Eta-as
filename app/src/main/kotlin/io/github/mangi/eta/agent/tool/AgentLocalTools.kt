@@ -67,6 +67,9 @@ import io.github.mangi.eta.data.repository.AgentMemoryWriteRequest
 import io.github.mangi.eta.data.repository.AgentMemoryWriteResult
 import io.github.mangi.eta.data.repository.LinuxEnvironmentSettingsRepository
 import io.github.mangi.eta.data.repository.runMemoryMutation
+import io.github.mangi.eta.data.world.WorldKnowledgeLogic
+import io.github.mangi.eta.data.world.WorldKnowledgeStore
+import io.github.mangi.eta.data.world.WorldTraceStore
 import java.io.File
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -296,6 +299,8 @@ internal class AgentLocalTools(
                 "find_files" -> textResult(terminalTool { findFiles(args) })
                 "task_plan" -> textResult(taskPlan(args))
                 "submit_plan" -> textResult(submitPlan(args))
+                "world_recall" -> textResult(worldRecall(args))
+                "world_trace" -> textResult(worldTrace(args))
                 AgentRunStatsToolCatalog.NAME -> textResult(
                     runStatsSummary?.invoke()
                         ?: errorResult("RUN_STATS_UNAVAILABLE", "本次 run 没有可用的度量数据"),
@@ -559,6 +564,106 @@ internal class AgentLocalTools(
 
     /** 本轮是否已提交方案、正在等用户确认。宿主用它决定要不要提前结束本轮。 */
     fun hasPendingPlan(): Boolean = pendingPlan != null
+
+    /**
+     * 检索观测库里的历史结论。
+     *
+     * 这是「世界」的读取端：子智能体的结论会落进观测库，后续 run 需要时按关键词取回。
+     * 做成工具而不是自动全量注入，依据是 Anthropic 的 context engineering 结论：
+     * 记忆应当 just-in-time 按需取（维护轻量引用、运行时加载），而不是预先塞满上下文——
+     * 全量注入会挤占注意力预算，而模型真正需要的往往只是其中一小部分。
+     *
+     * 返回的每条都带「多久之前」与新鲜度标注：依赖文件已变更的结论会被明写出来，
+     * 避免历史结论被当作当下事实使用。
+     */
+    private fun worldRecall(args: JSONObject): String {
+        val query = args.optString("query").trim()
+        if (query.isBlank()) {
+            return errorResult("INVALID_ARGUMENT", "query 不能为空：请给出要检索的关键词。").toString()
+        }
+        val limit = args.optInt("limit", WorldKnowledgeStore.DEFAULT_SEARCH_LIMIT)
+            .coerceIn(1, MAX_WORLD_RECALL_LIMIT)
+        val now = System.currentTimeMillis()
+        val entries = WorldKnowledgeStore.search(
+            context = requireContext(),
+            query = query,
+            limit = limit,
+            readContent = ::readWorkspaceFile,
+            nowMs = now,
+        )
+        if (entries.isEmpty()) {
+            return JSONObject()
+                .put("ok", true)
+                .put("tool", "world_recall")
+                .put("count", 0)
+                .put("message", "观测库里没有与「$query」相关的历史结论。")
+                .toString()
+        }
+        return JSONObject()
+            .put("ok", true)
+            .put("tool", "world_recall")
+            .put("count", entries.size)
+            .put("results", WorldKnowledgeLogic.formatRecall(entries, now))
+            .toString()
+    }
+
+    /** 读工作区文件，用于校验历史结论的依赖是否已变更；读不到返回 null。 */
+    private fun readWorkspaceFile(path: String): String? =
+        runCatching { java.io.File(path).takeIf { it.isFile }?.readText() }.getOrNull()
+
+    /**
+     * 查历史委派树。
+     *
+     * 与 world_recall 的分工：world_recall 查「结论」，这里查「现场」——某次委派到底看了什么、
+     * 子智能体之间怎么分层。摘要之外的内容（完整消息流）按需取：给了 node 参数就返回那一个
+     * 节点的正文，不给就只返回树的结构。
+     *
+     * 不给 trace 参数时列最近几次委派，方便先找到要看哪一棵。
+     */
+    private fun worldTrace(args: JSONObject): String {
+        val context = requireContext()
+        val nodeId = args.optString("node").trim()
+        if (nodeId.isNotEmpty()) {
+            val nodes = WorldTraceStore.recent(context, MAX_TRACE_LIST)
+            val target = nodes.firstOrNull { it.id == nodeId }
+            val content = target?.let { WorldTraceStore.contentOf(context, it) }
+            if (content.isNullOrBlank()) {
+                return JSONObject()
+                    .put("ok", true)
+                    .put("tool", "world_trace")
+                    .put("message", "没有找到节点「$nodeId」的正文。")
+                    .toString()
+            }
+            return JSONObject()
+                .put("ok", true)
+                .put("tool", "world_trace")
+                .put("node", nodeId)
+                .put("content", content.take(MAX_TRACE_CONTENT_CHARS))
+                .toString()
+        }
+
+        val traceId = args.optString("trace").trim()
+        val nodes = if (traceId.isNotEmpty()) {
+            WorldTraceStore.tree(context, traceId)
+        } else {
+            WorldTraceStore.recent(context, MAX_TRACE_LIST)
+        }
+        if (nodes.isEmpty()) {
+            return JSONObject()
+                .put("ok", true)
+                .put("tool", "world_trace")
+                .put("count", 0)
+                .put("message", "观测库里没有委派记录。")
+                .toString()
+        }
+        return JSONObject()
+            .put("ok", true)
+            .put("tool", "world_trace")
+            .put("count", nodes.size)
+            .put("tree", WorldTraceStore.renderTree(nodes, System.currentTimeMillis()))
+            .put("hint", "需要某个节点的完整过程时，用 node 参数传它的 id。")
+            .toString()
+    }
 
     /**
      * 提交方案：校验通过后本轮到此为止，等用户确认。
@@ -2524,6 +2629,15 @@ internal class AgentLocalTools(
     )
 
     private companion object {
+        /** 一次检索最多返回多少条：上限防止模型一次把整个库拉进上下文。 */
+        const val MAX_WORLD_RECALL_LIMIT = 20
+
+        /** 一次最多列出多少个委派节点。 */
+        const val MAX_TRACE_LIST = 40
+
+        /** 单次返回的委派正文上限，防止一次把整棵树的消息流拉进上下文。 */
+        const val MAX_TRACE_CONTENT_CHARS = 8000
+
         val DEVICE_DIRECT_TOOL_NAMES = setOf(
             "set_alarm",
             "set_timer",

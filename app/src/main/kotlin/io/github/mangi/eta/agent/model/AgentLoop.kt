@@ -6,6 +6,7 @@ import io.github.mangi.eta.agent.runtime.AgentRunController
 import io.github.mangi.eta.agent.runtime.AgentTokenUsage
 import io.github.mangi.eta.agent.roleplay.RoleplayRunContext
 import java.util.concurrent.Executors
+import io.github.mangi.eta.data.world.WorldKnowledgeStore
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -101,6 +102,23 @@ internal class AgentLoop(
      * 文件 IO 与路径规则归 AgentFailureLearningStore，单测里也能换成假实现。
      */
     var learningRecall: ((String) -> String?)? = null
+
+    /**
+     * 查一次历史结论，用于随请求注入（默认关闭）。
+     *
+     * 写成回调而不是在这里直接读观测库：`AgentLoop` 只做流程编排，数据库访问归
+     * WorldKnowledgeStore，单测里也能换成假实现。
+     *
+     * 惰性且只求值一次：注入的历史结论是背景信息，同一轮里不会变，而
+     * [requestMessagesFor] 每轮都跑——每轮查一次数据库等于把一次 IO 加到了每一轮上。
+     */
+    var recallLookup: (() -> List<WorldKnowledgeStore.Recalled>)? = null
+
+    /** [recallLookup] 的缓存；`null` 表示还没查过。 */
+    private var recallCache: List<WorldKnowledgeStore.Recalled>? = null
+
+    private val recallSnapshot: List<WorldKnowledgeStore.Recalled>
+        get() = recallCache ?: (recallLookup?.invoke() ?: emptyList()).also { recallCache = it }
 
     fun contextSnapshot(): AgentContextSnapshot? = context.snapshot()
 
@@ -445,10 +463,19 @@ internal class AgentLoop(
         val projected = roleplayContext?.projectMessages(messages, roundTools)
         val result = AgentContextPruner.prune(projected ?: messages, config.toolResultKeep)
         runStats?.updatePrunedToolResults(result.prunedCount)
-        // 每轮请求都把当前时间与当前任务清单重新附到最后一条消息上：时间让模型据此判断「现在」，
-        // 计划让它在压缩或跨轮之后仍然知道自己排了什么（两者都按前缀去重，不会叠加）。
-        // attach 会克隆最后一条消息再写，因此共享进来的历史对象不会被改到。
-        AgentRequestContext.attach(result.messages, taskPlanSnapshot?.invoke(), planSnapshot?.invoke())
+        // 每轮请求都把当前时间、当前方案、当前任务清单与历史结论重新附到最后一条消息上：
+        // 时间让模型据此判断「现在」，计划让它在压缩或跨轮之后仍然知道自己排了什么。
+        // 四者都按前缀去重，不会叠加。attach 会克隆最后一条消息再写，
+        // 因此共享进来的历史对象不会被改到。
+        //
+        // 历史结论只在首次组装时查一次（见 recallSnapshot）：它是背景信息，
+        // 同一轮里不会变，而这是每轮都跑的路径，不该把一次数据库查询加到每一轮上。
+        AgentRequestContext.attach(
+            result.messages,
+            taskPlanSnapshot?.invoke(),
+            planSnapshot?.invoke(),
+            recallEntries = recallSnapshot,
+        )
         return result.messages
     }
 

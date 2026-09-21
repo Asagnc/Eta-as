@@ -22,6 +22,8 @@ internal class AgentTraceFormatter {
             "search_code" -> summarizeFirstArgument("检索内容", toolCall.argumentsJson, listOf("pattern", "glob"))
             "task_plan" -> "更新任务计划"
             "submit_plan" -> "提交方案"
+            "world_recall" -> summarizeFirstArgument("检索历史结论", toolCall.argumentsJson, listOf("query"))
+            "world_trace" -> "查看历史委派"
             "run_stats" -> "查看运行统计"
             "run_sequence" -> "执行操作序列"
             "save_flow" -> "保存流程"

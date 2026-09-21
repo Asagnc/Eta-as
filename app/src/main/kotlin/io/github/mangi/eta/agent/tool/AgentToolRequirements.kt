@@ -86,6 +86,8 @@ internal object AgentToolRequirements {
             "terminal", "network_info", "get_setting", "recent_notifications",
             "search_personal_orders", "read_file", "read_files", "search_code", "list_directory",
             "find_files",
+            // 只读检索：它读工作区文件只为校验历史结论的依赖是否变更，不写任何东西。
+            "world_recall", "world_trace",
         )
         register(
             RootRequirement.REQUIRED,

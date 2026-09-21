@@ -76,6 +76,26 @@ internal interface WorldKnowledgeDao {
     )
     suspend fun recent(now: Long, limit: Int): List<WorldKnowledgeEntity>
 
+    /**
+     * 按关键词检索未过期的条目，最近优先。
+     *
+     * 关键词同时匹配结论、证据与不确定项：模型给的查询词可能出现在任一处，
+     * 只搜结论会漏掉「证据里提到过这个文件」这类高价值命中。
+     */
+    @Query(
+        "SELECT * FROM world_knowledge WHERE (expires_at = 0 OR expires_at > :now) " +
+            "AND (summary LIKE :pattern OR evidence LIKE :pattern OR uncertainty LIKE :pattern) " +
+            "ORDER BY created_at DESC LIMIT :limit",
+    )
+    suspend fun search(now: Long, pattern: String, limit: Int): List<WorldKnowledgeEntity>
+
+    /** 按种类取未过期条目，最近优先。 */
+    @Query(
+        "SELECT * FROM world_knowledge WHERE kind = :kind AND (expires_at = 0 OR expires_at > :now) " +
+            "ORDER BY created_at DESC LIMIT :limit",
+    )
+    suspend fun recentByKind(kind: String, now: Long, limit: Int): List<WorldKnowledgeEntity>
+
     /** 清理已过期条目，返回删除条数。 */
     @Query("DELETE FROM world_knowledge WHERE expires_at != 0 AND expires_at <= :now")
     suspend fun deleteExpired(now: Long): Int

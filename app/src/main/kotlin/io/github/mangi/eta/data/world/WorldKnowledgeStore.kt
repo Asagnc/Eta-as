@@ -139,4 +139,82 @@ internal object WorldKnowledgeStore {
         val freshness: WorldKnowledgeLogic.Freshness,
         val sensitive: Boolean,
     )
+
+    /**
+     * 按关键词检索历史结论。
+     *
+     * 检索同时覆盖结论、证据与不确定项，并逐条做新鲜度校验：读回来的是「可以拿去做判断的
+     * 结论」，不是一段未经核实的旧文本——依赖已变更的条目会被标注出来（见 [formatRecall]），
+     * 而不是静默当作事实。
+     *
+     * 关键词用 `LIKE %词%` 而不是全文索引：本库是运行副观察，规模在几百条量级，
+     * 全文索引带来的维护成本（额外的影子表与同步逻辑）大于收益。
+     */
+    fun search(
+        context: Context?,
+        query: String,
+        limit: Int = DEFAULT_SEARCH_LIMIT,
+        readContent: (String) -> String? = { null },
+        nowMs: Long = System.currentTimeMillis(),
+    ): List<Recalled> {
+        if (context == null || query.isBlank()) return emptyList()
+        return try {
+            val pattern = "%${escapeLike(query.trim())}%"
+            runBlocking(Dispatchers.IO) {
+                WorldDatabaseProvider.get(context).knowledgeDao()
+                    .search(nowMs, pattern, limit)
+            }.map { entity -> entity.toRecalled(readContent) }
+        } catch (_: Throwable) {
+            emptyList()
+        }
+    }
+
+    /**
+     * 取最近的历史结论，供 run 启动时做一次轻量注入。
+     *
+     * 只取少量（见 [DEFAULT_INJECT_LIMIT]）：按 Anthropic 的 context engineering 结论，
+     * 记忆的正确用法是「just in time 按需取」而非「预先全量加载」，启动注入只负责让模型
+     * 知道「世界里有这些东西」，细节留给它自己用工具查。
+     */
+    fun recentFindings(
+        context: Context?,
+        limit: Int = DEFAULT_INJECT_LIMIT,
+        readContent: (String) -> String? = { null },
+        nowMs: Long = System.currentTimeMillis(),
+    ): List<Recalled> {
+        if (context == null) return emptyList()
+        return try {
+            runBlocking(Dispatchers.IO) {
+                WorldDatabaseProvider.get(context).knowledgeDao()
+                    .recentByKind(KIND_FINDING, nowMs, limit)
+            }.map { entity -> entity.toRecalled(readContent) }
+        } catch (_: Throwable) {
+            emptyList()
+        }
+    }
+
+    private fun WorldKnowledgeEntity.toRecalled(readContent: (String) -> String?): Recalled {
+        val dependencies = WorldKnowledgeLogic.decodeDependencies(dependencies)
+        return Recalled(
+            summary = summary,
+            evidence = evidence,
+            uncertainty = uncertainty,
+            createdAt = createdAt,
+            freshness = WorldKnowledgeLogic.checkFreshness(dependencies, readContent),
+            sensitive = sensitive,
+        )
+    }
+
+    /** `LIKE` 的通配符要转义，否则查询词里的 `%` 会变成通配。 */
+    private fun escapeLike(value: String): String =
+        value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+    /** 一次检索最多返回多少条。 */
+    const val DEFAULT_SEARCH_LIMIT = 8
+
+    /** 启动时最多注入多少条历史结论。 */
+    const val DEFAULT_INJECT_LIMIT = 5
+
+    /** 观测库里「子智能体结论」的种类标记，与 [WorldTraceStore] 写入时一致。 */
+    const val KIND_FINDING = "finding"
 }

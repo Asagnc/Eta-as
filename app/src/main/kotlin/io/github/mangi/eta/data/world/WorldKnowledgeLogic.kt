@@ -131,6 +131,61 @@ internal object WorldKnowledgeLogic {
     private const val ANDROID_WORKSPACE_PREFIX = "/data/local/tmp/eta"
 
     /**
+     * 把读回的历史结论格式化成可注入的文本行。
+     *
+     * 三个设计点都来自 Anthropic 的 context engineering 结论：
+     * - **时间戳当相关性代理**：原文明确说 timestamps can be a proxy for relevance，
+     *   所以每条都带「多久之前」，让模型自己判断可信度。
+     * - **新鲜度必须显式标注**：依赖文件已变更的结论不能被当作事实，要写明「依赖已变更」，
+     *   否则历史结论会变成幻觉温床。
+     * - **敏感条目不注入正文**：只报存在，让模型自己决定要不要查。
+     */
+    fun formatRecall(
+        entries: List<WorldKnowledgeStore.Recalled>,
+        nowMs: Long,
+    ): String {
+        if (entries.isEmpty()) return ""
+        return entries.mapNotNull { entry ->
+            if (entry.sensitive) return@mapNotNull null
+            val age = humanAge(nowMs - entry.createdAt)
+            val marker = when (entry.freshness) {
+                Freshness.FRESH -> ""
+                Freshness.STALE -> "，依赖的文件已变更，结论可能失效"
+                Freshness.MISSING -> "，依赖的文件已不存在，结论可能失效"
+            }
+            buildString {
+                append("- （").append(age).append("前")
+                if (marker.isNotEmpty()) append(marker)
+                append("）").append(oneLine(entry.summary))
+                if (entry.evidence.isNotBlank()) {
+                    append("｜证据：").append(oneLine(entry.evidence))
+                }
+                if (entry.uncertainty.isNotBlank()) {
+                    append("｜不确定：").append(oneLine(entry.uncertainty))
+                }
+            }
+        }.joinToString("\n")
+    }
+
+    /** 把时间差说成人话：模型不需要精确到毫秒的年龄。 */
+    fun humanAge(elapsedMs: Long): String {
+        val minutes = elapsedMs / 60_000
+        return when {
+            minutes < 1 -> "刚刚"
+            minutes < 60 -> "$minutes 分钟"
+            minutes < 60 * 24 -> "${minutes / 60} 小时"
+            else -> "${minutes / (60 * 24)} 天"
+        }
+    }
+
+    /** 压成一行：注入上下文时不能因为原文带换行就撑开成多条消息。 */
+    private fun oneLine(value: String): String =
+        value.replace(Regex("\\s+"), " ").trim().take(MAX_RECALL_CHARS)
+
+    /** 单条结论注入时的字符上限。 */
+    const val MAX_RECALL_CHARS = 300
+
+    /**
      * 判断一条新观测是否值得落库。
      *
      * 同签名已存在且内容未变时不重复写——重复观测不带来新信息，只会挤占查询窗口。

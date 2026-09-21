@@ -269,6 +269,62 @@ internal object AgentTextSystemToolCatalog {
             )
             .put(
                 AgentToolSchema.function(
+                    name = "world_trace",
+                    description = "查历史委派树：某次任务里派了哪些子智能体、它们各自看了什么、结论是什么。" +
+                        "world_recall 查的是「结论」，这里查的是「现场」——当你想知道某条结论是怎么得出的、" +
+                        "或者想确认子智能体当时确实查了某个东西时用它。" +
+                        "不给参数时列最近几次委派；给 trace 看整棵树；给 node 看某个节点的完整过程。",
+                    parameters = JSONObject()
+                        .put("type", "object")
+                        .put(
+                            "properties",
+                            JSONObject()
+                                .put(
+                                    "trace",
+                                    JSONObject()
+                                        .put("type", "string")
+                                        .put("description", "要查看的委派树的 trace id；省略则列最近的委派。"),
+                                )
+                                .put(
+                                    "node",
+                                    JSONObject()
+                                        .put("type", "string")
+                                        .put("description", "要看完整过程的节点 id（树里会显示）。"),
+                                ),
+                        ),
+                ),
+            )
+            .put(
+                AgentToolSchema.function(
+                    name = "world_recall",
+                    description = "检索观测库里的历史结论：之前跑过的任务、子智能体调研出的结论、" +
+                        "工具失败教训都在里面。开始一项新任务前，或遇到看起来以前处理过的问题时，" +
+                        "先用它查一查——命中就省掉重新调研。每条结果都带「多久之前」和新鲜度标注，" +
+                        "写着「依赖的文件已变更」的结论不要直接当事实用，要重新核实。" +
+                        "查不到不代表没做过，可以换个关键词再查。",
+                    parameters = JSONObject()
+                        .put("type", "object")
+                        .put(
+                            "properties",
+                            JSONObject()
+                                .put(
+                                    "query",
+                                    JSONObject()
+                                        .put("type", "string")
+                                        .put("description", "检索关键词，例如文件路径、报错码、功能名。"),
+                                )
+                                .put(
+                                    "limit",
+                                    JSONObject()
+                                        .put("type", "integer")
+                                        .put("description", "最多返回多少条，默认 8，上限 20。"),
+                                ),
+                        )
+                        .put("required", JSONArray().put("query")),
+                ),
+            )
+            .put(
+                AgentToolSchema.function(
                     name = "task_plan",
                     description = "维护当前任务清单。需要多个步骤才能完成的任务先用它列出计划，" +
                         "每开始一步把它标为 in_progress、确认完成后标为 completed；" +
