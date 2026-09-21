@@ -2025,6 +2025,9 @@ internal class AgentLocalTools(
         if (!writeMode) {
             // 只有多角色并行才接信箱：单角色没有同伴可分享，开着只会多占一个工具位。
             val sharedMailboxRunId = if (roles.size > 1) mailboxRunId else ""
+            // 单角色才给联网读：共享浏览器是进程级单例，多角色并行时后一个 navigate
+            // 会顶掉前一个的页面，子智能体读到的就不是自己打开的那一页了。
+            val allowWebRead = roles.size == 1
             val requests = roles.map { role ->
                 AgentSubAgentRunner.Request(
                     role = role,
@@ -2032,6 +2035,7 @@ internal class AgentLocalTools(
                     context = context,
                     plan = plan,
                     mailboxRunId = sharedMailboxRunId,
+                    allowWebRead = allowWebRead,
                 )
             }
             val outcomes = if (requests.size == 1) {
@@ -2099,6 +2103,8 @@ internal class AgentLocalTools(
                 context = context,
                 plan = plan,
                 workspace = workspace,
+                // 写入模式本来就是单角色（多角色会在合并时冲突），不存在抢页面，给只读联网。
+                allowWebRead = true,
             ),
         )
         recordSubAgentRuns(listOf(outcome))

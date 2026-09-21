@@ -272,8 +272,12 @@ internal object AgentTextSystemToolCatalog {
                     name = "task_plan",
                     description = "维护当前任务清单。需要多个步骤才能完成的任务先用它列出计划，" +
                         "每开始一步把它标为 in_progress、确认完成后标为 completed；" +
-                        "简单的一两步任务不需要清单。每次调用提交完整清单，不是增量修改。" +
-                        "同一时间只能有一项 in_progress。",
+                        "简单的一两步任务不需要清单。每次调用提交完整清单，不是增量修改；" +
+                        "要去掉某一项就不再提交它，传空数组即清空整份清单。" +
+                        "同一时间只能有一项 in_progress，不要从 pending 直接跳到 completed。" +
+                        "结束这一轮之前，清单里不能留下没做完的项：要么标为 completed，" +
+                        "要么从清单里去掉；确实要留到以后做的，在回复里说明原因。" +
+                        "调整计划时也说明为什么改。",
                     parameters = JSONObject()
                         .put("type", "object")
                         .put(

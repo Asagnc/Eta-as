@@ -331,7 +331,7 @@ private fun AgentChatScaffold(
         ),
         topBar = {
             // 两个面板都在列表为空时自身不渲染，因此这里始终挂载不会占位。
-            AgentTaskPlanPanel(items = taskPlan, onResume = onSubmit)
+            AgentTaskPlanPanel(items = taskPlan, runActive = isStreaming, onResume = onSubmit)
             AgentSubAgentPanel(items = subAgents)
         },
         bottomBar = {

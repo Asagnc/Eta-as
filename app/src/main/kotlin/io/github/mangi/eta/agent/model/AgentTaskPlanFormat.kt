@@ -41,16 +41,29 @@ internal object AgentTaskPlanFormat {
         val open = items.count { it.status != "completed" }
         if (open == 0) return null
         val shown = items.take(MAX_INJECTED_ITEMS)
+        val activeIndex = items.indexOfFirst { it.isActive() }
         return buildList {
             add("$HEADER_PREFIX（${items.size - open}/${items.size} 完成，$open 项未完成）：")
+            // 断点提示：上一轮结束时停在哪一项，决定了「继续」该从哪开始。没有这一行，
+            // 模型会把进行中的项当成还没开始，于是重做一遍、或者干脆不动。
+            if (activeIndex >= 0) {
+                add(
+                    "$ITEM_PREFIX" + "提示：上次运行停在第 ${activeIndex + 1} 步，" +
+                        "先把那一项标回 in_progress 再继续，已经完成的项不要重做。",
+                )
+            }
             shown.forEach { add("$ITEM_PREFIX${marker(it.status)} ${it.id} ${it.content}") }
             if (items.size > shown.size) add("$ITEM_PREFIX…其余 ${items.size - shown.size} 项略")
         }
     }
 
+    /** 仍停在某一步的项：新数据写 in_progress，旧数据写的是 interrupted。 */
+    private fun Item.isActive(): Boolean = status == "in_progress" || status == "interrupted"
+
     private fun marker(status: String): String = when (status) {
         "completed" -> "[x]"
-        "in_progress" -> "[>]"
+        // interrupted 是旧版本写入的第四态，语义就是「停在这一步」，按进行中渲染。
+        "in_progress", "interrupted" -> "[>]"
         else -> "[ ]"
     }
 }

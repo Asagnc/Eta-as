@@ -14,8 +14,12 @@ class AgentTaskPlanFormatTest {
         val lines = AgentTaskPlanFormat.injectedLines(plan)
 
         assertEquals("当前任务清单（1/2 完成，1 项未完成）：", lines?.get(0))
-        assertEquals("[task_plan] [x] 1 定位", lines?.get(1))
-        assertEquals("[task_plan] [>] 2 改代码", lines?.get(2))
+        assertEquals(
+            "[task_plan] 提示：上次运行停在第 2 步，先把那一项标回 in_progress 再继续，已经完成的项不要重做。",
+            lines?.get(1),
+        )
+        assertEquals("[task_plan] [x] 1 定位", lines?.get(2))
+        assertEquals("[task_plan] [>] 2 改代码", lines?.get(3))
     }
 
     @Test
@@ -57,5 +61,24 @@ class AgentTaskPlanFormatTest {
 
         assertEquals(1 + AgentTaskPlanFormat.MAX_INJECTED_ITEMS + 1, lines?.size)
         assertTrue(lines!!.last().contains("其余 10 项略"))
+    }
+
+    @Test
+    fun `a plan without an active step carries no resume hint`() {
+        val lines = AgentTaskPlanFormat.injectedLines("""[{"id":"1","content":"a","status":"pending"}]""")
+
+        assertEquals(2, lines?.size)
+        assertEquals("[task_plan] [ ] 1 a", lines?.get(1))
+    }
+
+    @Test
+    fun `the legacy interrupted status renders as in progress and keeps the breakpoint`() {
+        val legacy =
+            """[{"id":"1","content":"a","status":"completed"},{"id":"2","content":"b","status":"interrupted"}]"""
+
+        val lines = AgentTaskPlanFormat.injectedLines(legacy)
+
+        assertTrue(lines?.get(1)?.contains("停在第 2 步") == true)
+        assertEquals("[task_plan] [>] 2 b", lines?.get(3))
     }
 }

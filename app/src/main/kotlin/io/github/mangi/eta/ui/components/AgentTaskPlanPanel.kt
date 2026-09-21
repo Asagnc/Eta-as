@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.runtime.Composable
@@ -39,18 +38,24 @@ import top.yukonga.miuix.kmp.utils.PressFeedbackType
  *
  * 只展示 task_plan 工具提交的清单，不提供手动勾选：清单由模型按完整快照覆盖更新，
  * 界面侧勾上的项会在下一次快照里被改回去，反而让人误以为进度已变。
+ *
+ * [runActive] 为 false 且清单仍停在某一步时，标题点出断点位置并给出「继续」入口。
+ * 状态本身不会被界面改写：界面只负责把「停在哪」说清楚，清单始终是模型提交的那一份。
  */
 @Composable
 internal fun AgentTaskPlanPanel(
     items: List<AgentTaskPlanItemUi>,
     modifier: Modifier = Modifier,
+    runActive: Boolean = false,
     onResume: ((String) -> Unit)? = null,
 ) {
     if (items.isEmpty()) return
     var expanded by rememberSaveable { mutableStateOf(true) }
     var autoCollapsed by rememberSaveable { mutableStateOf(false) }
     val completed = items.count { it.status == AgentTaskPlanStatus.COMPLETED }
-    val interrupted = items.count { it.status == AgentTaskPlanStatus.INTERRUPTED }
+    // 停在某一步的那一项：运行结束后它就是「继续」的落点。
+    val activeIndex = items.indexOfFirst { it.status == AgentTaskPlanStatus.IN_PROGRESS }
+    val active = items.getOrNull(activeIndex)
     // 整份清单跑完时自动收起一次，把屏幕让回对话；用户自己展开过就不再强制收起。
     if (!autoCollapsed && items.isNotEmpty() && completed == items.size) {
         autoCollapsed = true
@@ -69,8 +74,8 @@ internal fun AgentTaskPlanPanel(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = if (interrupted > 0) {
-                    "任务进度 $completed/${items.size} · 已中断"
+                text = if (active != null && !runActive) {
+                    "任务进度 $completed/${items.size} · 停在第 ${activeIndex + 1} 步"
                 } else {
                     "任务进度 $completed/${items.size}"
                 },
@@ -90,7 +95,8 @@ internal fun AgentTaskPlanPanel(
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 items.forEach { item -> AgentTaskPlanRow(item) }
             }
-            val resumeTarget = items.firstOrNull { it.status == AgentTaskPlanStatus.INTERRUPTED }
+            // 只有运行已经结束、且确实停在某一步时才给「继续」入口；跑的过程中点它没有意义。
+            val resumeTarget = active?.takeIf { !runActive }
             if (onResume != null && resumeTarget != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -135,14 +141,6 @@ private fun AgentTaskPlanRow(item: AgentTaskPlanItemUi) {
                 contentDescription = null,
                 modifier = Modifier.size(14.dp),
                 tint = MiuixTheme.colorScheme.primary,
-            )
-
-            // 运行中止时留在进行中的项：用警告图标标出来，跟「未开始」区分开。
-            AgentTaskPlanStatus.INTERRUPTED -> Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = null,
-                modifier = Modifier.size(14.dp),
-                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             )
 
             // 未开始的一项不配图标，留出同宽空位保持各行文字对齐。

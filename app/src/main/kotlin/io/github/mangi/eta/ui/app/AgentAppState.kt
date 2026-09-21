@@ -2248,7 +2248,6 @@ internal class AgentAppState(
             }
 
             is AgentEvent.RunFailed -> {
-                interruptTaskPlan(runId)
                 updateRunTrace(runId) { messages ->
                     val finalizedThinking = runMessageProjector.finalizeThinking(runId, messages)
                     val finalizedText = runMessageProjector.finalizeText(runId, finalizedThinking)
@@ -2270,7 +2269,6 @@ internal class AgentAppState(
             }
 
             is AgentEvent.RunFinished -> {
-                interruptTaskPlan(runId)
                 updateRunTrace(runId) { messages ->
                     val finalizedThinking = runMessageProjector.finalizeThinking(runId, messages)
                     runMessageProjector.finalizeText(runId, finalizedThinking)
@@ -2300,30 +2298,6 @@ internal class AgentAppState(
             is AgentEvent.RoundStarted,
             -> Unit
         }
-    }
-
-    /**
-     * 运行中止（额度不足、网络失败、用户停止都会走到这里）时，把仍处于进行中的计划项标为中断，
-     * 否则顶部进度会一直停在「进行中」，看不出这次运行已经结束。
-     */
-    private fun interruptTaskPlan(runId: String) {
-        val conversationId = conversationIdForRun(runId) ?: return
-        val state = conversationsById[conversationId] ?: return
-        val ongoing = io.github.mangi.eta.ui.model.AgentTaskPlanStatus.IN_PROGRESS
-        if (state.taskPlan.none { it.status == ongoing }) return
-        updateConversation(
-            conversationId = conversationId,
-            state = state.copy(
-                taskPlan = state.taskPlan.map { item ->
-                    if (item.status == ongoing) {
-                        item.copy(status = io.github.mangi.eta.ui.model.AgentTaskPlanStatus.INTERRUPTED)
-                    } else {
-                        item
-                    }
-                },
-            ),
-            updateTimestamp = false,
-        )
     }
 
     private fun applyRunResult(

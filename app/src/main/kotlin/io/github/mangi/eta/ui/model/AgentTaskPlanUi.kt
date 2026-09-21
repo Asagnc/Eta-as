@@ -6,7 +6,7 @@ import org.json.JSONObject
 
 /** 任务清单单项的状态；与 task_plan 工具接受的字符串一一对应。 */
 @Immutable
-internal enum class AgentTaskPlanStatus { PENDING, IN_PROGRESS, COMPLETED, INTERRUPTED }
+internal enum class AgentTaskPlanStatus { PENDING, IN_PROGRESS, COMPLETED }
 
 /** 任务清单快照里的一项，由 task_plan 工具事件投影而来。 */
 @Immutable
@@ -36,8 +36,9 @@ internal object AgentTaskPlanCodec {
                 content = content,
                 status = when (item.optString("status")) {
                     "completed" -> AgentTaskPlanStatus.COMPLETED
-                    "in_progress" -> AgentTaskPlanStatus.IN_PROGRESS
-                    "interrupted" -> AgentTaskPlanStatus.INTERRUPTED
+                    // "interrupted" 是旧版本写入的第四态：它只表示「运行结束时这一项还在进行中」，
+                    // 现在统一按 in_progress 读回，断点信息不会丢。
+                    "in_progress", "interrupted" -> AgentTaskPlanStatus.IN_PROGRESS
                     else -> AgentTaskPlanStatus.PENDING
                 },
                 toolCalls = item.optInt("tool_calls", 0),
@@ -47,17 +48,24 @@ internal object AgentTaskPlanCodec {
         }
     }.getOrDefault(emptyList())
 
-    /** 写回存档：空清单返回空串，免得在库里躺一个没意义的 "[]"。 */
+    /**
+     * 写回存档：空清单返回空串，免得在库里躺一个没意义的 "[]"。
+     *
+     * 每项的计数与失败原因一并写回：它们由 task_plan 事件带下来，只读不写会让重启后的
+     * 面板把「3 次工具调用 · 失败：超时」这类信息全丢掉。默认值不写，存档保持紧凑。
+     */
     fun encode(items: List<AgentTaskPlanItemUi>): String {
         if (items.isEmpty()) return ""
         val array = JSONArray()
         items.forEach { item ->
-            array.put(
-                JSONObject()
-                    .put("id", item.id)
-                    .put("content", item.content)
-                    .put("status", item.status.wireValue),
-            )
+            val json = JSONObject()
+                .put("id", item.id)
+                .put("content", item.content)
+                .put("status", item.status.wireValue)
+            if (item.toolCalls > 0) json.put("tool_calls", item.toolCalls)
+            if (item.elapsedMillis > 0L) json.put("elapsed_ms", item.elapsedMillis)
+            item.failure?.takeIf { it.isNotBlank() }?.let { json.put("failure", it) }
+            array.put(json)
         }
         return array.toString()
     }
@@ -67,6 +75,5 @@ internal object AgentTaskPlanCodec {
             AgentTaskPlanStatus.PENDING -> "pending"
             AgentTaskPlanStatus.IN_PROGRESS -> "in_progress"
             AgentTaskPlanStatus.COMPLETED -> "completed"
-            AgentTaskPlanStatus.INTERRUPTED -> "interrupted"
         }
 }

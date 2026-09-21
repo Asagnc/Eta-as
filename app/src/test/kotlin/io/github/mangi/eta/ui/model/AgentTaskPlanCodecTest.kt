@@ -45,4 +45,32 @@ class AgentTaskPlanCodecTest {
     fun `empty snapshot clears the plan`() {
         assertTrue(AgentTaskPlanCodec.decode("[]").isEmpty())
     }
+
+    @Test
+    fun `the legacy interrupted status reads back as in progress`() {
+        val items = AgentTaskPlanCodec.decode("""[{"id":"a","content":"x","status":"interrupted"}]""")
+
+        assertEquals(AgentTaskPlanStatus.IN_PROGRESS, items.single().status)
+    }
+
+    @Test
+    fun `encode keeps the per item counters and failure`() {
+        val encoded = AgentTaskPlanCodec.encode(
+            listOf(
+                AgentTaskPlanItemUi(
+                    id = "a",
+                    content = "x",
+                    status = AgentTaskPlanStatus.IN_PROGRESS,
+                    toolCalls = 3,
+                    elapsedMillis = 12_000L,
+                    failure = "超时",
+                ),
+            ),
+        )
+
+        val restored = AgentTaskPlanCodec.decode(encoded).single()
+        assertEquals(3, restored.toolCalls)
+        assertEquals(12_000L, restored.elapsedMillis)
+        assertEquals("超时", restored.failure)
+    }
 }

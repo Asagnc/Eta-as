@@ -59,6 +59,12 @@ internal class AgentSubAgentRunner(
         val plan: SubAgentPlan? = null,
         val workspace: SubAgentWorkspace? = null,
         val mailboxRunId: String = "",
+        /**
+         * 是否允许这次委派联网读网页。默认关闭——共享浏览器是进程级单例，
+         * 多个角色并行时后一个 navigate 会顶掉前一个的页面，只有确认没有同伴抢页面
+         * （单角色委派）时，调用方才显式打开。
+         */
+        val allowWebRead: Boolean = false,
     )
 
     data class Outcome(
@@ -91,10 +97,12 @@ internal class AgentSubAgentRunner(
         val writable = workspace != null
         val mailboxRunId = request.mailboxRunId.trim()
         val mailboxEnabled = mailboxRunId.isNotEmpty() && mailbox != null
+        val webRead = request.allowWebRead
         val allowedTools = buildSet {
             addAll(READ_ONLY_TOOL_NAMES)
             if (writable) addAll(WRITE_TOOL_NAMES)
             if (mailboxEnabled) addAll(MAILBOX_TOOL_NAMES)
+            if (webRead) add(BROWSER_TOOL_NAME)
         }
         val tools = restrictedTools(allowedTools)
         // 开工前先读同伴已有的发现：不读的话，并行的意义就只剩下"各查一遍再汇总"。
@@ -109,18 +117,21 @@ internal class AgentSubAgentRunner(
             .put(AgentConversationCodec.userTextMessage(request.brief))
         val executor = toolExecutorFor(allowedTools, workspace)
         val wrappedExecutor = AgentModelClient.ToolExecutor { call ->
-            if (call.name == AgentSubAgentToolCatalog.MAILBOX_POST && mailboxEnabled && mailboxPost != null) {
-                val args = runCatching { JSONObject(call.argumentsJson.ifBlank { "{}" }) }.getOrNull()
-                val summary = args?.optString("summary").orEmpty()
-                val body = args?.optString("body").orEmpty()
-                AgentModelClient.ToolResult(
-                    runBlocking {
-                        runCatching { mailboxPost.invoke(role, mailboxRunId, summary, body) }
-                            .getOrDefault("""{"ok":false,"code":"MAILBOX_FAILED","message":"投递失败"}""")
-                    },
-                )
-            } else {
-                executor.execute(call)
+            val blockedAction = if (webRead) blockedBrowserAction(call.name, call.argumentsJson) else null
+            when {
+                blockedAction != null -> AgentModelClient.ToolResult(browserReadOnlyResult(blockedAction))
+                call.name == AgentSubAgentToolCatalog.MAILBOX_POST && mailboxEnabled && mailboxPost != null -> {
+                    val args = runCatching { JSONObject(call.argumentsJson.ifBlank { "{}" }) }.getOrNull()
+                    val summary = args?.optString("summary").orEmpty()
+                    val body = args?.optString("body").orEmpty()
+                    AgentModelClient.ToolResult(
+                        runBlocking {
+                            runCatching { mailboxPost.invoke(role, mailboxRunId, summary, body) }
+                                .getOrDefault("""{"ok":false,"code":"MAILBOX_FAILED","message":"投递失败"}""")
+                        },
+                    )
+                }
+                else -> executor.execute(call)
             }
         }
 
@@ -314,8 +325,49 @@ internal class AgentSubAgentRunner(
         for (index in 0 until parentTools.length()) {
             val tool = parentTools.getJSONObject(index)
             val name = tool.getJSONObject("function").getString("name")
-            if (name in allowed) result.put(tool)
+            if (name !in allowed) continue
+            // 浏览器工具的 schema 按只读能力裁剪：模型看得见的能力应当就是它真能用的，
+            // 写动作不出现在枚举里，就不会“先试一次再被拒”。参数层还有一道拦截。
+            result.put(if (name == BROWSER_TOOL_NAME) restrictBrowserTool(tool) else tool)
         }
+    }
+
+    /** 返回第一个越权的浏览器动作名；没有越权（或不是浏览器调用）时返回 null。 */
+    private fun blockedBrowserAction(name: String, argumentsJson: String): String? {
+        if (name != BROWSER_TOOL_NAME) return null
+        val args = runCatching { JSONObject(argumentsJson.ifBlank { "{}" }) }.getOrNull() ?: return null
+        val single = args.optString("action").trim()
+        if (single.isNotEmpty() && single !in READ_ONLY_BROWSER_ACTIONS) return single
+        val batch = args.optJSONArray("actions") ?: return null
+        for (index in 0 until batch.length()) {
+            val action = batch.optJSONObject(index)?.optString("action")?.trim().orEmpty()
+            if (action.isNotEmpty() && action !in READ_ONLY_BROWSER_ACTIONS) return action
+        }
+        return null
+    }
+
+    private fun browserReadOnlyResult(action: String): String = JSONObject()
+        .put("ok", false)
+        .put("code", CODE_BROWSER_READ_ONLY)
+        .put(
+            "message",
+            "子智能体只能读取网页：$action 不在允许的动作里。允许：" +
+                "${READ_ONLY_BROWSER_ACTIONS.joinToString("、")}。" +
+                "需要点击、输入、执行 JS 或下载时，把这一步交回主智能体。",
+        )
+        .toString()
+
+    /** 裁剪浏览器工具 schema：动作枚举只留只读子集，说明里点明子智能体的能力范围。 */
+    private fun restrictBrowserTool(tool: JSONObject): JSONObject {
+        val clone = runCatching { JSONObject(tool.toString()) }.getOrNull() ?: return tool
+        val function = clone.optJSONObject("function") ?: return clone
+        val properties = function.optJSONObject("parameters")?.optJSONObject("properties")
+        properties?.optJSONObject("action")?.let { action ->
+            action.put("enum", JSONArray().apply { READ_ONLY_BROWSER_ACTIONS.forEach { put(it) } })
+            action.put("description", "本次唯一执行的浏览器动作（子智能体只有只读动作）。")
+        }
+        function.put("description", function.optString("description") + BROWSER_READ_ONLY_NOTE)
+        return clone
     }
 
     private fun systemMessage(role: String, context: String, worktree: String = ""): JSONObject = JSONObject()
@@ -378,10 +430,42 @@ internal data class DiffStat(val changedFiles: Int, val stat: String)
  * 写入模式下额外放行 [WRITE_TOOL_NAMES]，但那些工具只作用于子智能体自己的 worktree
  * （由 [AgentWorktreeManager] 隔离），主工作区不会被直接改动。
  */
-internal val READ_ONLY_TOOL_NAMES = setOf("read_file", "search_code", "list_directory")
+internal val READ_ONLY_TOOL_NAMES =
+    setOf("read_file", "read_files", "search_code", "find_files", "list_directory")
 
 /** 写入模式下额外放行的工具。`terminal` 是子智能体自验证（编译、跑单测）的唯一途径。 */
-internal val WRITE_TOOL_NAMES = setOf("write_file", "edit_file", "terminal")
+internal val WRITE_TOOL_NAMES = setOf("write_file", "edit_file", "edit_files", "terminal")
+
+/** 子智能体唯一能用的浏览器工具名。 */
+internal const val BROWSER_TOOL_NAME = "browser_use"
+
+/**
+ * 子智能体允许的浏览器只读动作。
+ *
+ * 排除项都有理由：`get_cookies` 是凭据读取（子智能体的产出会回流到主上下文与摘要里，
+ * 不该把会话 Cookie 带进去）、`evaluate_js` 能发任意请求、`download` 会落盘，
+ * `click` / `type` / `set_cookie` 直接改页面状态。
+ */
+internal val READ_ONLY_BROWSER_ACTIONS = linkedSetOf(
+    "navigate",
+    "get_readable",
+    "get_text",
+    "get_page_info",
+    "find_elements",
+    "scroll",
+    "screenshot",
+    "go_back",
+    "go_forward",
+    "reload",
+    "wait_for_selector",
+)
+
+private const val CODE_BROWSER_READ_ONLY = "SUB_AGENT_BROWSER_READ_ONLY"
+
+private const val BROWSER_READ_ONLY_NOTE =
+    " 注意：子智能体只能使用只读动作（navigate / get_readable / get_text / get_page_info / " +
+        "find_elements / scroll / screenshot / go_back / go_forward / reload / wait_for_selector）；" +
+        "点击、输入、执行 JS、读写 Cookie、下载都需要交回主智能体。"
 
 /** 信箱工具：并行角色之间共享发现。 */
 internal val MAILBOX_TOOL_NAMES = setOf("mailbox_post")

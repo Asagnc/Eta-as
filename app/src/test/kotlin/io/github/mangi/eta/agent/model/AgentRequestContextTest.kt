@@ -46,7 +46,9 @@ class AgentRequestContextTest {
 
         val lines = messages.getJSONObject(0).getString("content").lines()
         assertEquals(1, lines.count { it.startsWith(AgentTaskPlanFormat.HEADER_PREFIX) })
-        assertEquals(1, lines.count { it.startsWith(AgentTaskPlanFormat.ITEM_PREFIX) })
+        assertEquals(1, lines.count { it.startsWith(AgentTaskPlanFormat.ITEM_PREFIX) && it.contains("1 改代码") })
+        // 断点提示行也属于计划块，重复注入时同样只能留一份。
+        assertEquals(1, lines.count { it.contains("提示：上次运行停在第 1 步") })
         assertEquals(1, lines.count { it.startsWith(AgentRequestClock.PREFIX) })
     }
 
