@@ -1,7 +1,6 @@
 package io.github.mangi.eta.agent.model
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -49,7 +48,7 @@ class AgentFailureLearningRecordTest {
 
     @Test
     fun ignoresFlowControlRejections() {
-        // 方案待确认期间拦下写工具是设计行为，不是失败——记进经验库只会回注一条没用的教训。
+        // 方案待确认期间拦下写工具是设计行为，不是失败——记进观测库只会回注一条没用的教训。
         assertNull(
             AgentFailureLearningRecord.of(
                 "write_file",
@@ -62,54 +61,68 @@ class AgentFailureLearningRecordTest {
     }
 
     @Test
-    fun deduplicatesSameSignatureWithinWindow() {
+    fun signatureCombinesToolAndCode() {
         val entry = AgentFailureLearningRecord.of(
-            "run_command", 2, """{"ok":false,"exit_code":1}""", "ls /nope", now,
+            "run_command", 1, """{"ok":false,"exit_code":1}""", "ls /nope", now,
         )!!
-        val recent = AgentFailureLearningRecord.parseRecentSignatures(
-            "- 2023-11-14 22:13 · `run_command` · EXIT_1 · round 1\n",
-            now,
-        )
 
-        assertTrue(recent.isNotEmpty())
-        assertFalse(AgentFailureLearningRecord.shouldRecord(entry, recent))
+        // 签名是去重与检索键：同工具同错误码视为同一个坑。
+        assertEquals("run_command|EXIT_1", entry.signature)
     }
 
     @Test
-    fun recordsDifferentSignatureOrOldEntry() {
+    fun summaryCarriesToolCodeCommandAndDetail() {
         val entry = AgentFailureLearningRecord.of(
-            "read_file", 2, """{"ok":false,"code":"PATH_NOT_FOUND"}""", "", now,
-        )!!
-        val otherTool = AgentFailureLearningRecord.parseRecentSignatures(
-            "- 2023-11-14 22:13 · `run_command` · EXIT_1 · round 1\n",
-            now,
-        )
-        val oldEntry = AgentFailureLearningRecord.parseRecentSignatures(
-            "- 2023-11-14 21:00 · `read_file` · PATH_NOT_FOUND · round 1\n",
-            now,
-        )
-
-        assertTrue(AgentFailureLearningRecord.shouldRecord(entry, otherTool))
-        // 窗口之外的旧记录不参与去重，否则同一个坑隔天再踩就不会被记下来
-        assertTrue(AgentFailureLearningRecord.shouldRecord(entry, oldEntry))
-    }
-
-    @Test
-    fun markdownKeepsToolCodeAndRoundOnOneLine() {
-        val entry = AgentFailureLearningRecord.Entry(
             toolName = "run_command",
-            code = "EXIT_143",
-            detail = "Terminated\n第二行应被折叠",
-            command = "pkill -f gradle-daemon-main",
-            round = 7,
+            round = 3,
+            resultContent = """{"ok":false,"exit_code":127,"stderr":"sh: foo: not found"}""",
+            command = "foo --bar",
             timestampMs = now,
-        )
+        )!!
 
-        val markdown = entry.toMarkdown()
-        assertTrue(markdown.startsWith("- "))
-        assertTrue(markdown.contains("`run_command` · EXIT_143 · round 7"))
-        assertTrue(markdown.contains("pkill -f gradle-daemon-main"))
-        // 多行诊断被折叠成一行，避免一次失败在文件里占十几行
-        assertTrue(markdown.lines().size <= 4)
+        val summary = entry.summary
+        assertTrue(summary.contains("`run_command`"))
+        assertTrue(summary.contains("EXIT_127"))
+        assertTrue(summary.contains("foo --bar"))
+        assertTrue(summary.contains("not found"))
+    }
+
+    @Test
+    fun summaryIsSingleLineAndBounded() {
+        val entry = AgentFailureLearningRecord.of(
+            toolName = "run_command",
+            round = 1,
+            resultContent = """{"ok":false,"exit_code":143,"stderr":"line1\nline2\nline3"}""",
+            command = "pkill -f gradle-daemon-main",
+            timestampMs = now,
+        )!!
+
+        // 注入上下文时一行到底，不能因为原始诊断带换行就撑开多条消息。
+        assertTrue(entry.summary.lines().size == 1)
+        assertTrue(entry.summary.length < AgentFailureLearningRecord.MAX_DETAIL_CHARS * 2)
+    }
+
+    @Test
+    fun evidenceUsesCommandArrowOutputForm() {
+        val entry = AgentFailureLearningRecord.of(
+            toolName = "run_command",
+            round = 1,
+            resultContent = """{"ok":false,"exit_code":127,"stderr":"sh: foo: not found"}""",
+            command = "foo --bar",
+            timestampMs = now,
+        )!!
+
+        // 证据引用统一成「命令 → 关键输出」，主智能体据此回读原文核对。
+        assertTrue(entry.evidence.contains(" → "))
+        assertTrue(entry.evidence.startsWith("foo --bar"))
+    }
+
+    @Test
+    fun evidenceWithoutCommandStillIdentifiesFailure() {
+        val entry = AgentFailureLearningRecord.of(
+            "read_file", 1, """{"ok":false,"code":"PATH_NOT_FOUND"}""", "", now,
+        )!!
+
+        assertTrue(entry.evidence.contains("PATH_NOT_FOUND"))
     }
 }

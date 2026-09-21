@@ -16,6 +16,8 @@ import io.github.mangi.eta.data.model.ProviderTypes
 import io.github.mangi.eta.data.model.ReasoningEffort
 import io.github.mangi.eta.data.provider.BuiltinProviders
 import io.github.mangi.eta.data.provider.ProviderSourceRegistry
+import io.github.mangi.eta.data.world.WorldKnowledgeLogic
+import io.github.mangi.eta.data.world.WorldKnowledgeStore
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.json.JSONArray
@@ -115,8 +117,11 @@ internal object AgentModelClient {
         onTranscript: (List<ConversationMessage>) -> Unit = {},
         runStats: AgentRunStats? = null,
         onEvent: (AgentEvent) -> Unit = {},
-        /** 工具失败学习记录的落盘目录（通常是 App 的 filesDir）；为 null 时不记录。 */
-        failureLogDir: java.io.File? = null
+        /**
+         * 观测层（世界模型）的写入上下文，通常是 App 的 applicationContext；
+         * 为 null 时不记录、不回读。失败教训与子智能体结论都落在这里。
+         */
+        worldContext: android.content.Context? = null,
     ): ModelResponse.Text {
         config.validate()
         val initialCapabilities = capabilitiesProvider()
@@ -212,8 +217,8 @@ internal object AgentModelClient {
                 toolsFor(capabilities)
             },
         )
-        loop.failureRecorder = failureRecorder(failureLogDir)
-        loop.learningRecall = learningRecall(failureLogDir)
+        loop.failureRecorder = failureRecorder(worldContext)
+        loop.learningRecall = learningRecall(worldContext)
         val result = try {
             if (compactOnly) loop.compactOnly(compactUntilMessageId) else loop.run()
         } catch (throwable: Throwable) {
@@ -380,13 +385,16 @@ internal object AgentModelClient {
     }
 
     /**
-     * 把工具失败整理成学习记录并落盘。签名与失败详情都来自真实执行结果，
+     * 把工具失败整理成观测条目并写进观测库。签名与失败详情都来自真实执行结果，
      * 命令取自工具参数（截断保存），不落任何用户内容。
+     *
+     * 窗口去重由观测库的签名查询负责（见 [WorldKnowledgeLogic.shouldWrite]）：
+     * 同签名且内容未变时不重复写。
      */
     private fun failureRecorder(
-        directory: java.io.File?,
+        context: android.content.Context?,
     ): ((AgentModelClient.ToolCall, String, Int) -> Unit)? {
-        if (directory == null) return null
+        if (context == null) return null
         return { call, content, round ->
             val entry = AgentFailureLearningRecord.of(
                 toolName = call.name,
@@ -395,22 +403,56 @@ internal object AgentModelClient {
                 command = traceFormatter.displayCommand(call).orEmpty(),
                 timestampMs = System.currentTimeMillis(),
             )
-            if (entry != null) AgentFailureLearningStore.record(directory, entry)
+            if (entry != null) {
+                WorldKnowledgeStore.write(
+                    context,
+                    WorldKnowledgeStore.Entry(
+                        kind = KIND_FAILURE,
+                        signature = entry.signature,
+                        summary = entry.summary,
+                        evidence = entry.evidence,
+                        uncertainty = "",
+                        originAgent = entry.toolName,
+                        payload = org.json.JSONObject().put("round", entry.round).toString(),
+                        // 失败教训没有文件依赖：它描述的是工具行为，不是某个文件的内容。
+                        dependencies = emptyList(),
+                        createdAt = entry.timestampMs,
+                    ),
+                )
+            }
         }
     }
 
     /**
-     * 按失败签名回读历史教训。与 [failureRecorder] 同源（同一个学习记录文件），
+     * 按失败签名回读历史教训。与 [failureRecorder] 同源（同一个观测库），
      * 一个写、一个读，共同构成"同类失败下次更快被识别"的闭环。
+     *
+     * 只取窗口外的条目：窗口内的同签名失败属于"当前这起事故"，那时该说的是
+     * "你已经连续失败 N 次"（见 AgentFailureGuard），而不是把刚写下的记录原样念回给模型。
      */
     private fun learningRecall(
-        directory: java.io.File?,
+        context: android.content.Context?,
     ): ((String) -> String?)? {
-        if (directory == null) return null
+        if (context == null) return null
         return { signature ->
-            AgentFailureLearningStore.recall(directory, signature, System.currentTimeMillis())
+            val now = System.currentTimeMillis()
+            val recalled = WorldKnowledgeStore.recall(
+                context = context,
+                kind = KIND_FAILURE,
+                signature = signature,
+                readContent = { null },
+                nowMs = now,
+            )
+            if (recalled == null || now - recalled.createdAt <= AgentFailureLearningRecord.DEDUPE_WINDOW_MS) {
+                null
+            } else {
+                recalled.summary.take(AgentFailureLearningRecord.MAX_HISTORY_CHARS).trim()
+            }
         }
     }
+
+    /** 观测库里失败教训的种类标记。 */
+    private const val KIND_FAILURE = "failure"
 
 }
 

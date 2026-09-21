@@ -422,7 +422,7 @@ internal class AgentRuntimeRunExecutor(
                 skillContext = skillContext,
                 memoryContext = memoryContext,
                 additionalTools = runTools,
-                failureLogDir = appContext.filesDir,
+                worldContext = appContext,
                 onEvent = { event ->
                     timing.accept(event)
                     acceptEvent(
