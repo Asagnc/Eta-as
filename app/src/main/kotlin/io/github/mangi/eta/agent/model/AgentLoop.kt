@@ -436,16 +436,20 @@ internal class AgentLoop(
      *
      * 这是最轻量的压缩手段——不动助手推理，也不改写摘要，只让请求体变短；
      * 需要原始内容时模型可以重新调用对应工具。
+     *
+     * 视图的构造按「谁要改、谁才克隆」来做：`prune` 只克隆被裁掉的那几条消息，
+     * `attach` 只克隆它要写入的最后一条。这样每轮省掉整段历史的深拷贝，
+     * 同时历史对象本身仍然不被改写。
      */
     private fun requestMessagesFor(roundTools: JSONArray): JSONArray {
-        val base = roleplayContext?.projectMessages(messages, roundTools)
-            ?: AgentContextPruner.copyOf(messages)
-        val pruned = AgentContextPruner.prune(base, config.toolResultKeep)
-        runStats?.updatePrunedToolResults(pruned)
+        val projected = roleplayContext?.projectMessages(messages, roundTools)
+        val result = AgentContextPruner.prune(projected ?: messages, config.toolResultKeep)
+        runStats?.updatePrunedToolResults(result.prunedCount)
         // 每轮请求都把当前时间与当前任务清单重新附到最后一条消息上：时间让模型据此判断「现在」，
         // 计划让它在压缩或跨轮之后仍然知道自己排了什么（两者都按前缀去重，不会叠加）。
-        AgentRequestContext.attach(base, taskPlanSnapshot?.invoke(), planSnapshot?.invoke())
-        return base
+        // attach 会克隆最后一条消息再写，因此共享进来的历史对象不会被改到。
+        AgentRequestContext.attach(result.messages, taskPlanSnapshot?.invoke(), planSnapshot?.invoke())
+        return result.messages
     }
 
     /**

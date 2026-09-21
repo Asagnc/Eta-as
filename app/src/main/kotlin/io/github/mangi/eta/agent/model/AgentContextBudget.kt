@@ -117,22 +117,74 @@ internal class AgentContextBudget(
             var tokens = textTokens(tools.toString()) + 16
             for (index in 0 until messages.length()) {
                 val message = messages.optJSONObject(index) ?: continue
-                val copy = JSONObject()
-                message.keys().forEach { key -> if (key != "content") copy.put(key, message.get(key)) }
-                val parts = message.optJSONArray("content")
-                if (parts != null) {
-                    val text = JSONArray()
-                    for (partIndex in 0 until parts.length()) {
-                        val part = parts.optJSONObject(partIndex) ?: continue
-                        if (part.optString("type") in setOf("image_url", "input_image", "image")) {
-                            tokens += 4096
-                        } else text.put(part)
-                    }
-                    copy.put("content", text)
-                } else copy.put("content", message.opt("content"))
-                tokens += textTokens(copy.toString()) + 8
+                tokens += messageTokens(message)
             }
             return tokens
         }
+
+        /**
+         * 单条消息的 token 估算。
+         *
+         * 与 [textTokens] 共用同一套折算口径：ASCII 每 3 字符约 1 token，非 ASCII 每字符 1 token；
+         * 图片分片按固定值计。区别只在于**不构造中间 JSON**——`protectedIndexes` 会对每条消息
+         * 调用它，先序列化再估算等于为了估算多跑一遍序列化。
+         *
+         * 口径必须与 [rawEstimate] 一致：它决定保护区的边界，算少了会把模型正在用的
+         * 工具结果裁掉。
+         */
+        fun messageTokens(message: JSONObject): Int {
+            val counter = CharCounter()
+            message.keys().forEach { key ->
+                if (key != "content") {
+                    counter.add(key)
+                    counter.add(valueText(message.opt(key)))
+                }
+            }
+            var imageTokens = 0
+            val parts = message.optJSONArray("content")
+            if (parts != null) {
+                for (partIndex in 0 until parts.length()) {
+                    val part = parts.optJSONObject(partIndex) ?: continue
+                    if (part.optString("type") in IMAGE_PART_TYPES) {
+                        imageTokens += IMAGE_PART_TOKENS
+                    } else {
+                        counter.add(part.toString())
+                    }
+                }
+            } else {
+                counter.add(valueText(message.opt("content")))
+            }
+            return counter.tokens() + imageTokens + 8
+        }
+
+        /**
+         * 非 content 字段的文本形式，**对齐原实现 `copy.toString()` 的字符构成**：
+         * 字符串值带引号，嵌套结构按序列化结果计，数值/布尔按字面量。
+         *
+         * 这里刻意保留 JSON 结构字符（引号、括号、逗号）：原实现把整条消息序列化后估算，
+         * 这些字符也计入 token。少算会让保护区偏小，进而裁掉模型正在用的工具结果。
+         */
+        private fun valueText(value: Any?): String = when (value) {
+            null, JSONObject.NULL -> "null"
+            is String -> "\"$value\""
+            else -> value.toString()
+        }
+
+        /** 按 [textTokens] 的口径累计字符数：只扫一遍，不产生中间对象。 */
+        private class CharCounter {
+            private var ascii = 0
+            private var other = 0
+
+            fun add(text: String) {
+                for (char in text) {
+                    if (char.code < 128) ascii++ else other++
+                }
+            }
+
+            fun tokens(): Int = (ascii + 2) / 3 + other
+        }
+
+        private val IMAGE_PART_TYPES = setOf("image_url", "input_image", "image")
+        private const val IMAGE_PART_TOKENS = 4096
     }
 }

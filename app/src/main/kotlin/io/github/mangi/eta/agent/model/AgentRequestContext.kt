@@ -24,14 +24,19 @@ internal object AgentRequestContext {
         planJson: String?,
         now: ZonedDateTime = ZonedDateTime.now(),
     ) {
+        // 注入只改最后一条消息，所以这里只克隆那一条：视图的其余部分与历史共享对象，
+        // 每轮省掉整段历史的深拷贝。克隆必须发生在任何写入之前——[AgentRequestClock.attach]
+        // 与下面的方案/计划注入都往同一条消息上写，先克隆一次即可，不必各克隆一次。
+        val index = messages.length() - 1
+        if (index < 0) return
+        val last = messages.optJSONObject(index) ?: return
+        messages.put(index, cloneOf(last))
         AgentRequestClock.attach(messages, now)
         val blocks = listOfNotNull(
             AgentPlanFormat.injectedLines(planJson, taskPlanJson)?.joinToString("\n"),
             AgentTaskPlanFormat.injectedLines(taskPlanJson)?.joinToString("\n"),
         )
         if (blocks.isEmpty()) return
-        val index = messages.length() - 1
-        if (index < 0) return
         val message = messages.optJSONObject(index) ?: return
         val block = blocks.joinToString("\n")
         when (val content = message.opt("content")) {
@@ -45,6 +50,16 @@ internal object AgentRequestContext {
 
             is JSONArray -> message.put("content", rebuildParts(content, block))
         }
+    }
+
+    /** 浅拷贝一条消息：嵌套的 content 分片数组要复制一份，避免后续改动写回历史。 */
+    private fun cloneOf(message: JSONObject): JSONObject {
+        val copy = JSONObject()
+        message.keys().forEach { key ->
+            val value = message.get(key)
+            copy.put(key, if (key == "content" && value is JSONArray) JSONArray(value.toString()) else value)
+        }
+        return copy
     }
 
     private fun rebuildParts(content: JSONArray, block: String): JSONArray {

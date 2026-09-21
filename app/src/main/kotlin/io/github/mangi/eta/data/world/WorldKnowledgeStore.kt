@@ -2,8 +2,10 @@ package io.github.mangi.eta.data.world
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.withTransaction
 import java.io.File
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -53,15 +55,21 @@ internal object WorldKnowledgeStore {
     ) {
         if (context == null) return
         try {
-            runBlocking {
-                val dao = database(context).knowledgeDao()
-                val existing = dao.latestBySignature(entry.kind, entry.signature)
-                if (!WorldKnowledgeLogic.shouldWrite(entry.kind, entry.signature, entry.summary, existing)) {
-                    return@runBlocking
+            // 固定走 IO 调度器：本类的调用点分布在工具执行、事件回收等多条路径上，
+            // 不能让某一条恰好落在主线程时把磁盘 IO 带到主线程上。
+            runBlocking(Dispatchers.IO) {
+                val db = database(context)
+                // 查重、写入、过期清理、裁剪放进同一个事务：否则并发写入时
+                // “查到不存在→两个都写”会各插一条，去重就失效了。
+                db.withTransaction {
+                    val dao = db.knowledgeDao()
+                    val existing = dao.latestBySignature(entry.kind, entry.signature)
+                    if (WorldKnowledgeLogic.shouldWrite(entry.kind, entry.signature, entry.summary, existing)) {
+                        dao.upsert(entry.toEntity(existing?.id ?: UUID.randomUUID().toString()))
+                    }
+                    dao.deleteExpired(System.currentTimeMillis())
+                    dao.trim(KEEP_ENTRIES)
                 }
-                dao.upsert(entry.toEntity(existing?.id ?: UUID.randomUUID().toString()))
-                dao.deleteExpired(System.currentTimeMillis())
-                dao.trim(KEEP_ENTRIES)
             }
         } catch (_: Throwable) {
             // 记录观测不影响本轮运行
@@ -83,7 +91,7 @@ internal object WorldKnowledgeStore {
     ): Recalled? {
         if (context == null || signature.isBlank()) return null
         return try {
-            val entity = runBlocking {
+            val entity = runBlocking(Dispatchers.IO) {
                 database(context).knowledgeDao().latestBySignature(kind, signature)
             } ?: return null
             if (entity.expiresAt != 0L && entity.expiresAt <= nowMs) return null
