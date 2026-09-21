@@ -94,6 +94,43 @@ internal object WorldKnowledgeLogic {
     }
 
     /**
+     * 把证据里的文件路径变成依赖指纹。
+     *
+     * 这一步是「世界可信」的关键：没有依赖指纹，历史结论只是一条不可验证的笔记；
+     * 有了它，回读时能判断「这条结论引用的文件是否已改」，过期结论不会被当作事实注入。
+     *
+     * 读不到的文件直接跳过，而不是记一条空指纹——空指纹会让新鲜度校验永远判为 STALE，
+     * 那等于把这条结论永久作废，比不记更糟。
+     */
+    fun dependenciesFor(
+        paths: List<String>,
+        readContent: (String) -> String?,
+    ): List<Dependency> = paths.mapNotNull { path ->
+        val content = readContent(path) ?: return@mapNotNull null
+        Dependency(path = path, fingerprint = fingerprint(content))
+    }
+
+    /**
+     * 归一证据里的文件路径，使其可用于读取。
+     *
+     * 子智能体按提示可能写 `/workspace/x`（Linux 侧）或 `/data/local/tmp/eta/x`（Android 侧），
+     * 两者是同一个文件。相对路径按工作区根拼。返回 null 表示不是可读的绝对/相对文件引用。
+     */
+    fun normalizePath(path: String, workspaceRoot: String): String? {
+        val trimmed = path.trim().trim('`')
+        if (trimmed.isEmpty()) return null
+        val android = trimmed.replace(LINUX_WORKSPACE_PREFIX, ANDROID_WORKSPACE_PREFIX)
+        return when {
+            android.startsWith(ANDROID_WORKSPACE_PREFIX) -> android
+            android.startsWith("/") -> android
+            else -> "$workspaceRoot/$android"
+        }
+    }
+
+    private const val LINUX_WORKSPACE_PREFIX = "/workspace"
+    private const val ANDROID_WORKSPACE_PREFIX = "/data/local/tmp/eta"
+
+    /**
      * 判断一条新观测是否值得落库。
      *
      * 同签名已存在且内容未变时不重复写——重复观测不带来新信息，只会挤占查询窗口。

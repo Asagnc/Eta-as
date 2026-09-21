@@ -42,14 +42,32 @@ internal class AgentSubAgentRunner(
     /** 信箱工具的执行入口：由宿主把 `mailbox_post` 的调用接到 [SubAgentMailbox.post]。 */
     private val mailboxPost: (suspend (author: String, runId: String, summary: String, body: String) -> String)? = null,
     /**
-     * 轨迹落盘：把这次委派的完整消息流交给宿主写文件。
+     * 轨迹落盘：把这次委派的完整消息流交给宿主。
      *
      * 子智能体的过程默认不进主上下文（这正是它省 token 的方式），代价是主 loop 只能看到摘要、
-     * 无法核验。落盘把「信任」变成「可追溯」：需要抽查时读文件，用户也能自己翻。
-     * 缺省 null 时不落盘——单测不需要，也不该在测试里写磁盘。
+     * 无法核验。落盘把「信任」变成「可追溯」：需要抽查时读回来，用户也能自己翻。
+     *
+     * 参数带上节点自身的信息（id、父节点、起止时间、结果），宿主才能把它挂进委派树，
+     * 而不是只能按角色名平铺着存。缺省 null 时不落盘——单测不需要，也不该在测试里写磁盘。
      */
-    private val traceSink: ((name: String, content: String) -> Unit)? = null,
+    private val traceSink: ((TraceRecord) -> Unit)? = null,
 ) {
+    /**
+     * 一次委派的完整记录：树的节点身份 + 内容。
+     *
+     * [parentId] 是发起这次委派的节点 id（主循环直接派出时为空）；[id] 是本次委派自身的节点 id，
+     * 它同时是未来嵌套委派的父 id——一次 run 就是一棵以 [id] 为根的子树。
+     */
+    data class TraceRecord(
+        val id: String,
+        val parentId: String,
+        val role: String,
+        val startedAt: Long,
+        val endedAt: Long,
+        val status: String,
+        val summary: String,
+        val content: String,
+    )
     /**
      * [plan] 由调用方按任务档位与历史消耗算好；缺省时按 compare 档默认值执行，
      * 保证单独调用 run() 也不会因为没传预算而失控。
@@ -75,6 +93,11 @@ internal class AgentSubAgentRunner(
         val allowWebRead: Boolean = false,
         /** 触发这次委派的 delegate 工具调用 id；事件带着它，界面才能把进度挂到对应那一步。 */
         val toolCallId: String = "",
+        /**
+         * 发起这次委派的节点 id。主循环直接派出时为空（本次委派就是根的子节点）；
+         * 由另一个子智能体派生时填那个委派自身的节点 id，委派树才能长出层级。
+         */
+        val parentId: String = "",
     )
 
     data class Outcome(
@@ -101,6 +124,7 @@ internal class AgentSubAgentRunner(
         val plan = request.plan
             ?: SubAgentPlan(SubAgentScope.COMPARE, maxRounds, tokenBudget, 0, fromHistory = false)
         val id = "sub-$role-${sequence.incrementAndGet()}"
+        val startedAt = System.currentTimeMillis()
         val toolCallId = request.toolCallId.trim()
         onEvent(
             AgentEvent.SubAgentUpdated(
@@ -265,9 +289,23 @@ internal class AgentSubAgentRunner(
                 toolCallId = toolCallId,
             ),
         )
-        // 完整消息流落盘：摘要之外留一份可核验的原始记录。写失败不影响本次委派的结果，
-        // 它只是可追溯性的补充，不是产出本身。
-        runCatching { traceSink?.invoke(id, buildTrace(role, request, messages, content, errorCode)) }
+        // 完整消息流交给宿主：摘要之外留一份可核验的原始记录。写失败不影响本次委派的结果，
+        // 它只是可追溯性的补充，不是产出本身。节点身份（id / 父节点 / 起止）一并交出，
+        // 宿主才能把这次委派挂进委派树。
+        runCatching {
+            traceSink?.invoke(
+                TraceRecord(
+                    id = id,
+                    parentId = request.parentId.trim(),
+                    role = role,
+                    startedAt = startedAt,
+                    endedAt = System.currentTimeMillis(),
+                    status = if (ok) TRACE_STATUS_OK else errorCode.ifBlank { TRACE_STATUS_FAILED },
+                    summary = content,
+                    content = buildTrace(role, request, messages, content, errorCode),
+                ),
+            )
+        }
         return Outcome(
             role = role,
             ok = ok,
@@ -463,6 +501,10 @@ internal class AgentSubAgentRunner(
         const val PHASE_STARTED = "started"
         const val PHASE_FINISHED = "finished"
         const val PHASE_FAILED = "failed"
+
+        /** 轨迹节点的结束状态：成功、或带上具体错误码的失败。 */
+        const val TRACE_STATUS_OK = "ok"
+        const val TRACE_STATUS_FAILED = "failed"
         const val DEFAULT_ROLE = AgentSubAgentRoles.DEFAULT
 
         /** `3 files changed, 42 insertions(+)` 里的文件数；单文件时是 `1 file changed`。 */

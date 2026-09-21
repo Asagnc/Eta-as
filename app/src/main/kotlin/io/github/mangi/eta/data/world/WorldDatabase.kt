@@ -88,17 +88,112 @@ internal interface WorldKnowledgeDao {
     suspend fun trim(keep: Int)
 }
 
+/**
+ * 子智能体的一次委派记录，形如一棵树。
+ *
+ * 字段取自 OpenTelemetry 的 span 模型（name / parent span id / 起止时间 / attributes）：
+ * 一次 run 对应一棵树（[traceId]），主循环派出的委派挂在根下，委派内部再派生的节点用
+ * [parentId] 挂在它下面。这样「这条结论是哪一轮、谁派的、下面还做了什么」都能回溯，
+ * 而不是只能按 run 平铺着查。
+ *
+ * 正文的存放位置按 SQLite 官方实测的分界线（100KB）决定：小于该值时正文直接入库读取更快，
+ * 超过则落文件、库里只留路径，避免大文本拖慢整张表的查询与分页。
+ */
+@Entity(
+    tableName = "world_trace",
+    indices = [
+        Index(value = ["trace_id", "parent_id"]),
+        Index(value = ["run_id"]),
+        Index(value = ["started_at"]),
+    ],
+)
+internal data class WorldTraceEntity(
+    @PrimaryKey @ColumnInfo(name = "id") val id: String,
+    /** 父节点 id；空串表示这是一次 run 的根。 */
+    @ColumnInfo(name = "parent_id") val parentId: String,
+    /** 一次 run 对应一棵树。 */
+    @ColumnInfo(name = "trace_id") val traceId: String,
+    @ColumnInfo(name = "run_id") val runId: String,
+    @ColumnInfo(name = "session_id") val sessionId: String,
+    /** 发起者：主循环，或某个子智能体角色名。 */
+    @ColumnInfo(name = "agent") val agent: String,
+    /** 本次委派的角色名。 */
+    @ColumnInfo(name = "role") val role: String,
+    @ColumnInfo(name = "started_at") val startedAt: Long,
+    @ColumnInfo(name = "ended_at") val endedAt: Long,
+    /** 结束状态：ok / failed；失败时同时记错误码。 */
+    @ColumnInfo(name = "status") val status: String,
+    /** 子智能体的摘要全文，也就是主循环看到的那一份。 */
+    @ColumnInfo(name = "summary") val summary: String,
+    /** 摘要解析出的结论（三段格式的第一段）；解析不出时退化为全文。 */
+    @ColumnInfo(name = "conclusion") val conclusion: String,
+    /** 证据行，每行一条，与摘要里的原样一致。 */
+    @ColumnInfo(name = "evidence") val evidence: String,
+    /** 不确定项，每行一条。 */
+    @ColumnInfo(name = "uncertainty") val uncertainty: String,
+    /** 正文（完整消息流）；超阈值时为空，改由 [contentPath] 指向文件。 */
+    @ColumnInfo(name = "content") val content: String,
+    @ColumnInfo(name = "content_path") val contentPath: String,
+    @ColumnInfo(name = "content_bytes") val contentBytes: Long,
+)
+
+@Dao
+internal interface WorldTraceDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(entity: WorldTraceEntity)
+
+    /** 取整棵树，按开始时间排列，父必然排在子之前。 */
+    @Query("SELECT * FROM world_trace WHERE trace_id = :traceId ORDER BY started_at ASC")
+    suspend fun tree(traceId: String): List<WorldTraceEntity>
+
+    /** 取某个节点的直接子节点。 */
+    @Query("SELECT * FROM world_trace WHERE parent_id = :parentId ORDER BY started_at ASC")
+    suspend fun children(parentId: String): List<WorldTraceEntity>
+
+    /** 按 run 取记录。 */
+    @Query("SELECT * FROM world_trace WHERE run_id = :runId ORDER BY started_at ASC")
+    suspend fun byRun(runId: String): List<WorldTraceEntity>
+
+    /** 最近若干次委派，用于回答「上一次排查到底看了什么」。 */
+    @Query("SELECT * FROM world_trace ORDER BY started_at DESC LIMIT :limit")
+    suspend fun recent(limit: Int): List<WorldTraceEntity>
+
+    /** 超出保留条数的旧记录；正文文件由调用方连带删除。 */
+    @Query(
+        "SELECT id, content_path FROM world_trace WHERE id NOT IN " +
+            "(SELECT id FROM world_trace ORDER BY started_at DESC LIMIT :keep)",
+    )
+    suspend fun overflow(keep: Int): List<TraceOverflowRow>
+
+    @Query("DELETE FROM world_trace WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<String>)
+}
+
+/** 裁剪时需要连带删除的正文文件路径。 */
+internal data class TraceOverflowRow(
+    @ColumnInfo(name = "id") val id: String,
+    @ColumnInfo(name = "content_path") val contentPath: String,
+)
+
 @Database(
-    entities = [WorldKnowledgeEntity::class],
+    entities = [WorldKnowledgeEntity::class, WorldTraceEntity::class],
     version = WorldDatabase.VERSION,
     exportSchema = false,
 )
 internal abstract class WorldDatabase : RoomDatabase() {
     abstract fun knowledgeDao(): WorldKnowledgeDao
 
+    abstract fun traceDao(): WorldTraceDao
+
     companion object {
-        /** schema 版本。与主库无关：版本不匹配时本库直接重建，不写迁移。 */
-        const val VERSION = 1
+        /**
+         * schema 版本。与主库无关：版本不匹配时本库直接重建，不写迁移。
+         *
+         * 2：新增 world_trace（子智能体委派树）。
+         * 3：world_trace 增加 conclusion / evidence / uncertainty，摘要按三段格式拆开存，
+         *    证据行与不确定项因此可查询，不必把摘要当自由文本重新解析。
+         */
+        const val VERSION = 3
 
         const val FILE_NAME = "world.db"
     }

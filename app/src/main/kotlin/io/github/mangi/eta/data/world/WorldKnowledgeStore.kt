@@ -1,7 +1,6 @@
 package io.github.mangi.eta.data.world
 
 import android.content.Context
-import androidx.room.Room
 import androidx.room.withTransaction
 import java.io.File
 import java.util.UUID
@@ -13,8 +12,6 @@ import kotlinx.coroutines.runBlocking
  *
  * 所有异常都吞掉并降级为"没有数据"：本库记录的是运行副产物，读不到或写不进都不该让
  * 正在跑的 run 失败——这与它要替代的失败学习文件存储是同一条原则。
- *
- * 库是单例且懒建；首次访问时才创建文件，没用到世界模型时不产生磁盘占用。
  */
 internal object WorldKnowledgeStore {
 
@@ -24,24 +21,8 @@ internal object WorldKnowledgeStore {
     /** 默认有效期：7 天。超过这个时间的观测结论默认不再注入。 */
     const val DEFAULT_TTL_MS = 7L * 24 * 60 * 60 * 1000
 
-    @Volatile
-    private var database: WorldDatabase? = null
-
-    private fun database(context: Context): WorldDatabase =
-        database ?: synchronized(this) {
-            database ?: Room.databaseBuilder(
-                context.applicationContext,
-                WorldDatabase::class.java,
-                WorldDatabase.FILE_NAME,
-            )
-                // 本库是运行观测，版本不匹配时重建即可：不写迁移，也就不可能迁移出错。
-                .fallbackToDestructiveMigration(dropAllTables = true)
-                .build()
-                .also { database = it }
-        }
-
     /** 观测库文件，供排查与清理使用。 */
-    fun fileFor(context: Context): File = context.getDatabasePath(WorldDatabase.FILE_NAME)
+    fun fileFor(context: Context): File = WorldDatabaseProvider.fileFor(context)
 
     /**
      * 写入一条观测。
@@ -58,7 +39,7 @@ internal object WorldKnowledgeStore {
             // 固定走 IO 调度器：本类的调用点分布在工具执行、事件回收等多条路径上，
             // 不能让某一条恰好落在主线程时把磁盘 IO 带到主线程上。
             runBlocking(Dispatchers.IO) {
-                val db = database(context)
+                val db = WorldDatabaseProvider.get(context)
                 // 查重、写入、过期清理、裁剪放进同一个事务：否则并发写入时
                 // “查到不存在→两个都写”会各插一条，去重就失效了。
                 db.withTransaction {
@@ -92,7 +73,7 @@ internal object WorldKnowledgeStore {
         if (context == null || signature.isBlank()) return null
         return try {
             val entity = runBlocking(Dispatchers.IO) {
-                database(context).knowledgeDao().latestBySignature(kind, signature)
+                WorldDatabaseProvider.get(context).knowledgeDao().latestBySignature(kind, signature)
             } ?: return null
             if (entity.expiresAt != 0L && entity.expiresAt <= nowMs) return null
             val dependencies = WorldKnowledgeLogic.decodeDependencies(entity.dependencies)
@@ -112,10 +93,7 @@ internal object WorldKnowledgeStore {
 
     /** 供测试重置单例。 */
     internal fun closeForTests() {
-        synchronized(this) {
-            database?.close()
-            database = null
-        }
+        WorldDatabaseProvider.closeForTests()
     }
 
     /** 写入时用的条目；字段与 [WorldKnowledgeEntity] 一一对应。 */

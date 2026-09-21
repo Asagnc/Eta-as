@@ -38,6 +38,7 @@ import io.github.mangi.eta.agent.voice.EtaAssistantOverlayService
 import io.github.mangi.eta.core.AndroidAgentLogger
 import io.github.mangi.eta.core.safeLogType
 import io.github.mangi.eta.data.repository.AgentMemoryRepository
+import io.github.mangi.eta.data.world.WorldTraceStore
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -68,6 +69,14 @@ internal class AgentRuntimeRunExecutor(
     )
 
     private val appContext = context.applicationContext
+
+    private companion object {
+        /** 委派树的发起者标记：主循环派出的节点以此记 agent 字段。 */
+        const val AGENT_SUB = "subagent"
+
+        /** 主工作区根目录（Android 侧形态），用于归一子智能体证据里的相对路径。 */
+        const val WORKSPACE_ROOT = "/data/local/tmp/eta"
+    }
 
     fun execute(
         session: AgentRuntimeSession,
@@ -187,7 +196,27 @@ internal class AgentRuntimeRunExecutor(
                     memoryTools = false,
                     capabilities = AgentToolCapabilities.capture(appContext),
                 ),
-                traceSink = { name, content -> AgentSubAgentTraceStore.write(appContext, name, content) },
+                traceSink = { record ->
+                    WorldTraceStore.record(
+                        appContext,
+                        WorldTraceStore.Node(
+                            id = record.id,
+                            parentId = record.parentId,
+                            traceId = request.runId,
+                            runId = request.runId,
+                            sessionId = request.effectiveModelSessionId,
+                            agent = AGENT_SUB,
+                            role = record.role,
+                            startedAt = record.startedAt,
+                            endedAt = record.endedAt,
+                            status = record.status,
+                            summary = record.summary,
+                            content = record.content,
+                            // 工作区根用于把相对路径证据归一成可读路径，进而算出依赖指纹。
+                            workspaceRoot = WORKSPACE_ROOT,
+                        ),
+                    )
+                },
                 mailbox = mailbox,
                 mailboxPost = { author, runId, summary, body ->
                     val posted = mailbox.post(runId, author, SubAgentMailboxPolicy.KIND_NOTE, summary, body)
