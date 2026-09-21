@@ -67,6 +67,7 @@ import io.github.mangi.eta.data.repository.AgentMemoryWriteRequest
 import io.github.mangi.eta.data.repository.AgentMemoryWriteResult
 import io.github.mangi.eta.data.repository.LinuxEnvironmentSettingsRepository
 import io.github.mangi.eta.data.repository.runMemoryMutation
+import io.github.mangi.eta.data.world.WorldHealth
 import io.github.mangi.eta.data.world.WorldKnowledgeLogic
 import io.github.mangi.eta.data.world.WorldKnowledgeStore
 import io.github.mangi.eta.data.world.WorldTraceStore
@@ -592,19 +593,34 @@ internal class AgentLocalTools(
             nowMs = now,
         )
         if (entries.isEmpty()) {
-            return JSONObject()
+            return withWorldHealth(
+                JSONObject()
+                    .put("ok", true)
+                    .put("tool", "world_recall")
+                    .put("count", 0)
+                    .put("message", "观测库里没有与「$query」相关的历史结论。"),
+            )
+        }
+        return withWorldHealth(
+            JSONObject()
                 .put("ok", true)
                 .put("tool", "world_recall")
-                .put("count", 0)
-                .put("message", "观测库里没有与「$query」相关的历史结论。")
-                .toString()
-        }
-        return JSONObject()
-            .put("ok", true)
-            .put("tool", "world_recall")
-            .put("count", entries.size)
-            .put("results", WorldKnowledgeLogic.formatRecall(entries, now))
-            .toString()
+                .put("count", entries.size)
+                .put("results", WorldKnowledgeLogic.formatRecall(entries, now)),
+        )
+    }
+
+    /**
+     * 给观测层的返回补一行健康警告，再转成字符串。
+     *
+     * 本层读写失败一律降级为「没有数据」，那看起来是一次成功查询，实际可能是「世界坏了」。
+     * 按 Google SRE 的四个黄金信号，这属于必须盯住的隐式错误
+     * （"an HTTP 200 success response, but coupled with the wrong content"）：
+     * 查询成功了，但它背后少了一部分数据。把警告放进返回里，模型才知道结果可能不完整。
+     */
+    private fun withWorldHealth(result: JSONObject): String {
+        WorldHealth.warningLine()?.let { warning -> result.put("warning", warning) }
+        return result.toString()
     }
 
     /** 读工作区文件，用于校验历史结论的依赖是否已变更；读不到返回 null。 */
@@ -628,18 +644,20 @@ internal class AgentLocalTools(
             val target = nodes.firstOrNull { it.id == nodeId }
             val content = target?.let { WorldTraceStore.contentOf(context, it) }
             if (content.isNullOrBlank()) {
-                return JSONObject()
+                return withWorldHealth(
+                    JSONObject()
+                        .put("ok", true)
+                        .put("tool", "world_trace")
+                        .put("message", "没有找到节点「$nodeId」的正文。"),
+                )
+            }
+            return withWorldHealth(
+                JSONObject()
                     .put("ok", true)
                     .put("tool", "world_trace")
-                    .put("message", "没有找到节点「$nodeId」的正文。")
-                    .toString()
-            }
-            return JSONObject()
-                .put("ok", true)
-                .put("tool", "world_trace")
-                .put("node", nodeId)
-                .put("content", content.take(MAX_TRACE_CONTENT_CHARS))
-                .toString()
+                    .put("node", nodeId)
+                    .put("content", content.take(MAX_TRACE_CONTENT_CHARS)),
+            )
         }
 
         val traceId = args.optString("trace").trim()
@@ -649,20 +667,22 @@ internal class AgentLocalTools(
             WorldTraceStore.recent(context, MAX_TRACE_LIST)
         }
         if (nodes.isEmpty()) {
-            return JSONObject()
+            return withWorldHealth(
+                JSONObject()
+                    .put("ok", true)
+                    .put("tool", "world_trace")
+                    .put("count", 0)
+                    .put("message", "观测库里没有委派记录。"),
+            )
+        }
+        return withWorldHealth(
+            JSONObject()
                 .put("ok", true)
                 .put("tool", "world_trace")
-                .put("count", 0)
-                .put("message", "观测库里没有委派记录。")
-                .toString()
-        }
-        return JSONObject()
-            .put("ok", true)
-            .put("tool", "world_trace")
-            .put("count", nodes.size)
-            .put("tree", WorldTraceStore.renderTree(nodes, System.currentTimeMillis()))
-            .put("hint", "需要某个节点的完整过程时，用 node 参数传它的 id。")
-            .toString()
+                .put("count", nodes.size)
+                .put("tree", WorldTraceStore.renderTree(nodes, System.currentTimeMillis()))
+                .put("hint", "需要某个节点的完整过程时，用 node 参数传它的 id。"),
+        )
     }
 
     /**

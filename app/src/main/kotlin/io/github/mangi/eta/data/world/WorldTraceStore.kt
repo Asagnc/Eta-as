@@ -138,8 +138,9 @@ internal object WorldTraceStore {
                     )
                 }
             }
-        } catch (_: Throwable) {
-            // 记录轨迹不影响本轮运行
+        } catch (error: Throwable) {
+            // 记录轨迹不影响本轮运行，但降级要留痕：否则「世界坏了」会被当成「世界上没这条」。
+            WorldHealth.recordDegradation("trace.record", error)
         }
     }
 

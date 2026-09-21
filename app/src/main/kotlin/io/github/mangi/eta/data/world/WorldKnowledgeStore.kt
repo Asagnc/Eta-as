@@ -52,8 +52,9 @@ internal object WorldKnowledgeStore {
                     dao.trim(KEEP_ENTRIES)
                 }
             }
-        } catch (_: Throwable) {
-            // 记录观测不影响本轮运行
+        } catch (error: Throwable) {
+            // 记录观测不影响本轮运行，但降级要留痕。
+            WorldHealth.recordDegradation("knowledge.write(${entry.kind})", error)
         }
     }
 
@@ -86,7 +87,10 @@ internal object WorldKnowledgeStore {
                 freshness = freshness,
                 sensitive = entity.sensitive,
             )
-        } catch (_: Throwable) {
+        } catch (error: Throwable) {
+            // 读失败必须留痕：返回 null 会被上层理解成「没有这条历史」，
+            // 而真实原因可能是库坏了——两者对模型的含义完全不同。
+            WorldHealth.recordDegradation("knowledge.recall($kind)", error)
             null
         }
     }
@@ -164,7 +168,9 @@ internal object WorldKnowledgeStore {
                 WorldDatabaseProvider.get(context).knowledgeDao()
                     .search(nowMs, pattern, limit)
             }.map { entity -> entity.toRecalled(readContent) }
-        } catch (_: Throwable) {
+        } catch (error: Throwable) {
+            // 返回空列表与「真的没查到」无法区分，必须留痕。
+            WorldHealth.recordDegradation("knowledge.search", error)
             emptyList()
         }
     }
@@ -188,7 +194,9 @@ internal object WorldKnowledgeStore {
                 WorldDatabaseProvider.get(context).knowledgeDao()
                     .recentByKind(KIND_FINDING, nowMs, limit)
             }.map { entity -> entity.toRecalled(readContent) }
-        } catch (_: Throwable) {
+        } catch (error: Throwable) {
+            // 启动注入拿不到历史结论时表现为「以前什么都没做过」，同样需要留痕。
+            WorldHealth.recordDegradation("knowledge.recentFindings", error)
             emptyList()
         }
     }
