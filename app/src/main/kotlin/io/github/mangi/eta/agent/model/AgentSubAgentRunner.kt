@@ -41,6 +41,14 @@ internal class AgentSubAgentRunner(
     private val mailbox: SubAgentMailbox? = null,
     /** 信箱工具的执行入口：由宿主把 `mailbox_post` 的调用接到 [SubAgentMailbox.post]。 */
     private val mailboxPost: (suspend (author: String, runId: String, summary: String, body: String) -> String)? = null,
+    /**
+     * 轨迹落盘：把这次委派的完整消息流交给宿主写文件。
+     *
+     * 子智能体的过程默认不进主上下文（这正是它省 token 的方式），代价是主 loop 只能看到摘要、
+     * 无法核验。落盘把「信任」变成「可追溯」：需要抽查时读文件，用户也能自己翻。
+     * 缺省 null 时不落盘——单测不需要，也不该在测试里写磁盘。
+     */
+    private val traceSink: ((name: String, content: String) -> Unit)? = null,
 ) {
     /**
      * [plan] 由调用方按任务档位与历史消耗算好；缺省时按 compare 档默认值执行，
@@ -257,6 +265,9 @@ internal class AgentSubAgentRunner(
                 toolCallId = toolCallId,
             ),
         )
+        // 完整消息流落盘：摘要之外留一份可核验的原始记录。写失败不影响本次委派的结果，
+        // 它只是可追溯性的补充，不是产出本身。
+        runCatching { traceSink?.invoke(id, buildTrace(role, request, messages, content, errorCode)) }
         return Outcome(
             role = role,
             ok = ok,
@@ -283,6 +294,28 @@ internal class AgentSubAgentRunner(
         if (output.isBlank()) return DiffStat(0, "")
         val files = FILE_COUNT_PATTERN.find(output)?.groupValues?.get(1)?.toIntOrNull() ?: 0
         return DiffStat(files, output.take(SUB_AGENT_DIFF_STAT_CHARS))
+    }
+
+    /**
+     * 轨迹文本：元信息 + 完整消息流。
+     *
+     * 截断只针对工具输出撑爆的极端情况——留不住全部也比只剩一段摘要强，
+     * 但也不能让单次委派写出一个几十 MB 的文件。
+     */
+    private fun buildTrace(
+        role: String,
+        request: Request,
+        messages: JSONArray,
+        summary: String,
+        errorCode: String,
+    ): String = buildString {
+        append("role: ").append(role).append('\n')
+        append("brief: ").append(request.brief).append('\n')
+        if (request.context.isNotBlank()) append("context: ").append(request.context).append('\n')
+        append("error: ").append(errorCode.ifBlank { "-" }).append('\n')
+        append("\n--- summary ---\n").append(summary).append('\n')
+        append("\n--- messages ---\n")
+        append(messages.toString().take(SUB_AGENT_TRACE_CHARS))
     }
 
     /** worktree 命令统一走宿主注入的执行器；没有注入时（单测）退化为不执行。 */
@@ -391,7 +424,14 @@ internal class AgentSubAgentRunner(
                 append("不要推测其它角色或主智能体的结论，也不要请求工具以外的能力。\n")
                 AgentSubAgentRoles.instructionFor(role)?.let { append(it).append('\n') }
                 if (worktree.isNotBlank()) append(worktreeInstruction(worktree))
-                append("结论写成可直接交给主智能体的摘要：先给结论，再给关键证据（文件路径与行号或命令输出要点），不要复述过程。\n")
+                append("结论写成可直接交给主智能体的摘要，严格按三段格式：\n")
+                append("结论：一句话回答交给你的问题。\n")
+                append("证据：每条支撑结论的事实单独一行，写成 `路径:行号` 或 `命令 → 关键输出片段`。\n")
+                append("不确定：你没验证到的部分单独列出，不要用推测补齐。\n")
+                append(
+                    "主智能体会按证据逐条回读原文核对，没有证据的结论会被当作未验证——宁少勿虚。" +
+                        "不要复述探索过程。\n",
+                )
                 if (context.isNotBlank()) append("\n背景：\n").append(context)
             },
         )
@@ -430,6 +470,9 @@ internal class AgentSubAgentRunner(
 
         /** diff 统计进主上下文的长度上限：够看清改了哪些文件，又不至于把 diff 整个搬过去。 */
         const val SUB_AGENT_DIFF_STAT_CHARS = 2_000
+
+        /** 单次委派轨迹落盘的长度上限。 */
+        const val SUB_AGENT_TRACE_CHARS = 400_000
     }
 }
 

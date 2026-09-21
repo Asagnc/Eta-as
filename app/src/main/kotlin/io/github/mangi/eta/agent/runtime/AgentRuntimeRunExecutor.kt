@@ -187,6 +187,7 @@ internal class AgentRuntimeRunExecutor(
                     memoryTools = false,
                     capabilities = AgentToolCapabilities.capture(appContext),
                 ),
+                traceSink = { name, content -> AgentSubAgentTraceStore.write(appContext, name, content) },
                 mailbox = mailbox,
                 mailboxPost = { author, runId, summary, body ->
                     val posted = mailbox.post(runId, author, SubAgentMailboxPolicy.KIND_NOTE, summary, body)
@@ -340,6 +341,7 @@ internal class AgentRuntimeRunExecutor(
                         checkpointRecorder,
                     )
                 },
+                planSnapshot = { latestPlan },
                 onPlanUpdated = { planJson ->
                     latestPlan = planJson
                     acceptEvent(
@@ -397,6 +399,7 @@ internal class AgentRuntimeRunExecutor(
                 roleplayContext = roleplayContext,
                 taskPlanSnapshot = { latestTaskPlan },
                 planSnapshot = { latestPlan },
+                runShouldStop = { executor.hasPendingPlan() },
                 rewriteReply = request.operation == AgentRuntimeWire.OP_REWRITE_REPLY,
                 compactOnly = request.operation == AgentRuntimeWire.OP_COMPACT,
                 compactUntilMessageId = request.compactUntilMessageId,

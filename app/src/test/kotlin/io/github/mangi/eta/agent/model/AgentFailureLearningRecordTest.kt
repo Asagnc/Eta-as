@@ -48,6 +48,20 @@ class AgentFailureLearningRecordTest {
     }
 
     @Test
+    fun ignoresFlowControlRejections() {
+        // 方案待确认期间拦下写工具是设计行为，不是失败——记进经验库只会回注一条没用的教训。
+        assertNull(
+            AgentFailureLearningRecord.of(
+                "write_file",
+                2,
+                """{"ok":false,"code":"PLAN_PENDING","message":"方案已提交，正等用户确认"}""",
+                "",
+                now,
+            ),
+        )
+    }
+
+    @Test
     fun deduplicatesSameSignatureWithinWindow() {
         val entry = AgentFailureLearningRecord.of(
             "run_command", 2, """{"ok":false,"exit_code":1}""", "ls /nope", now,

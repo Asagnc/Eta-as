@@ -48,6 +48,11 @@ internal class AgentLoop(
      * 可能带表格，每轮注入全文会让请求持续膨胀。
      */
     private val planSnapshot: (() -> String?)? = null,
+    /**
+     * 本轮是否该结束。方案提交后返回 true：本轮到此为止，等用户确认后再开新一轮——
+     * 让它继续跑只会撞上 PLAN_PENDING 拦截，白费一次往返。
+     */
+    private val runShouldStop: (() -> Boolean)? = null,
     initialSupplementIndex: Int = 0,
 ) {
     data class Result(
@@ -254,6 +259,11 @@ internal class AgentLoop(
                 publishTranscript()
                 appendToolImages(round, outcomes)
                 publishTranscript()
+                // 方案已提交：本轮到此为止，走和自然结束一样的收尾。继续跑只会撞上
+                // PLAN_PENDING 拦截，白费一次往返；用户确认后走的是新一轮，方案与清单都已落库。
+                if (runShouldStop?.invoke() == true) {
+                    return finishRun(round, assistantMessage.optString("content").trim(), roundTools)
+                }
                 noticeRepeatedToolCalls(round, toolCalls)
                 compactOnRequest(outcomes, roundTools)
                 round += 1
@@ -274,25 +284,34 @@ internal class AgentLoop(
                 error("模型接口第 $round 轮返回为空${finishReason.takeIf { it.isNotBlank() }?.let { "：$it" }.orEmpty()}")
             }
 
-            publishTranscript()
-            if (purpose.allowsTools) {
-                context.compact(
-                    roundTools,
-                    final = true,
-                    reasonCode = AgentEvent.ContextCompaction.REASON_FINAL,
-                )
-            }
-            runStats?.takeIf { !it.isEmpty }?.let { stats ->
-                onEvent(AgentEvent.RunStatsReported(stats.snapshot().toString()))
-                stats.selfReview()?.let { review -> onEvent(AgentEvent.SelfReview(review)) }
-            }
-            onEvent(AgentEvent.RunFinished(round = round, contentChars = content.length))
-            return Result(
-                content = content,
-                reasoningContent = reasoningSnapshot(),
-                sensitiveToolCallIds = sensitiveToolCallIds.toSet(),
+            return finishRun(round, content, roundTools)
+        }
+    }
+
+    /**
+     * 本轮收尾：发布最终 transcript、做一次最终压缩、汇报统计并返回结果。
+     *
+     * 自然结束与「方案提交后提前结束」共用它——两条路径的收尾必须一致，各写一份迟早会漂移。
+     */
+    private fun finishRun(round: Int, content: String, roundTools: JSONArray): Result {
+        publishTranscript()
+        if (purpose.allowsTools) {
+            context.compact(
+                roundTools,
+                final = true,
+                reasonCode = AgentEvent.ContextCompaction.REASON_FINAL,
             )
         }
+        runStats?.takeIf { !it.isEmpty }?.let { stats ->
+            onEvent(AgentEvent.RunStatsReported(stats.snapshot().toString()))
+            stats.selfReview()?.let { review -> onEvent(AgentEvent.SelfReview(review)) }
+        }
+        onEvent(AgentEvent.RunFinished(round = round, contentChars = content.length))
+        return Result(
+            content = content,
+            reasoningContent = reasoningSnapshot(),
+            sensitiveToolCallIds = sensitiveToolCallIds.toSet(),
+        )
     }
 
     /**

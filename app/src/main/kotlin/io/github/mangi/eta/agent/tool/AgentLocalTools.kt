@@ -16,6 +16,7 @@ import io.github.mangi.eta.agent.model.AgentModelClient
 import io.github.mangi.eta.agent.model.AgentRunStatsToolCatalog
 import io.github.mangi.eta.agent.model.AgentScreenObservationContract
 import io.github.mangi.eta.agent.model.AgentSensitiveToolPolicy
+import io.github.mangi.eta.agent.model.AgentPlanFormat
 import io.github.mangi.eta.agent.model.AgentSubAgentBudget
 import io.github.mangi.eta.agent.model.AgentSubAgentRoles
 import io.github.mangi.eta.agent.model.AgentSubAgentRunner
@@ -105,6 +106,8 @@ internal class AgentLocalTools(
     private val onTaskPlanUpdated: ((String) -> Unit)? = null,
     /** 方案提交回调：把快照交给运行时存档并发事件，界面据此显示方案卡片。 */
     private val onPlanUpdated: ((String) -> Unit)? = null,
+    /** 当前方案快照：派子智能体时把方向摘要附进背景，避免它的调研偏离方案。 */
+    private val planSnapshot: (() -> String?)? = null,
     /** 本次 run 的度量摘要，由 Runtime 侧的执行循环提供；缺失时工具回报自己不可用。 */
     private val runStatsSummary: (() -> String)? = null,
     /** 受限子智能体；未开启时工具回报自己未启用。 */
@@ -553,6 +556,9 @@ internal class AgentLocalTools(
             .put("plan", renderTaskPlan(normalized))
             .toString()
     }
+
+    /** 本轮是否已提交方案、正在等用户确认。宿主用它决定要不要提前结束本轮。 */
+    fun hasPendingPlan(): Boolean = pendingPlan != null
 
     /**
      * 提交方案：校验通过后本轮到此为止，等用户确认。
@@ -2148,7 +2154,7 @@ internal class AgentLocalTools(
                     "（每角色 ${plan.tokenBudget} × ${roles.size} 个角色）；请减少角色数，或把 scope 降到 quick 后重试",
             )
         }
-        val context = args.optString("context").trim().take(MAX_SUB_AGENT_CONTEXT_CHARS)
+        val context = withPlanDigest(args.optString("context").trim().take(MAX_SUB_AGENT_CONTEXT_CHARS))
         val writeMode = args.optString("mode").trim().equals(AgentSubAgentToolCatalog.MODE_WRITE, ignoreCase = true)
         if (!writeMode) {
             // 只有多角色并行才接信箱：单角色没有同伴可分享，开着只会多占一个工具位。
@@ -2189,6 +2195,23 @@ internal class AgentLocalTools(
             return errorResult("INVALID_ARGUMENT", "mode=write 需要恰好一个角色")
         }
         return delegateWrite(runner, roles.single(), task, context, plan, repoPath, toolCallId)
+    }
+
+    /**
+     * 把当前方案的方向摘要附到子智能体的背景里。
+     *
+     * 不附的话子智能体只知道自己那一小块任务，可能查一堆与方案无关的东西，而它的产出会回流到
+     * 主 loop，等于把方向偏差又放大一遍。方案是主 loop 的方向契约，子智能体应当看得见。
+     */
+    private fun withPlanDigest(context: String): String {
+        val plan = AgentPlanFormat.parse(planSnapshot?.invoke()) ?: return context
+        val digest = buildString {
+            append("当前方案「").append(plan.title).append("」：").append(plan.digest)
+            val steps = plan.steps.take(SUB_AGENT_PLAN_STEPS).joinToString("；")
+            if (steps.isNotBlank()) append(" 步骤：").append(steps)
+        }.take(SUB_AGENT_PLAN_DIGEST_CHARS)
+        if (context.isBlank()) return digest
+        return "$digest\n$context".take(MAX_SUB_AGENT_CONTEXT_CHARS)
     }
 
     /**
@@ -2609,6 +2632,12 @@ private val BUSYBOX_REGEX_ERROR_MARKERS = listOf(
 /** 子智能体入口的取值范围，与 AgentSubAgentToolCatalog 的 schema 保持一致。 */
 private const val MAX_SUB_AGENT_TASK_CHARS = 2_000
 private const val MAX_SUB_AGENT_CONTEXT_CHARS = 4_000
+
+/** 附给子智能体的方案摘要长度上限；太长会把子智能体自己的背景挤满。 */
+private const val SUB_AGENT_PLAN_DIGEST_CHARS = 600
+
+/** 附给子智能体的方案步骤条数上限。 */
+private const val SUB_AGENT_PLAN_STEPS = 4
 
 /** 多角色并行上限，与 AgentSubAgentRunner 的并行上限一致：再多不会更快，只会放大成本。 */
 private const val MAX_SUB_AGENT_ROLES = 3
