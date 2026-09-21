@@ -83,6 +83,14 @@ internal class AgentLoop(
      */
     var failureRecorder: ((AgentModelClient.ToolCall, String, Int) -> Unit)? = null
 
+    /**
+     * 按失败签名回读历史教训（来自更早的运行），用于失败时回注。
+     *
+     * 由宿主注入而不是在这里直接读文件：`AgentLoop` 只做流程编排，
+     * 文件 IO 与路径规则归 AgentFailureLearningStore，单测里也能换成假实现。
+     */
+    var learningRecall: ((String) -> String?)? = null
+
     fun contextSnapshot(): AgentContextSnapshot? = context.snapshot()
 
     private fun appendMessage(message: JSONObject) {
@@ -450,23 +458,37 @@ internal class AgentLoop(
      */
     private fun failureNudges(outcomes: List<ToolOutcome>): Map<Int, String> {
         val nudges = mutableMapOf<Int, String>()
+        // 同一轮里同一签名只回注一次历史：第 2、3 个同因失败不需要再看一遍同样的旧记录。
+        val recalledSignatures = mutableSetOf<String>()
         outcomes.forEachIndexed { index, outcome ->
             val failure = AgentFailureSignature.of(outcome.call.name, outcome.result.content)
             if (failure == null) {
                 failureGuard.reset()
                 return@forEachIndexed
             }
+            val parts = mutableListOf<String>()
             val verdict = failureGuard.observe(failure.signature)
-            if (!verdict.shouldNudge) return@forEachIndexed
-            val reason = when (verdict.kind) {
-                AgentFailureGuard.Kind.CONSECUTIVE ->
-                    "已连续 ${verdict.consecutive} 次以相同错误失败"
-                AgentFailureGuard.Kind.REPEATED ->
-                    "本次运行里已第 ${verdict.total} 次以相同错误失败（中间换过别的方式，但问题没解决）"
-                AgentFailureGuard.Kind.NONE -> return@forEachIndexed
+            if (verdict.shouldNudge) {
+                val reason = when (verdict.kind) {
+                    AgentFailureGuard.Kind.CONSECUTIVE ->
+                        "已连续 ${verdict.consecutive} 次以相同错误失败"
+                    AgentFailureGuard.Kind.REPEATED ->
+                        "本次运行里已第 ${verdict.total} 次以相同错误失败（中间换过别的方式，但问题没解决）"
+                    AgentFailureGuard.Kind.NONE -> ""
+                }
+                if (reason.isNotEmpty()) {
+                    parts += "同一个工具（${outcome.call.name}）$reason：" +
+                        "${failure.detail}。原样重试不会成功，请先核对前置条件，或换一种做法。"
+                }
             }
-            nudges[index] = "同一个工具（${outcome.call.name}）$reason：" +
-                "${failure.detail}。原样重试不会成功，请先核对前置条件，或换一种做法。"
+            // 历史回注与"连续失败"提示独立：本轮的第一次失败也值得知道上一轮踩过同样的坑。
+            if (recalledSignatures.add(failure.signature)) {
+                val history = runCatching { learningRecall?.invoke(failure.signature) }.getOrNull()
+                if (!history.isNullOrBlank()) {
+                    parts += "同一个失败在更早的运行里出现过，当时的记录是：\n$history"
+                }
+            }
+            if (parts.isNotEmpty()) nudges[index] = parts.joinToString("\n")
         }
         return nudges
     }

@@ -204,6 +204,7 @@ internal object AgentModelClient {
             },
         )
         loop.failureRecorder = failureRecorder(failureLogDir)
+        loop.learningRecall = learningRecall(failureLogDir)
         val result = try {
             if (compactOnly) loop.compactOnly(compactUntilMessageId) else loop.run()
         } catch (throwable: Throwable) {
@@ -386,6 +387,19 @@ internal object AgentModelClient {
                 timestampMs = System.currentTimeMillis(),
             )
             if (entry != null) AgentFailureLearningStore.record(directory, entry)
+        }
+    }
+
+    /**
+     * 按失败签名回读历史教训。与 [failureRecorder] 同源（同一个学习记录文件），
+     * 一个写、一个读，共同构成"同类失败下次更快被识别"的闭环。
+     */
+    private fun learningRecall(
+        directory: java.io.File?,
+    ): ((String) -> String?)? {
+        if (directory == null) return null
+        return { signature ->
+            AgentFailureLearningStore.recall(directory, signature, System.currentTimeMillis())
         }
     }
 

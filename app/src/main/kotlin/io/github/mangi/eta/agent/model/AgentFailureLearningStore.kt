@@ -24,10 +24,8 @@ internal object AgentFailureLearningStore {
         if (filesDir == null) return
         if (!writing.compareAndSet(false, true)) return
         try {
-            val directory = File(filesDir, DIRECTORY_NAME)
-            if (!directory.exists() && !directory.mkdirs()) return
-            val file = File(directory, FILE_NAME)
-            val existing = if (file.exists()) file.readText() else ""
+            val file = fileFor(filesDir)
+            val existing = readExisting(file)
             val recent = AgentFailureLearningRecord.parseRecentSignatures(existing, entry.timestampMs)
             if (!AgentFailureLearningRecord.shouldRecord(entry, recent)) return
             val prefix = if (existing.isBlank()) HEADER else ""
@@ -43,6 +41,40 @@ internal object AgentFailureLearningStore {
         } finally {
             writing.set(false)
         }
+    }
+
+    /**
+     * 取同签名的历史教训，用来在失败时回注给模型。
+     *
+     * 只读、只取窗口外的条目（判据见 [AgentFailureLearningRecord.historyFor]）。
+     * 读失败一律当作"没有历史"——回注是锦上添花，不能因为它让正在跑的 run 出错。
+     */
+    fun recall(filesDir: File?, signature: String, nowMs: Long): String? {
+        if (filesDir == null || signature.isBlank()) return null
+        return try {
+            val file = fileFor(filesDir)
+            if (!file.exists()) return null
+            AgentFailureLearningRecord.historyFor(file.readText(), signature, nowMs)
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    /**
+     * `record` 与 `recall` 共用同一个文件路径。
+     *
+     * 两者不需要额外加锁：`record` 用 `writing` 标志串行化写入，而 `recall` 是尽力而为的读取
+     * ——并发追加时它可能读到空内容、拿不到历史。那只是少回注一次旧记录，
+     * 不会影响正在跑的 run，也不值得为它引入读锁（会让失败路径上多一次阻塞）。
+     */
+    fun fileFor(filesDir: File): File = File(File(filesDir, DIRECTORY_NAME), FILE_NAME)
+
+    private fun readExisting(file: File): String {
+        if (file.exists()) return file.readText()
+        file.parentFile?.let { directory ->
+            if (!directory.exists()) directory.mkdirs()
+        }
+        return ""
     }
 
     private const val HEADER =
