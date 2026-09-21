@@ -26,8 +26,9 @@ import androidx.room.migration.Migration
         CharacterEntity::class,
         UserPersonaEntity::class,
         SubAgentRunEntity::class,
+        SubAgentMailboxEntity::class,
     ],
-    version = 27,
+    version = 28,
     exportSchema = false,
 )
 internal abstract class EtaDatabase : RoomDatabase() {
@@ -38,6 +39,7 @@ internal abstract class EtaDatabase : RoomDatabase() {
     abstract fun mcpServerDao(): McpServerDao
     abstract fun characterDao(): CharacterDao
     abstract fun subAgentRunDao(): SubAgentRunDao
+    abstract fun subAgentMailboxDao(): SubAgentMailboxDao
 
     companion object {
         @Volatile
@@ -72,6 +74,7 @@ internal abstract class EtaDatabase : RoomDatabase() {
                         MIGRATION_24_25,
                         MIGRATION_25_26,
                         MIGRATION_26_27,
+                        MIGRATION_27_28,
                     )
                     .addCallback(object : Callback() {
                         override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) { createTextChunkCleanup(db) }
@@ -114,6 +117,30 @@ internal abstract class EtaDatabase : RoomDatabase() {
         internal val MIGRATION_26_27 = Migration(26, 27) { database ->
             database.execSQL(
                 "ALTER TABLE `model_providers` ADD COLUMN `balance_option_json` TEXT NOT NULL DEFAULT 'null'",
+            )
+        }
+
+        /**
+         * 并行子智能体的共享信箱。
+         *
+         * `id` 自增主键 + `run_id` 普通列（而不是复合主键）：读取用 `id > :sinceId` 做增量游标，
+         * 复合主键下自增语义不清晰，容易写出漏读或重读的查询。
+         * 索引建在 `(run_id, created_at)` 上，覆盖"某轮 run 内按时间取"这个唯一读法。
+         */
+        internal val MIGRATION_27_28 = Migration(27, 28) { database ->
+            database.execSQL(
+                "CREATE TABLE IF NOT EXISTS `sub_agent_mailbox` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`run_id` TEXT NOT NULL, " +
+                    "`author` TEXT NOT NULL, " +
+                    "`kind` TEXT NOT NULL, " +
+                    "`summary` TEXT NOT NULL, " +
+                    "`body` TEXT NOT NULL, " +
+                    "`created_at` INTEGER NOT NULL)",
+            )
+            database.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_sub_agent_mailbox_run_id_created_at` " +
+                    "ON `sub_agent_mailbox` (`run_id`, `created_at`)",
             )
         }
 

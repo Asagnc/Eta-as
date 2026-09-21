@@ -15,6 +15,40 @@ import org.json.JSONObject
  */
 internal object AgentSubAgentToolCatalog {
     const val DELEGATE = "delegate"
+    const val MAILBOX_POST = "mailbox_post"
+
+    /** 子智能体可用的信箱工具：投递自己的发现、读同伴的发现。 */
+    fun appendMailboxTo(tools: JSONArray) {
+        tools.put(
+            AgentToolSchema.function(
+                name = MAILBOX_POST,
+                description = "把你的发现投递给同一轮里的其它角色，避免他们重复查同一件事。" +
+                    "查到关键事实（某个定义的位置、某个接口的行为、某个坑）就投一条，不要等收尾。" +
+                    "同一句话只会存一次；一轮里最多 12 条，别把推理过程写进来，只写结论。",
+                parameters = JSONObject()
+                    .put("type", "object")
+                    .put(
+                        "properties",
+                        JSONObject()
+                            .put(
+                                "summary",
+                                JSONObject()
+                                    .put("type", "string")
+                                    .put("maxLength", 160)
+                                    .put("description", "一句话结论，别人扫一眼就知道值不值得看。"),
+                            )
+                            .put(
+                                "body",
+                                JSONObject()
+                                    .put("type", "string")
+                                    .put("maxLength", 1_200)
+                                    .put("description", "支撑结论的关键证据：文件路径与行号、命令输出要点。可省略。"),
+                            ),
+                    )
+                    .put("required", JSONArray().put("summary")),
+            ),
+        )
+    }
 
     /** `mode` 取值：只读取证（默认）与在隔离 worktree 里改代码。 */
     const val MODE_READ = "read"

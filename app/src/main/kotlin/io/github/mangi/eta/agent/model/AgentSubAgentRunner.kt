@@ -4,6 +4,7 @@ import io.github.mangi.eta.agent.runtime.AgentEvent
 import io.github.mangi.eta.agent.runtime.AgentRunCancelledException
 import io.github.mangi.eta.agent.runtime.AgentRunController
 import java.util.concurrent.Executors
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.atomic.AtomicInteger
 import org.json.JSONArray
 import org.json.JSONObject
@@ -33,6 +34,13 @@ internal class AgentSubAgentRunner(
      * 缺省 null 时写入模式拿不到 diff 统计，但不会崩——单测与只读模式都不需要它。
      */
     private val worktreeShellExecutor: ((String) -> String)? = null,
+    /**
+     * 共享信箱。为 null 时信箱工具不出现——单角色委派没有同伴可分享，
+     * 开着只会多占一个工具位。
+     */
+    private val mailbox: SubAgentMailbox? = null,
+    /** 信箱工具的执行入口：由宿主把 `mailbox_post` 的调用接到 [SubAgentMailbox.post]。 */
+    private val mailboxPost: (suspend (author: String, runId: String, summary: String, body: String) -> String)? = null,
 ) {
     /**
      * [plan] 由调用方按任务档位与历史消耗算好；缺省时按 compare 档默认值执行，
@@ -40,6 +48,9 @@ internal class AgentSubAgentRunner(
      *
      * [workspace] 非空表示这次委派带写权限：子智能体在独立 worktree 里改文件，
      * 产出以 diff 形式交回主 loop，由主 loop 决定是否合并。
+     *
+     * [mailboxRunId] 非空表示这次委派接入共享信箱：开工前读同伴的发现，
+     * 过程中可以投递自己的发现。只有多角色并行时才值得开——单角色没有同伴可分享。
      */
     data class Request(
         val role: String,
@@ -47,6 +58,7 @@ internal class AgentSubAgentRunner(
         val context: String = "",
         val plan: SubAgentPlan? = null,
         val workspace: SubAgentWorkspace? = null,
+        val mailboxRunId: String = "",
     )
 
     data class Outcome(
@@ -77,12 +89,40 @@ internal class AgentSubAgentRunner(
 
         val workspace = request.workspace
         val writable = workspace != null
-        val allowedTools = if (writable) READ_ONLY_TOOL_NAMES + WRITE_TOOL_NAMES else READ_ONLY_TOOL_NAMES
+        val mailboxRunId = request.mailboxRunId.trim()
+        val mailboxEnabled = mailboxRunId.isNotEmpty() && mailbox != null
+        val allowedTools = buildSet {
+            addAll(READ_ONLY_TOOL_NAMES)
+            if (writable) addAll(WRITE_TOOL_NAMES)
+            if (mailboxEnabled) addAll(MAILBOX_TOOL_NAMES)
+        }
         val tools = restrictedTools(allowedTools)
+        // 开工前先读同伴已有的发现：不读的话，并行的意义就只剩下"各查一遍再汇总"。
+        // 游标从 0 开始，拿到的是这一轮 run 到此刻为止的全部留言。
+        val peerFindings = if (mailboxEnabled) {
+            runCatching { runBlocking { mailbox!!.readSince(mailboxRunId, 0).text } }.getOrDefault("")
+        } else {
+            ""
+        }
         val messages = JSONArray()
-            .put(systemMessage(role, request.context, workspace?.worktreePath.orEmpty()))
+            .put(systemMessage(role, request.context + peerFindings, workspace?.worktreePath.orEmpty()))
             .put(AgentConversationCodec.userTextMessage(request.brief))
         val executor = toolExecutorFor(allowedTools, workspace)
+        val wrappedExecutor = AgentModelClient.ToolExecutor { call ->
+            if (call.name == AgentSubAgentToolCatalog.MAILBOX_POST && mailboxEnabled && mailboxPost != null) {
+                val args = runCatching { JSONObject(call.argumentsJson.ifBlank { "{}" }) }.getOrNull()
+                val summary = args?.optString("summary").orEmpty()
+                val body = args?.optString("body").orEmpty()
+                AgentModelClient.ToolResult(
+                    runBlocking {
+                        runCatching { mailboxPost.invoke(role, mailboxRunId, summary, body) }
+                            .getOrDefault("""{"ok":false,"code":"MAILBOX_FAILED","message":"投递失败"}""")
+                    },
+                )
+            } else {
+                executor.execute(call)
+            }
+        }
 
         val summary = StringBuilder()
         var round = 1
@@ -134,7 +174,7 @@ internal class AgentSubAgentRunner(
                 ),
             )
             toolCalls.forEach { call ->
-                val result = runCatching { executor.execute(call) }.getOrElse { throwable ->
+                val result = runCatching { wrappedExecutor.execute(call) }.getOrElse { throwable ->
                     AgentModelClient.ToolResult(
                         content = JSONObject()
                             .put("ok", false)
@@ -342,6 +382,9 @@ internal val READ_ONLY_TOOL_NAMES = setOf("read_file", "search_code", "list_dire
 
 /** 写入模式下额外放行的工具。`terminal` 是子智能体自验证（编译、跑单测）的唯一途径。 */
 internal val WRITE_TOOL_NAMES = setOf("write_file", "edit_file", "terminal")
+
+/** 信箱工具：并行角色之间共享发现。 */
+internal val MAILBOX_TOOL_NAMES = setOf("mailbox_post")
 
 /** 构造参数的兜底值：真实预算由 [AgentSubAgentBudget] 按档位与历史消耗算出。 */
 internal const val MAX_SUB_AGENT_ROUNDS = 6

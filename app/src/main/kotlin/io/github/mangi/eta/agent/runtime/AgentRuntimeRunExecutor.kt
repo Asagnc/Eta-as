@@ -10,6 +10,8 @@ import io.github.mangi.eta.agent.model.AgentModelClient
 import io.github.mangi.eta.agent.model.AgentModelExecutionException
 import io.github.mangi.eta.agent.model.AgentRunStats
 import io.github.mangi.eta.agent.model.AgentSubAgentRunner
+import io.github.mangi.eta.agent.model.SubAgentMailbox
+import io.github.mangi.eta.agent.model.SubAgentMailboxPolicy
 import io.github.mangi.eta.agent.model.AgentSubAgentToolScope
 import io.github.mangi.eta.agent.model.AgentToolCatalog
 import io.github.mangi.eta.agent.model.ProviderClientFactory
@@ -76,6 +78,7 @@ internal class AgentRuntimeRunExecutor(
         var entrySurfaceGuard: EntrySurfaceGuard? = null
         var toolExecutor: AutoCloseable? = null
         var localTools: AgentLocalTools? = null
+        val mailbox = SubAgentMailbox(EtaDatabase.get(appContext))
         var toolsBinding: AgentRunController.ResourceBinding? = null
         var response: AgentModelClient.ModelResponse.Text? = null
         var cancelled = false
@@ -184,6 +187,35 @@ internal class AgentRuntimeRunExecutor(
                     memoryTools = false,
                     capabilities = AgentToolCapabilities.capture(appContext),
                 ),
+                mailbox = mailbox,
+                mailboxPost = { author, runId, summary, body ->
+                    val posted = mailbox.post(runId, author, SubAgentMailboxPolicy.KIND_NOTE, summary, body)
+                    when (posted) {
+                        is SubAgentMailbox.Post.Stored -> JSONObject()
+                            .put("ok", true)
+                            .put("message", "已投递给同伴（id=${posted.id}）")
+                            .toString()
+
+                        SubAgentMailbox.Post.Duplicate -> JSONObject()
+                            .put("ok", false)
+                            .put("code", "MAILBOX_DUPLICATE")
+                            .put("message", "这条发现已经有人投过了，直接看信箱里的内容即可")
+                            .toString()
+
+                        SubAgentMailbox.Post.Throttled -> JSONObject()
+                            .put("ok", false)
+                            .put("code", "MAILBOX_THROTTLED")
+                            .put("message", "本轮留言已达上限（${SubAgentMailboxPolicy.MAX_NOTES_PER_RUN} 条），" +
+                                "请只在收尾时把结论写进摘要")
+                            .toString()
+
+                        SubAgentMailbox.Post.Empty -> JSONObject()
+                            .put("ok", false)
+                            .put("code", "MAILBOX_EMPTY")
+                            .put("message", "summary 与 body 不能同时为空")
+                            .toString()
+                    }
+                },
                 toolExecutorFor = { allowed, workspace ->
                     AgentModelClient.ToolExecutor { call ->
                         val delegate = toolExecutorRef
@@ -292,6 +324,8 @@ internal class AgentRuntimeRunExecutor(
                 pendingSkillConflict = pendingSkillConflict,
                 runStatsSummary = { runStats.summaryText() },
                 subAgentRunner = subAgentRunner,
+                mailboxRunId = request.runId,
+                mailbox = mailbox,
                 onTaskPlanUpdated = { planJson ->
                     latestTaskPlan = planJson
                     acceptEvent(
@@ -442,6 +476,8 @@ internal class AgentRuntimeRunExecutor(
             // 子智能体的隔离工作区保留到这一刻才回收：保留期间主智能体才能回去看改动细节。
             // 清理失败不影响 run 结果——它是收尾动作，不该把成功的运行变成失败。
             runCatching { localTools?.cleanupWorktrees() }
+            // 信箱按 run 隔离，run 结束即清空：留着只会占空间，且下一轮 run 有自己的分区。
+            runCatching { runBlocking { mailbox.clear(request.runId) } }
             runCatching { toolsBinding?.close() }
             runCatching { toolExecutor?.close() }
         }

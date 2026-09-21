@@ -22,6 +22,7 @@ import io.github.mangi.eta.agent.model.AgentSubAgentRunner
 import io.github.mangi.eta.agent.model.AgentSubAgentToolCatalog
 import io.github.mangi.eta.agent.model.AgentWorktreeManager
 import io.github.mangi.eta.agent.model.SUB_AGENT_INVOCATION_LIMIT
+import io.github.mangi.eta.agent.model.SubAgentMailbox
 import io.github.mangi.eta.agent.model.SubAgentPlan
 import io.github.mangi.eta.agent.model.SubAgentSample
 import io.github.mangi.eta.agent.model.SubAgentScope
@@ -113,6 +114,14 @@ internal class AgentLocalTools(
      * 而不是偷偷退化成在主工作区里改——隔离失效比功能不可用危险得多。
      */
     private val worktreeShellExecutor: ((String) -> String)? = null,
+    /**
+     * 本次 run 的标识，用作信箱分区键。
+     *
+     * 缺省空串表示不启用信箱（单角色委派没有同伴可分享，开着只会多占工具位）。
+     */
+    private val mailboxRunId: String = "",
+    /** 共享信箱；由 Runtime 侧注入。 */
+    private val mailbox: SubAgentMailbox? = null,
     private val beforeToolExecution: (String) -> ToolExecutionDecision = {
         ToolExecutionDecision.Allow
     },
@@ -1981,12 +1990,15 @@ internal class AgentLocalTools(
         val context = args.optString("context").trim().take(MAX_SUB_AGENT_CONTEXT_CHARS)
         val writeMode = args.optString("mode").trim().equals(AgentSubAgentToolCatalog.MODE_WRITE, ignoreCase = true)
         if (!writeMode) {
+            // 只有多角色并行才接信箱：单角色没有同伴可分享，开着只会多占一个工具位。
+            val sharedMailboxRunId = if (roles.size > 1) mailboxRunId else ""
             val requests = roles.map { role ->
                 AgentSubAgentRunner.Request(
                     role = role,
                     brief = task.take(MAX_SUB_AGENT_TASK_CHARS),
                     context = context,
                     plan = plan,
+                    mailboxRunId = sharedMailboxRunId,
                 )
             }
             val outcomes = if (requests.size == 1) {
