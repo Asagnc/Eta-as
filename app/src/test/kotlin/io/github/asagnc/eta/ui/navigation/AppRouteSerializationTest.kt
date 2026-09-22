@@ -13,7 +13,6 @@ class AppRouteSerializationTest {
             AppRoute.Home,
             AppRoute.Chat,
             AppRoute.Browser,
-            AppRoute.Terminal,
             AppRoute.Tools,
             AppRoute.Skills,
             AppRoute.Characters,

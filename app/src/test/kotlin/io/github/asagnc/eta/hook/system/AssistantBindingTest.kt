@@ -21,12 +21,9 @@ class AssistantBindingTest {
     }
 
     @Test
-    fun `Gemini and Eta use their own packages and components`() {
-        val gemini = requireNotNull(assistantBindingFor(PowerAssistantTarget.GEMINI))
+    fun `Eta uses its own package and component`() {
         val eta = requireNotNull(assistantBindingFor(PowerAssistantTarget.ETA))
 
-        assertEquals(ModuleConfig.GOOGLE_PACKAGE, gemini.packageName)
-        assertEquals(ModuleConfig.GOOGLE_ASSISTANT_COMPONENT, gemini.componentName)
         assertEquals(ModuleConfig.ETA_PACKAGE, eta.packageName)
         assertEquals(ModuleConfig.ETA_VOICE_INTERACTION_COMPONENT, eta.componentName)
     }
@@ -36,22 +33,22 @@ class AssistantBindingTest {
         assertTrue(
             isAssistantConfigurationCurrent(
                 autoConfigEnabled = true,
-                expectedTarget = PowerAssistantTarget.GEMINI,
-                currentTarget = PowerAssistantTarget.GEMINI,
+                expectedTarget = PowerAssistantTarget.ETA,
+                currentTarget = PowerAssistantTarget.ETA,
             ),
         )
         assertFalse(
             isAssistantConfigurationCurrent(
                 autoConfigEnabled = false,
-                expectedTarget = PowerAssistantTarget.GEMINI,
-                currentTarget = PowerAssistantTarget.GEMINI,
+                expectedTarget = PowerAssistantTarget.ETA,
+                currentTarget = PowerAssistantTarget.ETA,
             ),
         )
         assertFalse(
             isAssistantConfigurationCurrent(
                 autoConfigEnabled = true,
-                expectedTarget = PowerAssistantTarget.GEMINI,
-                currentTarget = PowerAssistantTarget.ETA,
+                expectedTarget = PowerAssistantTarget.ETA,
+                currentTarget = PowerAssistantTarget.OEM,
             ),
         )
     }
@@ -60,15 +57,11 @@ class AssistantBindingTest {
     fun `preference changes configure managed targets and restore OEM`() {
         assertEquals(
             AssistantSelectionAction.CONFIGURE_MANAGED,
-            assistantSelectionAction(true, PowerAssistantTarget.GEMINI),
-        )
-        assertEquals(
-            AssistantSelectionAction.CONFIGURE_MANAGED,
             assistantSelectionAction(true, PowerAssistantTarget.ETA),
         )
         assertEquals(
             AssistantSelectionAction.NONE,
-            assistantSelectionAction(false, PowerAssistantTarget.GEMINI),
+            assistantSelectionAction(false, PowerAssistantTarget.ETA),
         )
         assertEquals(
             AssistantSelectionAction.RESTORE_OEM,

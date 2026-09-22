@@ -8,43 +8,27 @@ class PowerAssistantTargetTest {
     fun `valid persisted values select matching target`() {
         assertEquals(
             PowerAssistantTarget.OEM,
-            PowerAssistantTarget.resolve("oem", legacyPowerKeyTakeover = true),
-        )
-        assertEquals(
-            PowerAssistantTarget.GEMINI,
-            PowerAssistantTarget.resolve("gemini", legacyPowerKeyTakeover = false),
+            PowerAssistantTarget.resolve("oem"),
         )
         assertEquals(
             PowerAssistantTarget.ETA,
-            PowerAssistantTarget.resolve("eta", legacyPowerKeyTakeover = false),
+            PowerAssistantTarget.resolve("eta"),
         )
     }
 
     @Test
-    fun `missing persisted value preserves legacy Gemini takeover`() {
-        assertEquals(
-            PowerAssistantTarget.GEMINI,
-            PowerAssistantTarget.resolve(null, legacyPowerKeyTakeover = true),
-        )
-    }
-
-    @Test
-    fun `missing persisted value preserves legacy OEM behavior`() {
+    fun `missing persisted value falls back to OEM`() {
         assertEquals(
             PowerAssistantTarget.OEM,
-            PowerAssistantTarget.resolve(null, legacyPowerKeyTakeover = false),
+            PowerAssistantTarget.resolve(null),
         )
     }
 
     @Test
-    fun `unknown persisted value falls back to legacy setting`() {
-        assertEquals(
-            PowerAssistantTarget.GEMINI,
-            PowerAssistantTarget.resolve("unknown", legacyPowerKeyTakeover = true),
-        )
+    fun `unknown persisted value falls back to OEM`() {
         assertEquals(
             PowerAssistantTarget.OEM,
-            PowerAssistantTarget.resolve("unknown", legacyPowerKeyTakeover = false),
+            PowerAssistantTarget.resolve("unknown"),
         )
     }
 }
