@@ -102,6 +102,7 @@ internal object WorldTraceStore {
                         content = if (overflow && path.isNotBlank()) "" else node.content,
                         contentPath = path,
                         contentBytes = bytes,
+                        scope = node.workspaceRoot,
                     ),
                 )
                 prune(db)
@@ -109,7 +110,10 @@ internal object WorldTraceStore {
                 // 知识条目回答「这件事的结论是什么」（可注入、可校验）。两者用 run id 关联，
                 // 所以能从一条结论回溯到产生它的那次委派。
                 if (parsed.conclusion.isNotBlank()) {
-                    WorldKnowledgeStore.write(
+                    // 取实际落库 id 而不是自己算的签名：同签名内容未变时不写新行，
+                    // 此时库里存在的是**旧行**，边必须连到它身上，否则图上的端点会
+                    // 指向一条数据库里不存在的记录，那部分连接在聚类时静默消失。
+                    val observationId = WorldKnowledgeStore.write(
                         context,
                         WorldKnowledgeStore.Entry(
                             kind = KIND_FINDING,
@@ -133,9 +137,28 @@ internal object WorldTraceStore {
                                     runCatching { File(path).takeIf { it.isFile }?.readText() }.getOrNull()
                                 },
                             ),
+                            scope = node.workspaceRoot,
                             createdAt = node.endedAt,
                         ),
                     )
+                    // 一条新的观测同时入图：抽实体、与窗口内的既有观测建确定性边。
+                    // 放在知识条目写入之后而不是之前，因为建边要读既有观测（含刚写这条
+                    // 之前的全部），顺序反了会把自己和「还不存在的自己」比较。
+                    //
+                    // 整段仍在这个 try 里：建图失败会走 WorldHealth 留痕，不影响委派结果。
+                    // observationId 为空说明这条没真正落库（被裁剪或写失败），此时不建边。
+                    if (observationId.isNotBlank()) {
+                        WorldGraphStore.ingest(
+                            context = context,
+                            observationId = observationId,
+                            conclusion = parsed.conclusion,
+                            evidence = parsed.evidence.joinToString("\n") { it.raw },
+                            uncertainty = parsed.uncertainty.joinToString("\n"),
+                            scope = node.workspaceRoot,
+                            workspaceRoot = node.workspaceRoot,
+                            nowMs = node.endedAt,
+                        )
+                    }
                 }
             }
         } catch (error: Throwable) {

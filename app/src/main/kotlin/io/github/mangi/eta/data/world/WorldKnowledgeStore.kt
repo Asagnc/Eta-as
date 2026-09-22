@@ -25,7 +25,11 @@ internal object WorldKnowledgeStore {
     fun fileFor(context: Context): File = WorldDatabaseProvider.fileFor(context)
 
     /**
-     * 写入一条观测。
+     * 写入一条观测，返回**实际落库的条目 id**（写失败或不需要写时为空串）。
+     *
+     * 返回值不是可有可无的便利：同签名且内容未变时不写新行，此时实际存在的是**旧行的
+     * id**，与调用方自己算出来的签名并不相同。图里的边必须以这个 id 为端点，否则
+     * 「共享文件」会指向一个数据库里根本不存在的节点，聚类时那部分连接会静默丢失。
      *
      * 同签名且内容未变时不写（见 [WorldKnowledgeLogic.shouldWrite]）；内容变了则覆盖更新，
      * 避免同一条知识堆积多个版本。
@@ -33,9 +37,9 @@ internal object WorldKnowledgeStore {
     fun write(
         context: Context?,
         entry: Entry,
-    ) {
-        if (context == null) return
-        try {
+    ): String {
+        if (context == null) return ""
+        return try {
             // 固定走 IO 调度器：本类的调用点分布在工具执行、事件回收等多条路径上，
             // 不能让某一条恰好落在主线程时把磁盘 IO 带到主线程上。
             runBlocking(Dispatchers.IO) {
@@ -45,16 +49,22 @@ internal object WorldKnowledgeStore {
                 db.withTransaction {
                     val dao = db.knowledgeDao()
                     val existing = dao.latestBySignature(entry.kind, entry.signature)
+                    // 内容没变时沿用旧行 id：这条观测已经存在，边应当连到它身上。
+                    val targetId = existing?.id ?: UUID.randomUUID().toString()
                     if (WorldKnowledgeLogic.shouldWrite(entry.kind, entry.signature, entry.summary, existing)) {
-                        dao.upsert(entry.toEntity(existing?.id ?: UUID.randomUUID().toString()))
+                        dao.upsert(entry.toEntity(targetId))
                     }
                     dao.deleteExpired(System.currentTimeMillis())
                     dao.trim(KEEP_ENTRIES)
+                    // 已有旧行且内容未变时，旧行仍在（未被 trim 掉的），照常返回它的 id；
+                    // 但若刚才的 trim 把它裁掉了，返回空串以免图上留下悬空引用。
+                    if (dao.exists(targetId) > 0) targetId else ""
                 }
             }
         } catch (error: Throwable) {
             // 记录观测不影响本轮运行，但降级要留痕。
             WorldHealth.recordDegradation("knowledge.write(${entry.kind})", error)
+            ""
         }
     }
 
@@ -113,6 +123,13 @@ internal object WorldKnowledgeStore {
         val payload: String = "",
         val dependencies: List<WorldKnowledgeLogic.Dependency> = emptyList(),
         val sensitive: Boolean = false,
+        /**
+         * 该条观测的空间坐标（工作区根路径）。
+         *
+         * 空串表示「坐标未知」：调用方（如失败学习这类不依附工作区的条目）可能拿不到
+         * 工作区根，此时按最远处理而不是拒绝写入——不知道坐标的观测仍然发生过。
+         */
+        val scope: String = "",
         val createdAt: Long = System.currentTimeMillis(),
         val ttlMs: Long = DEFAULT_TTL_MS,
     ) {
@@ -131,6 +148,7 @@ internal object WorldKnowledgeStore {
             payload = payload,
             dependencies = WorldKnowledgeLogic.encodeDependencies(dependencies),
             sensitive = sensitive,
+            scope = scope,
         )
     }
 

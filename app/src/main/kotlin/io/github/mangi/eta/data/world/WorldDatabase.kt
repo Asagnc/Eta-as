@@ -50,6 +50,14 @@ internal data class WorldKnowledgeEntity(
     /** 依赖文件及其指纹，JSON 数组；读回时据此判断结论是否仍然成立。 */
     @ColumnInfo(name = "dependencies") val dependencies: String,
     @ColumnInfo(name = "sensitive") val sensitive: Boolean,
+    /**
+     * 该条观测所属的空间坐标（工作区根路径，形如 `/data/local/tmp/eta/Eta-src`）。
+     *
+     * 「空间」这个维度不是装饰：同一句结论在不同工作区里含义不同，只按关键词检索会让
+     * 两个项目的同名文件互相污染。空串表示「坐标未知」，排序时按最远处理而不丢弃
+     * ——未知坐标的历史结论仍可能有价值，只是不作为优先项。
+     */
+    @ColumnInfo(name = "scope") val scope: String = "",
 )
 
 @Dao
@@ -96,9 +104,41 @@ internal interface WorldKnowledgeDao {
     )
     suspend fun recentByKind(kind: String, now: Long, limit: Int): List<WorldKnowledgeEntity>
 
+    /**
+     * 取最近的条目（不限种类、不过滤过期）。
+     *
+     * 供建图时重建既有观测的坐标用：图描述的是「历史上这些观测之间的关系」，过期的
+     * 结论仍然参与建边——否则一条结论到期后它的所有边会凭空消失，聚类结果会跟着抖动。
+     * 过期只影响「要不要注入给模型」，不影响「世界上有没有发生过」。
+     */
+    @Query("SELECT * FROM world_knowledge ORDER BY created_at DESC LIMIT :limit")
+    suspend fun recentAny(limit: Int): List<WorldKnowledgeEntity>
+
+    /**
+     * 该 id 是否仍然存在。
+     *
+     * 写入路径需要它：调用方拿到实际落库 id 后会用它当图上的节点端点，若这一条刚好
+     * 在裁剪中被删掉，端点在库里就不存在，图会留下悬空引用。
+     */
+    @Query("SELECT COUNT(*) FROM world_knowledge WHERE id = :id")
+    suspend fun exists(id: String): Int
+
     /** 清理已过期条目，返回删除条数。 */
     @Query("DELETE FROM world_knowledge WHERE expires_at != 0 AND expires_at <= :now")
     suspend fun deleteExpired(now: Long): Int
+
+    /**
+     * 把坐标未知的历史条目回填成当前工作区根。
+     *
+     * 只补空串，不覆盖已有值：已有值可能是真实的多工作区坐标（将来支持多工作区时），
+     * 无条件覆盖会把它们抹平成同一个点。
+     *
+     * 为什么必须回填而不是放着：scope 空串在检索时按"最远"处理，于是所有历史结论
+     * 都会被当成"来自别的空间"而排在后面——用户升级后会发现"最新写入的观测查不到"，
+     * 而那是回填缺失，不是检索逻辑错。
+     */
+    @Query("UPDATE world_knowledge SET scope = :scope WHERE scope = ''")
+    suspend fun backfillScope(scope: String): Int
 
     /** 按条数裁剪：只保留最近的 [keep] 条，避免无限增长。 */
     @Query(
@@ -155,6 +195,11 @@ internal data class WorldTraceEntity(
     @ColumnInfo(name = "content") val content: String,
     @ColumnInfo(name = "content_path") val contentPath: String,
     @ColumnInfo(name = "content_bytes") val contentBytes: Long,
+    /**
+     * 该次委派所属的空间坐标（工作区根路径）。与 [WorldKnowledgeEntity.scope] 同一口径，
+     * 使「结论」与「现场」能在同一个空间里被一起检索出来。
+     */
+    @ColumnInfo(name = "scope") val scope: String = "",
 )
 
 @Dao
@@ -187,6 +232,15 @@ internal interface WorldTraceDao {
 
     @Query("DELETE FROM world_trace WHERE id IN (:ids)")
     suspend fun deleteByIds(ids: List<String>)
+
+    /**
+     * 把坐标未知的历史委派记录回填成当前工作区根。
+     *
+     * 与知识条目的回填成对存在：只补一张表会造成"结论有坐标、现场没有"，而两者在
+     * 第二阶段的检索里要按同一口径比较空间距离，一边缺坐标就会让排序结果失去意义。
+     */
+    @Query("UPDATE world_trace SET scope = :scope WHERE scope = ''")
+    suspend fun backfillScope(scope: String): Int
 }
 
 /** 裁剪时需要连带删除的正文文件路径。 */
@@ -195,8 +249,218 @@ internal data class TraceOverflowRow(
     @ColumnInfo(name = "content_path") val contentPath: String,
 )
 
+/**
+ * 图里的一个节点（实体）。
+ *
+ * 观测条目是「一次行动留下的记录」，实体是「这次行动涉及的东西」——文件、符号、
+ * 概念。把两者分开的理由是：同一条观测会涉及多个实体，同一个实体会被多条观测涉及，
+ * 这个多对多关系正是「聚类」得以发生的地方。
+ *
+ * [kind] 只有三种取值：
+ * - `file`：代码文件路径，从证据的 `路径:行号` 直接提取，**确定性**。
+ * - `symbol`：代码标识符（类名、函数名、常量名），从结论与证据文本里识别，**确定性**。
+ * - `concept`：语义概念，由 LLM 抽取，**有成本且可能不准**，所以单独一类而不是混进前两种。
+ *
+ * 前两种不花一分钱、不会幻觉，是图的主要骨架；第三种只在补断点时用。这个划分直接
+ * 决定了整套聚类的成本与可信度，不是分类癖。
+ */
+@Entity(
+    tableName = "world_entity",
+    indices = [
+        Index(value = ["kind", "name"], unique = true),
+        Index(value = ["updated_at"]),
+    ],
+)
+internal data class WorldEntityRow(
+    @PrimaryKey @ColumnInfo(name = "id") val id: String,
+    @ColumnInfo(name = "kind") val kind: String,
+    /** 实体名：文件路径、符号名或概念名。 */
+    @ColumnInfo(name = "name") val name: String,
+    /** 所属空间坐标，与知识条目同一口径。 */
+    @ColumnInfo(name = "scope") val scope: String,
+    @ColumnInfo(name = "created_at") val createdAt: Long,
+    @ColumnInfo(name = "updated_at") val updatedAt: Long,
+)
+
+/**
+ * 图里的一条边。
+ *
+ * [layer] 记录这条边**是怎么来的**，取值 `file` / `symbol` / `keyword` / `semantic`。
+ * 这个字段是整套设计的可解释性基础：「这两个东西为什么被聚成一类」必须能回答，
+ * 否则聚类结果无法被信任，也无法在出错时定位是哪一层出的问题。
+ *
+ * [weight] 表示连接强度：共享的实体越多、关键词重叠越多，权重越高。同一对节点之间
+ * 可能同时存在多层边（既共享文件又共享符号），入库时按 `(src,dst,layer)` 去重合并，
+ * 排序时把权重相加。
+ */
+@Entity(
+    tableName = "world_edge",
+    indices = [
+        Index(value = ["src_id"]),
+        Index(value = ["dst_id"]),
+        Index(value = ["layer"]),
+        Index(value = ["src_id", "dst_id", "layer"], unique = true),
+    ],
+)
+internal data class WorldEdgeRow(
+    @PrimaryKey @ColumnInfo(name = "id") val id: String,
+    @ColumnInfo(name = "src_id") val srcId: String,
+    @ColumnInfo(name = "dst_id") val dstId: String,
+    @ColumnInfo(name = "layer") val layer: String,
+    @ColumnInfo(name = "weight") val weight: Double,
+    @ColumnInfo(name = "created_at") val createdAt: Long,
+)
+
+/**
+ * 一个社区（「星系」）。
+ *
+ * 对应 Zep 三层子图的最上层（community subgraph）：「clusters of strongly connected
+ * entities」加「high-level summarizations」。它的价值不是省查询，而是**提供逐条查询
+ * 给不出的视角**——单看五条结论不知道它们在讲同一件事，看社区摘要才知道。
+ *
+ * [dependencySignature] 是成员观测依赖指纹集合的哈希，用来判断摘要是否还成立：摘要
+ * 引用的某条观测一旦失效，摘要就该被标为过期，而不是继续当作整体结论注入。这是把
+ * 知识条目上已验证的新鲜度机制**递归应用到摘要层**，否则摘要会成为新的幻觉温床。
+ */
+@Entity(
+    tableName = "world_community",
+    indices = [
+        Index(value = ["level"]),
+        Index(value = ["updated_at"]),
+    ],
+)
+internal data class WorldCommunityRow(
+    @PrimaryKey @ColumnInfo(name = "id") val id: String,
+    /** 社区标签，由成员实体名概括得出。 */
+    @ColumnInfo(name = "label") val label: String,
+    /** 所属空间坐标。 */
+    @ColumnInfo(name = "scope") val scope: String,
+    /** 层级；本轮只产出 0 层（最细），留字段供后续做「星系团」。 */
+    @ColumnInfo(name = "level") val level: Int,
+    /** 成员实体 id，JSON 数组。 */
+    @ColumnInfo(name = "member_ids") val memberIds: String,
+    /** 高层摘要；未生成时为空串。 */
+    @ColumnInfo(name = "summary") val summary: String,
+    /** 成员观测依赖指纹集合的哈希，用于判断摘要是否失效。 */
+    @ColumnInfo(name = "dependency_signature") val dependencySignature: String,
+    @ColumnInfo(name = "created_at") val createdAt: Long,
+    @ColumnInfo(name = "updated_at") val updatedAt: Long,
+)
+
+/**
+ * 边的失效记录。
+ *
+ * 取自 Zep 的时序边机制：新信息与旧信息矛盾时，旧边被标为失效（`invalid_at`）而不是
+ * 删除，且**一律以新信息为准**（原文 "consistently prioritizes new information"）。
+ * 保留失效记录而不是物理删除，是因为「这个结论曾经成立过、后来被推翻了」本身是信息
+ * ——排查时能解释为什么当时的判断是那样。
+ */
+@Entity(
+    tableName = "world_edge_invalidation",
+    indices = [Index(value = ["edge_id"], unique = true)],
+)
+internal data class WorldEdgeInvalidationRow(
+    @PrimaryKey @ColumnInfo(name = "id") val id: String,
+    @ColumnInfo(name = "edge_id") val edgeId: String,
+    /** 失效时刻。 */
+    @ColumnInfo(name = "invalid_at") val invalidAt: Long,
+    /** 取代它的那条边；没有则空串。 */
+    @ColumnInfo(name = "superseded_by") val supersededBy: String,
+)
+
+@Dao
+internal interface WorldEntityDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(rows: List<WorldEntityRow>)
+
+    @Query("SELECT * FROM world_entity WHERE kind = :kind AND name = :name LIMIT 1")
+    suspend fun find(kind: String, name: String): WorldEntityRow?
+
+    @Query("SELECT * FROM world_entity WHERE kind = :kind AND name IN (:names)")
+    suspend fun findMany(kind: String, names: List<String>): List<WorldEntityRow>
+
+    @Query("SELECT * FROM world_entity ORDER BY updated_at DESC LIMIT :limit")
+    suspend fun recent(limit: Int): List<WorldEntityRow>
+
+    @Query("SELECT COUNT(*) FROM world_entity")
+    suspend fun count(): Int
+
+    @Query(
+        "DELETE FROM world_entity WHERE id NOT IN " +
+            "(SELECT id FROM world_entity ORDER BY updated_at DESC LIMIT :keep)",
+    )
+    suspend fun trim(keep: Int)
+}
+
+@Dao
+internal interface WorldEdgeDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(rows: List<WorldEdgeRow>)
+
+    @Query("SELECT * FROM world_edge WHERE src_id = :id OR dst_id = :id")
+    suspend fun touching(id: String): List<WorldEdgeRow>
+
+    @Query("SELECT * FROM world_edge WHERE id = :id LIMIT 1")
+    suspend fun find(id: String): WorldEdgeRow?
+
+    @Query("SELECT COUNT(*) FROM world_edge")
+    suspend fun count(): Int
+
+    @Query(
+        "DELETE FROM world_edge WHERE id NOT IN " +
+            "(SELECT id FROM world_edge ORDER BY created_at DESC LIMIT :keep)",
+    )
+    suspend fun trim(keep: Int)
+}
+
+@Dao
+internal interface WorldCommunityDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(rows: List<WorldCommunityRow>)
+
+    @Query("SELECT * FROM world_community ORDER BY updated_at DESC LIMIT :limit")
+    suspend fun recent(limit: Int): List<WorldCommunityRow>
+
+    @Query("SELECT * FROM world_community WHERE scope = :scope ORDER BY updated_at DESC")
+    suspend fun byScope(scope: String): List<WorldCommunityRow>
+
+    @Query("SELECT * FROM world_community WHERE id = :id LIMIT 1")
+    suspend fun find(id: String): WorldCommunityRow?
+
+    @Query("SELECT COUNT(*) FROM world_community")
+    suspend fun count(): Int
+
+    @Query("DELETE FROM world_community WHERE id = :id")
+    suspend fun delete(id: String)
+
+    @Query(
+        "DELETE FROM world_community WHERE id NOT IN " +
+            "(SELECT id FROM world_community ORDER BY updated_at DESC LIMIT :keep)",
+    )
+    suspend fun trim(keep: Int)
+}
+
+@Dao
+internal interface WorldEdgeInvalidationDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(row: WorldEdgeInvalidationRow)
+
+    @Query("SELECT * FROM world_edge_invalidation WHERE edge_id = :edgeId LIMIT 1")
+    suspend fun byEdge(edgeId: String): WorldEdgeInvalidationRow?
+
+    @Query("SELECT COUNT(*) FROM world_edge_invalidation")
+    suspend fun count(): Int
+}
+
 @Database(
-    entities = [WorldKnowledgeEntity::class, WorldTraceEntity::class],
+    entities = [
+        WorldKnowledgeEntity::class,
+        WorldTraceEntity::class,
+        WorldEntityRow::class,
+        WorldEdgeRow::class,
+        WorldCommunityRow::class,
+        WorldEdgeInvalidationRow::class,
+    ],
     version = WorldDatabase.VERSION,
     exportSchema = false,
 )
@@ -205,6 +469,14 @@ internal abstract class WorldDatabase : RoomDatabase() {
 
     abstract fun traceDao(): WorldTraceDao
 
+    abstract fun entityDao(): WorldEntityDao
+
+    abstract fun edgeDao(): WorldEdgeDao
+
+    abstract fun communityDao(): WorldCommunityDao
+
+    abstract fun edgeInvalidationDao(): WorldEdgeInvalidationDao
+
     companion object {
         /**
          * schema 版本。与主库无关：版本不匹配时本库直接重建，不写迁移。
@@ -212,8 +484,11 @@ internal abstract class WorldDatabase : RoomDatabase() {
          * 2：新增 world_trace（子智能体委派树）。
          * 3：world_trace 增加 conclusion / evidence / uncertainty，摘要按三段格式拆开存，
          *    证据行与不确定项因此可查询，不必把摘要当自由文本重新解析。
+         * 4：新增空间维度与语义聚类——knowledge / trace 增加 scope 坐标；
+         *    新增 world_entity（实体）、world_edge（边）、world_community（社区）、
+         *    world_edge_invalidation（边失效）四张表。
          */
-        const val VERSION = 3
+        const val VERSION = 4
 
         const val FILE_NAME = "world.db"
     }
