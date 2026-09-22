@@ -43,6 +43,15 @@ sealed interface ProviderSetting {
     val customHeaders: List<CustomHeader>
     val customBody: List<CustomBody>
     val createdAt: Long
+    /**
+     * 上游支持提示缓存时才在请求体里放缓存字段：不认识该字段的网关会直接 400。
+     * Anthropic 走顶层 `cache_control`，OpenAI 兼容路径走 `prompt_cache_key`。
+     *
+     * 必须声明在接口上（而不是只长在 Anthropic 上）：否则每处读取都得写
+     * `as? AnthropicProviderSetting ?: false`，漏掉任意一处就会把开关静默写回 false。
+     */
+    val promptCacheEnabled: Boolean
+        get() = false
     val hostedWebSearchEnabled: Boolean
         get() = false
 }
@@ -64,12 +73,8 @@ data class OpenAiCompatibleProviderSetting(
     override val customBody: List<CustomBody> = emptyList(),
     override val createdAt: Long = System.currentTimeMillis(),
     val endpointMode: String = OpenAiEndpointMode.CHAT_COMPLETIONS,
-    /**
-     * 上游支持提示缓存时才在请求体里放缓存字段：不认识该字段的网关会直接 400。
-     * OpenAI 兼容路径用 `prompt_cache_key`（稳定会话键），与 Anthropic 的顶层
-     * `cache_control` 是两套机制，因此两个 Provider 各有自己的开关。
-     */
-    val promptCacheEnabled: Boolean = false,
+    /** OpenAI 兼容路径用 `prompt_cache_key`（稳定会话键），见 [ProviderSetting.promptCacheEnabled]。 */
+    override val promptCacheEnabled: Boolean = false,
     override val hostedWebSearchEnabled: Boolean = false,
 ) : ProviderSetting
 
@@ -90,8 +95,8 @@ data class AnthropicProviderSetting(
     override val customBody: List<CustomBody> = emptyList(),
     override val createdAt: Long = System.currentTimeMillis(),
     val anthropicVersion: String = DEFAULT_ANTHROPIC_VERSION,
-    /** 上游支持 Anthropic 提示缓存时才在请求体里放 cache_control：网关不认识该字段会直接 400。 */
-    val promptCacheEnabled: Boolean = false,
+    /** Anthropic 路径走顶层 `cache_control`，见 [ProviderSetting.promptCacheEnabled]。 */
+    override val promptCacheEnabled: Boolean = false,
     /** 让服务端按官方默认阈值清理较早的工具结果；需要上游透传 context-management beta 头。 */
     val contextEditingEnabled: Boolean = false,
 ) : ProviderSetting {
@@ -117,8 +122,8 @@ data class CustomProviderSetting(
     override val customBody: List<CustomBody> = emptyList(),
     override val createdAt: Long = System.currentTimeMillis(),
     val endpointMode: String = OpenAiEndpointMode.CHAT_COMPLETIONS,
-    /** 与 [OpenAiCompatibleProviderSetting.promptCacheEnabled] 同义。 */
-    val promptCacheEnabled: Boolean = false,
+    /** 与 [OpenAiCompatibleProviderSetting] 同路径，见 [ProviderSetting.promptCacheEnabled]。 */
+    override val promptCacheEnabled: Boolean = false,
     override val hostedWebSearchEnabled: Boolean = false,
 ) : ProviderSetting
 

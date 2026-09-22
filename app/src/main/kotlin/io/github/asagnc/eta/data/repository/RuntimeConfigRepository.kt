@@ -123,11 +123,7 @@ internal object RuntimeConfigRepository {
             systemPrompt = systemPrompt,
             anthropicVersion = (provider as? AnthropicProviderSetting)?.anthropicVersion
                 ?: AnthropicProviderSetting.DEFAULT_ANTHROPIC_VERSION,
-            promptCacheEnabled = when (provider) {
-                is AnthropicProviderSetting -> provider.promptCacheEnabled
-                is OpenAiCompatibleProviderSetting -> provider.promptCacheEnabled
-                is CustomProviderSetting -> provider.promptCacheEnabled
-            },
+            promptCacheEnabled = provider.promptCacheEnabled,
             contextEditingEnabled = (provider as? AnthropicProviderSetting)?.contextEditingEnabled ?: false,
             openAiEndpointMode = endpointMode,
             hostedWebSearchEnabled = provider.hostedWebSearchEnabled,

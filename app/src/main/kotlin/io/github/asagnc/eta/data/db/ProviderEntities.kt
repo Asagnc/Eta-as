@@ -126,7 +126,7 @@ internal fun ProviderSetting.toEntity(): ProviderEntity =
             is AnthropicProviderSetting -> anthropicVersion
             else -> AnthropicProviderSetting.DEFAULT_ANTHROPIC_VERSION
         },
-        promptCacheEnabled = (this as? AnthropicProviderSetting)?.promptCacheEnabled ?: false,
+        promptCacheEnabled = promptCacheEnabled,
         contextEditingEnabled = (this as? AnthropicProviderSetting)?.contextEditingEnabled ?: false,
     )
 
@@ -179,6 +179,7 @@ internal fun ProviderWithModels.toDomain(): ProviderSetting {
             customBody = ProviderJson.decodeBody(provider.customBodyJson),
             createdAt = provider.createdAt,
             endpointMode = provider.endpointMode.ifBlank { OpenAiEndpointMode.CHAT_COMPLETIONS },
+            promptCacheEnabled = provider.promptCacheEnabled,
             hostedWebSearchEnabled = provider.hostedWebSearchEnabled,
         )
 
@@ -198,6 +199,7 @@ internal fun ProviderWithModels.toDomain(): ProviderSetting {
             createdAt = provider.createdAt,
             endpointMode = provider.endpointMode.ifBlank { OpenAiEndpointMode.CHAT_COMPLETIONS },
             hostedWebSearchEnabled = provider.hostedWebSearchEnabled,
+            promptCacheEnabled = provider.promptCacheEnabled,
         )
     }
 }
