@@ -31,8 +31,6 @@ internal object Prefs {
         const val POWER_KEY_TAKEOVER = "power_key_takeover"
         const val ASSISTANT_AUTO_CONFIG = "assistant_auto_config"
         const val HOTWORD_SELF_HEAL = "hotword_self_heal"
-        const val GESTURE_BAR_CIRCLE_TO_SEARCH = "gesture_bar_circle_to_search"
-        const val DOUBLE_FINGER_CIRCLE_TO_SEARCH = "double_finger_circle_to_search"
         const val LOCKSCREEN_VOICE_COMMAND = "lockscreen_voice_command"
         const val SCREEN_ON_VOICE_COMMAND = "screen_on_voice_command"
         const val AGENT_CUSTOM_MODEL = "agent_custom_model"
@@ -58,8 +56,6 @@ internal object Prefs {
             POWER_KEY_TAKEOVER to false,
             ASSISTANT_AUTO_CONFIG to false,
             HOTWORD_SELF_HEAL to false,
-            GESTURE_BAR_CIRCLE_TO_SEARCH to true,
-            DOUBLE_FINGER_CIRCLE_TO_SEARCH to false,
             LOCKSCREEN_VOICE_COMMAND to false,
             SCREEN_ON_VOICE_COMMAND to false,
             AGENT_CUSTOM_MODEL to true,

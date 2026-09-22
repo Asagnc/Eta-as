@@ -314,7 +314,6 @@
   <string name="ui_linux_tool_environment_314d22">Linux tool environment</string>
   <string name="ui_the_entire_contents_of_memory_md_will_be_deleted_and_83a8ac">The entire contents of MEMORY.md will be deleted and the memory switch will remain in its current state.</string>
   <string name="ui_provider_does_not_exist_83cee6">Provider does not exist</string>
-  <string name="ui_search_in_one_turn_179584">Circle to Search</string>
   <string name="ui_contextual_usage_d12810">Context usage</string>
   <string name="ui_context_length_tokens_227860">Context window (tokens)</string>
   <string name="ui_bright_screen_evokes_automatic_voice_input_4358fe">Bright screen evokes automatic voice input</string>
@@ -335,7 +334,6 @@
   <string name="ui_delete_model_cf24da">Delete model</string>
   <string name="ui_delete_user_skills_f319a9">Delete Skill</string>
   <string name="ui_delete_this_conversation_3f351b">Delete this conversation</string>
-  <string name="ui_long_press_with_two_fingers_to_trigger_a_circle_sear_ab597a">Touch and hold with two fingers to start Circle to Search</string>
   <string name="ui_cancel_edit_c698df">Cancel edit</string>
   <string name="ui_available_capacity_743337">Available capabilities</string>
   <string name="ui_optional_tools_3097d6">Optional tools</string>
@@ -366,7 +364,6 @@
   <string name="ui_maintain_hey_google_detection_after_screen_rest_9d6877">Maintain Hey Google detection after screen rest</string>
   <string name="ui_floating_window_permissions_076b77">Floating window permissions</string>
   <string name="ui_manually_fill_in_the_display_name_and_model_id_077a7b">Manually fill in the display name and Model ID</string>
-  <string name="ui_long_press_on_the_gesture_bar_triggers_a_circle_to_s_b80117">Touch and hold the gesture bar to start Circle to Search</string>
   <string name="ui_open_current_browser_58358e">Open current browser</string>
   <string name="ui_open_wechat_6b2c28">Open WeChat</string>
   <string name="ui_search_provider_74e049">Search provider</string>
