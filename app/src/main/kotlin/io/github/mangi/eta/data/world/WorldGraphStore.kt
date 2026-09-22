@@ -161,9 +161,6 @@ internal object WorldGraphStore {
     /** 边总数。 */
     fun edgeCount(context: Context?): Int = countOf(context) { it.edgeDao().count() }
 
-    /** 社区总数。 */
-    fun communityCount(context: Context?): Int = countOf(context) { it.communityDao().count() }
-
     /** 图中某个节点连出去的所有边（含作为 dst 的）。 */
     fun edgesTouching(context: Context?, nodeId: String): List<WorldEdgeRow> {
         if (context == null || nodeId.isBlank()) return emptyList()

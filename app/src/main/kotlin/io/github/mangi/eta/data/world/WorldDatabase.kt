@@ -311,63 +311,6 @@ internal data class WorldEdgeRow(
     @ColumnInfo(name = "created_at") val createdAt: Long,
 )
 
-/**
- * 一个社区（「星系」）。
- *
- * 对应 Zep 三层子图的最上层（community subgraph）：「clusters of strongly connected
- * entities」加「high-level summarizations」。它的价值不是省查询，而是**提供逐条查询
- * 给不出的视角**——单看五条结论不知道它们在讲同一件事，看社区摘要才知道。
- *
- * [dependencySignature] 是成员观测依赖指纹集合的哈希，用来判断摘要是否还成立：摘要
- * 引用的某条观测一旦失效，摘要就该被标为过期，而不是继续当作整体结论注入。这是把
- * 知识条目上已验证的新鲜度机制**递归应用到摘要层**，否则摘要会成为新的幻觉温床。
- */
-@Entity(
-    tableName = "world_community",
-    indices = [
-        Index(value = ["level"]),
-        Index(value = ["updated_at"]),
-    ],
-)
-internal data class WorldCommunityRow(
-    @PrimaryKey @ColumnInfo(name = "id") val id: String,
-    /** 社区标签，由成员实体名概括得出。 */
-    @ColumnInfo(name = "label") val label: String,
-    /** 所属空间坐标。 */
-    @ColumnInfo(name = "scope") val scope: String,
-    /** 层级；本轮只产出 0 层（最细），留字段供后续做「星系团」。 */
-    @ColumnInfo(name = "level") val level: Int,
-    /** 成员实体 id，JSON 数组。 */
-    @ColumnInfo(name = "member_ids") val memberIds: String,
-    /** 高层摘要；未生成时为空串。 */
-    @ColumnInfo(name = "summary") val summary: String,
-    /** 成员观测依赖指纹集合的哈希，用于判断摘要是否失效。 */
-    @ColumnInfo(name = "dependency_signature") val dependencySignature: String,
-    @ColumnInfo(name = "created_at") val createdAt: Long,
-    @ColumnInfo(name = "updated_at") val updatedAt: Long,
-)
-
-/**
- * 边的失效记录。
- *
- * 取自 Zep 的时序边机制：新信息与旧信息矛盾时，旧边被标为失效（`invalid_at`）而不是
- * 删除，且**一律以新信息为准**（原文 "consistently prioritizes new information"）。
- * 保留失效记录而不是物理删除，是因为「这个结论曾经成立过、后来被推翻了」本身是信息
- * ——排查时能解释为什么当时的判断是那样。
- */
-@Entity(
-    tableName = "world_edge_invalidation",
-    indices = [Index(value = ["edge_id"], unique = true)],
-)
-internal data class WorldEdgeInvalidationRow(
-    @PrimaryKey @ColumnInfo(name = "id") val id: String,
-    @ColumnInfo(name = "edge_id") val edgeId: String,
-    /** 失效时刻。 */
-    @ColumnInfo(name = "invalid_at") val invalidAt: Long,
-    /** 取代它的那条边；没有则空串。 */
-    @ColumnInfo(name = "superseded_by") val supersededBy: String,
-)
-
 @Dao
 internal interface WorldEntityDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -413,53 +356,12 @@ internal interface WorldEdgeDao {
     suspend fun trim(keep: Int)
 }
 
-@Dao
-internal interface WorldCommunityDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(rows: List<WorldCommunityRow>)
-
-    @Query("SELECT * FROM world_community ORDER BY updated_at DESC LIMIT :limit")
-    suspend fun recent(limit: Int): List<WorldCommunityRow>
-
-    @Query("SELECT * FROM world_community WHERE scope = :scope ORDER BY updated_at DESC")
-    suspend fun byScope(scope: String): List<WorldCommunityRow>
-
-    @Query("SELECT * FROM world_community WHERE id = :id LIMIT 1")
-    suspend fun find(id: String): WorldCommunityRow?
-
-    @Query("SELECT COUNT(*) FROM world_community")
-    suspend fun count(): Int
-
-    @Query("DELETE FROM world_community WHERE id = :id")
-    suspend fun delete(id: String)
-
-    @Query(
-        "DELETE FROM world_community WHERE id NOT IN " +
-            "(SELECT id FROM world_community ORDER BY updated_at DESC LIMIT :keep)",
-    )
-    suspend fun trim(keep: Int)
-}
-
-@Dao
-internal interface WorldEdgeInvalidationDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(row: WorldEdgeInvalidationRow)
-
-    @Query("SELECT * FROM world_edge_invalidation WHERE edge_id = :edgeId LIMIT 1")
-    suspend fun byEdge(edgeId: String): WorldEdgeInvalidationRow?
-
-    @Query("SELECT COUNT(*) FROM world_edge_invalidation")
-    suspend fun count(): Int
-}
-
 @Database(
     entities = [
         WorldKnowledgeEntity::class,
         WorldTraceEntity::class,
         WorldEntityRow::class,
         WorldEdgeRow::class,
-        WorldCommunityRow::class,
-        WorldEdgeInvalidationRow::class,
     ],
     version = WorldDatabase.VERSION,
     exportSchema = false,
@@ -473,10 +375,6 @@ internal abstract class WorldDatabase : RoomDatabase() {
 
     abstract fun edgeDao(): WorldEdgeDao
 
-    abstract fun communityDao(): WorldCommunityDao
-
-    abstract fun edgeInvalidationDao(): WorldEdgeInvalidationDao
-
     companion object {
         /**
          * schema 版本。与主库无关：版本不匹配时本库直接重建，不写迁移。
@@ -484,9 +382,8 @@ internal abstract class WorldDatabase : RoomDatabase() {
          * 2：新增 world_trace（子智能体委派树）。
          * 3：world_trace 增加 conclusion / evidence / uncertainty，摘要按三段格式拆开存，
          *    证据行与不确定项因此可查询，不必把摘要当自由文本重新解析。
-         * 4：新增空间维度与语义聚类——knowledge / trace 增加 scope 坐标；
-         *    新增 world_entity（实体）、world_edge（边）、world_community（社区）、
-         *    world_edge_invalidation（边失效）四张表。
+         * 4：新增空间维度——knowledge / trace 增加 scope 坐标；新增 world_entity（实体）
+         *    与 world_edge（分层的边）两张表，让「哪些工作记录在讲同一件事」可查询。
          */
         const val VERSION = 4
 
