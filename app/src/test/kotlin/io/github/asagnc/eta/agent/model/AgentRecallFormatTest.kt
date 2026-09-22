@@ -122,6 +122,21 @@ class AgentRecallFormatTest {
         assertEquals("一句话结论", AgentRecallFormat.probeOf("  一句话结论  \n"))
     }
 
+    @Test
+    fun skipsInconclusiveConclusions() {
+        // 「查不到」型的结论没有可复用的知识；写库侧已拦新的，这里兜住修复前的历史脏数据。
+        val lines = AgentRecallFormat.injectedLines(
+            listOf(
+                entry(summary = "无法给出结论。本环境没有联网工具。"),
+                entry(summary = "可用结论"),
+            ),
+            now,
+        )!!
+
+        assertTrue(lines.none { it.contains("无法给出结论") })
+        assertTrue(lines.any { it.contains("可用结论") })
+    }
+
     private fun entry(
         summary: String,
         ageMs: Long = 60_000L,

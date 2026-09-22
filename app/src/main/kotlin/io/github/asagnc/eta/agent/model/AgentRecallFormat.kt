@@ -54,6 +54,9 @@ internal object AgentRecallFormat {
     ): List<String>? {
         val usable = entries
             .filterNot { it.sensitive }
+            // 空集结论（「查不到」型）不进注入：它没有可复用的知识。写库侧已经拦了新的，
+            // 这里再拦一次是为了兜住修复之前就已入库的历史脏数据。
+            .filterNot { WorldKnowledgeLogic.isInconclusiveConclusion(it.summary) }
             .filter { it.freshness == WorldKnowledgeLogic.Freshness.FRESH }
             // 会话里已经出现过的结论不再注入：模型已经从工具结果里读到过它，再摆一遍只是
             // 重复占预算（依据同上：just-in-time 优于预先全量加载）。
