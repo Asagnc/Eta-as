@@ -33,7 +33,6 @@
   <string name="action_new_conversation">New conversation</string>
   <string name="action_conversation_history">Conversation history</string>
   <string name="action_more">More options</string>
-  <string name="action_open_terminal">Open terminal</string>
   <string name="action_open_browser">Open browser</string>
   <string name="route_chat">Chat</string>
   <string name="route_browser">Agent browser</string>
@@ -44,7 +43,6 @@
   <string name="route_settings">Settings</string>
   <string name="route_memory">Memory</string>
   <string name="route_linux_environment">Linux environment</string>
-  <string name="route_terminal">Terminal</string>
   <string name="terminal_input_hint">Enter a command</string>
   <string name="terminal_input_running_hint">Send input to the running command</string>
   <string name="terminal_send">Send</string>

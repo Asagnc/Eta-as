@@ -67,7 +67,6 @@ fun AgentAppShell(
     onDismissConversationPane: () -> Unit,
     onSearchConversations: (String) -> Unit,
     onNewConversation: () -> Unit,
-    onOpenTerminal: () -> Unit,
     onOpenBrowser: () -> Unit,
     onSelectConversation: (String) -> Unit,
     onConversationRename: (ConversationSummaryUi) -> Unit,
@@ -99,7 +98,6 @@ fun AgentAppShell(
                             onBack = onBack,
                             onOpenConversationPane = onOpenConversationPane,
                             onNewConversation = onNewConversation,
-                            onOpenTerminal = onOpenTerminal,
                             onOpenBrowser = onOpenBrowser,
                         )
                     }
@@ -151,7 +149,6 @@ private fun AgentTopBar(
     onBack: () -> Unit,
     onOpenConversationPane: () -> Unit,
     onNewConversation: () -> Unit,
-    onOpenTerminal: () -> Unit,
     onOpenBrowser: () -> Unit,
 ) {
     val isHome = route is AppRoute.Home
@@ -171,7 +168,6 @@ private fun AgentTopBar(
         if (isHome) {
             TopBarOverflowMenu(
                 onNewConversation = onNewConversation,
-                onOpenTerminal = onOpenTerminal,
                 onOpenBrowser = onOpenBrowser,
             )
         }
@@ -206,7 +202,6 @@ private val TopBarMenuIconSize = 20.dp
 @Composable
 private fun TopBarOverflowMenu(
     onNewConversation: () -> Unit,
-    onOpenTerminal: () -> Unit,
     onOpenBrowser: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -223,11 +218,9 @@ private fun TopBarOverflowMenu(
             onDismissRequest = { showMenu = false },
         ) {
             val newConversationText = stringResource(R.string.action_new_conversation)
-            val openTerminalText = stringResource(R.string.action_open_terminal)
             val openBrowserText = stringResource(R.string.action_open_browser)
             val menuItems = remember(
                 newConversationText,
-                openTerminalText,
                 openBrowserText,
             ) {
                 listOf(
@@ -236,16 +229,6 @@ private fun TopBarOverflowMenu(
                         icon = { modifier ->
                             Icon(
                                 imageVector = Icons.Rounded.AddComment,
-                                contentDescription = null,
-                                modifier = modifier.size(TopBarMenuIconSize),
-                            )
-                        },
-                    ),
-                    DropdownItem(
-                        text = openTerminalText,
-                        icon = { modifier ->
-                            Icon(
-                                imageVector = Icons.Rounded.Terminal,
                                 contentDescription = null,
                                 modifier = modifier.size(TopBarMenuIconSize),
                             )
@@ -274,8 +257,7 @@ private fun TopBarOverflowMenu(
                             showMenu = false
                             when (index) {
                                 0 -> onNewConversation()
-                                1 -> onOpenTerminal()
-                                2 -> onOpenBrowser()
+                                1 -> onOpenBrowser()
                             }
                         },
                     )
@@ -290,7 +272,6 @@ private fun titleForRoute(route: AppRoute?): String = when (route) {
     is AppRoute.Home -> ""
     is AppRoute.Chat -> stringResource(R.string.route_chat)
     is AppRoute.Browser -> stringResource(R.string.route_browser)
-    is AppRoute.Terminal -> stringResource(R.string.route_terminal)
     is AppRoute.Tools -> stringResource(R.string.route_tools)
     is AppRoute.Skills -> stringResource(R.string.route_skills)
     is AppRoute.Characters -> "角色"

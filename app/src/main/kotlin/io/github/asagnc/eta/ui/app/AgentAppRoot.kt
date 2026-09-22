@@ -77,7 +77,6 @@ import io.github.asagnc.eta.ui.screens.skills.AgentSkillsScreen
 import io.github.asagnc.eta.ui.screens.terminal.LinuxEnvironmentScreen
 import io.github.asagnc.eta.ui.screens.terminal.LinuxFilesScreen
 import io.github.asagnc.eta.ui.screens.terminal.SharedFoldersScreen
-import io.github.asagnc.eta.ui.screens.terminal.TerminalEntryScreen
 import io.github.asagnc.eta.ui.screens.terminal.WorkspaceScreen
 import io.github.asagnc.eta.ui.screens.tools.AgentToolsScreen
 import kotlinx.coroutines.CancellationException
@@ -220,7 +219,6 @@ fun AgentAppRoot(
             onDismissConversationPane = { conversationPaneOpen = false },
             onSearchConversations = { query -> agentState.updateSearchQuery(query) },
             onNewConversation = { createConversation() },
-            onOpenTerminal = { pushRoute(AppRoute.Terminal) },
             onOpenBrowser = { pushRoute(AppRoute.Browser) },
             onSelectConversation = { conversationId -> selectConversation(conversationId) },
             onConversationRename = { conversation ->
@@ -372,16 +370,6 @@ fun AgentAppRoot(
             entry<AppRoute.Browser>(swipeDismiss = swipeDismiss) {
                 RoutedShell(route = AppRoute.Browser) {
                     AgentBrowserScreen()
-                }
-            }
-            entry<AppRoute.Terminal>(swipeDismiss = swipeDismiss) {
-                LaunchedEffect(Unit) { requestExecutionNotifications() }
-                RoutedShell(route = AppRoute.Terminal) {
-                    TerminalEntryScreen(
-                        terminalStore = appViewModel.terminalStore,
-                        consoleStore = appViewModel.consoleStore,
-                        onOpenEnvironment = { pushRoute(AppRoute.LinuxEnvironment) },
-                    )
                 }
             }
             entry<AppRoute.Tools>(swipeDismiss = swipeDismiss) {
