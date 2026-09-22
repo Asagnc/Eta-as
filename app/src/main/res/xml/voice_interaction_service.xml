@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:recognitionService="io.github.asagnc.eta.agent.voice.EtaRecognitionService"
-    android:sessionService="io.github.asagnc.eta.agent.voice.EtaVoiceInteractionSessionService"
-    android:settingsActivity="io.github.asagnc.eta.ui.MainActivity"
+    android:recognitionService="io.github.asagnc.sta.agent.voice.StaRecognitionService"
+    android:sessionService="io.github.asagnc.sta.agent.voice.StaVoiceInteractionSessionService"
+    android:settingsActivity="io.github.asagnc.sta.ui.MainActivity"
     android:supportsAssist="true"
     android:supportsLaunchVoiceAssistFromKeyguard="true"
     android:supportsLocalInteraction="false" />

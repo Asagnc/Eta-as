@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="execution_channel">任务运行</string>
-    <string name="execution_title">Eta 正在运行</string>
-    <string name="execution_summary">%1$d 项任务正在运行，可返回 Eta 查看进度</string>
+    <string name="execution_title">Sta 正在运行</string>
+    <string name="execution_summary">%1$d 项任务正在运行，可返回 Sta 查看进度</string>
     <string name="execution_stop">停止运行任务</string>
     <string name="execution_finished_title">任务已完成</string>
-    <string name="execution_finished_text">Eta 已结束后台任务，点开可查看结果</string>
+    <string name="execution_finished_text">Sta 已结束后台任务，点开可查看结果</string>
     <string name="execution_failed_title">任务已中断</string>
-    <string name="execution_failed_text">Eta 的后台任务未正常结束，点开可查看详情</string>
+    <string name="execution_failed_text">Sta 的后台任务未正常结束，点开可查看详情</string>
 </resources>

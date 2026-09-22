@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Eta" parent="@android:style/Theme.Material.NoActionBar">
+    <style name="Theme.Sta" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_animated</item>
@@ -11,14 +11,14 @@
         <item name="android:windowLightNavigationBar">false</item>
     </style>
 
-    <style name="Theme.EtaVoiceAssistBridge" parent="@android:style/Theme.Material.NoActionBar">
+    <style name="Theme.StaVoiceAssistBridge" parent="@android:style/Theme.Material.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:colorAccent">@android:color/transparent</item>
     </style>
 
-    <style name="Theme.EtaVoiceInteractionSession" parent="@android:style/Theme.Material.NoActionBar.TranslucentDecor">
+    <style name="Theme.StaVoiceInteractionSession" parent="@android:style/Theme.Material.NoActionBar.TranslucentDecor">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>

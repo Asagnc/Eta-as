@@ -25,10 +25,10 @@
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <permission
-        android:name="io.github.asagnc.eta.permission.CONTROL_ACCESSIBILITY_PROTECTION"
+        android:name="io.github.asagnc.sta.permission.CONTROL_ACCESSIBILITY_PROTECTION"
         android:protectionLevel="signature" />
 
-    <uses-permission android:name="io.github.asagnc.eta.permission.CONTROL_ACCESSIBILITY_PROTECTION" />
+    <uses-permission android:name="io.github.asagnc.sta.permission.CONTROL_ACCESSIBILITY_PROTECTION" />
 
     <queries>
         <package android:name="com.google.android.googlequicksearchbox" />
@@ -42,7 +42,7 @@
     </queries>
 
     <application
-        android:name=".EtaApp"
+        android:name=".StaApp"
         android:allowBackup="false"
         android:description="@string/xposed_description"
         android:enableOnBackInvokedCallback="true"
@@ -58,7 +58,7 @@
             android:exported="true"
             android:label="@string/app_name"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.Eta"
+            android:theme="@style/Theme.Sta"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -67,13 +67,13 @@
         </activity>
 
         <activity
-            android:name=".agent.voice.EtaVoiceAssistActivity"
+            android:name=".agent.voice.StaVoiceAssistActivity"
             android:excludeFromRecents="true"
             android:exported="true"
             android:noHistory="true"
             android:process=":voice"
             android:showWhenLocked="true"
-            android:theme="@style/Theme.EtaVoiceAssistBridge">
+            android:theme="@style/Theme.StaVoiceAssistBridge">
             <intent-filter>
                 <action android:name="android.intent.action.ASSIST" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -81,7 +81,7 @@
         </activity>
 
         <service
-            android:name=".agent.voice.EtaVoiceInteractionService"
+            android:name=".agent.voice.StaVoiceInteractionService"
             android:exported="true"
             android:label="@string/voice_interaction_service_label"
             android:permission="android.permission.BIND_VOICE_INTERACTION"
@@ -95,13 +95,13 @@
         </service>
 
         <service
-            android:name=".agent.voice.EtaVoiceInteractionSessionService"
+            android:name=".agent.voice.StaVoiceInteractionSessionService"
             android:exported="true"
             android:permission="android.permission.BIND_VOICE_INTERACTION"
             android:process=":voice_session" />
 
         <service
-            android:name=".agent.voice.EtaRecognitionService"
+            android:name=".agent.voice.StaRecognitionService"
             android:exported="true"
             android:label="@string/recognition_service_label"
             android:permission="android.permission.BIND_SPEECH_RECOGNITION_SERVICE"
@@ -115,7 +115,7 @@
         </service>
 
         <service
-            android:name=".agent.voice.EtaAssistantOverlayService"
+            android:name=".agent.voice.StaAssistantOverlayService"
             android:exported="false" />
 
         <service
@@ -157,7 +157,7 @@
 
         <provider
             android:name=".agent.accessibility.AgentAccessibilityHealthProvider"
-            android:authorities="io.github.asagnc.eta.accessibility.health"
+            android:authorities="io.github.asagnc.sta.accessibility.health"
             android:exported="true"
             android:grantUriPermissions="false"
             android:permission="android.permission.MANAGE_ACCESSIBILITY" />

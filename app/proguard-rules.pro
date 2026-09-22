@@ -24,7 +24,7 @@
 # 允许入口类混淆时，需要同步改写 java_init.list，避免 release 裁剪后模块失效。
 -dontwarn io.github.libxposed.annotation.**
 -adaptresourcefilecontents META-INF/xposed/java_init.list
--keep,allowoptimization,allowobfuscation class io.github.asagnc.eta.ModuleMain {
+-keep,allowoptimization,allowobfuscation class io.github.asagnc.sta.ModuleMain {
     public <init>();
 }
 
@@ -33,7 +33,7 @@
 -dontwarn top.yukonga.miuix.**
 
 # 副屏镜像宿主由 root 侧的 app_process 按类名启动，混淆或裁剪后宿主无法启动。
--keep class io.github.asagnc.eta.agent.device.VirtualScreenMirrorHost {
+-keep class io.github.asagnc.sta.agent.device.VirtualScreenMirrorHost {
     public static void main(java.lang.String[]);
 }
 
@@ -43,19 +43,19 @@
 # 配置 key 是字符串常量并通过静态调用访问，不需要保留类名或成员名。
 
 # ── Release 日志策略 ────────────────────────────────────────────────────────
-# 仅删除 Eta 自有代码中的 Android VERBOSE/DEBUG 调用；INFO/WARN/ERROR 必须保留，
+# 仅删除 Sta 自有代码中的 Android VERBOSE/DEBUG 调用；INFO/WARN/ERROR 必须保留，
 # 第三方依赖的日志策略由依赖自身决定。
--maximumremovedandroidloglevel 3 class io.github.asagnc.eta.** { *; }
+-maximumremovedandroidloglevel 3 class io.github.asagnc.sta.** { *; }
 
 # XposedModule.log 不是 android.util.Log，R8 无法通过上面的规则识别。
 # debug supplier 是纯观察 API；禁止在 supplier 内执行任何业务副作用。
--assumenosideeffects interface io.github.asagnc.eta.core.AgentLogger {
+-assumenosideeffects interface io.github.asagnc.sta.core.AgentLogger {
     public abstract void debug(kotlin.jvm.functions.Function0);
 }
--assumenosideeffects class io.github.asagnc.eta.core.AndroidAgentLogger {
+-assumenosideeffects class io.github.asagnc.sta.core.AndroidAgentLogger {
     public void debug(kotlin.jvm.functions.Function0);
 }
--assumenosideeffects class io.github.asagnc.eta.core.ModuleLogger {
+-assumenosideeffects class io.github.asagnc.sta.core.ModuleLogger {
     public void debug(kotlin.jvm.functions.Function0);
 }
 
