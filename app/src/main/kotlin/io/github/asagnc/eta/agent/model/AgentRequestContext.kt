@@ -20,6 +20,12 @@ import java.time.ZonedDateTime
  */
 internal object AgentRequestContext {
 
+    /** 提交方案的工具名；判断「方案之后有没有用户回应」时用。 */
+    private const val SUBMIT_PLAN_TOOL = "submit_plan"
+
+    /** 用户消息的角色名。 */
+    private const val ROLE_USER = "user"
+
     fun attach(
         messages: JSONArray,
         taskPlanJson: String?,
@@ -37,11 +43,18 @@ internal object AgentRequestContext {
         AgentRequestClock.attach(messages, now)
         // 注入顺序：方案（这次要做什么）→ 清单（做到哪了）→ 历史结论（以前做过什么）。
         // 历史结论放最后：它是背景，不是本次任务的要求，压在方向与进度之上会误导模型。
+        // 会话历史里已经出现过的结论不再注入：模型已经从工具结果里读到过它，再摆一遍只是
+        // 重复占预算。用内容前缀匹配而不是 id/时间，这样会话被压缩后同一条结论会重新注入。
+        val historyText = historyTextOf(messages)
         val blocks = listOfNotNull(
-            AgentPlanFormat.injectedLines(planJson, taskPlanJson)?.joinToString("\n"),
-            AgentTaskPlanFormat.injectedLines(taskPlanJson)?.joinToString("\n"),
-            AgentRecallFormat.injectedLines(recallEntries, now.toInstant().toEpochMilli())
+            AgentPlanFormat.injectedLines(planJson, taskPlanJson, planSupersededByUser(messages))
                 ?.joinToString("\n"),
+            AgentTaskPlanFormat.injectedLines(taskPlanJson)?.joinToString("\n"),
+            AgentRecallFormat.injectedLines(
+                recallEntries,
+                now.toInstant().toEpochMilli(),
+                alreadyInContext = { probe -> probe.isNotBlank() && historyText.contains(probe) },
+            )?.joinToString("\n"),
         )
         if (blocks.isEmpty()) return
         val message = messages.optJSONObject(index) ?: return
@@ -56,6 +69,50 @@ internal object AgentRequestContext {
             }
 
             is JSONArray -> message.put("content", rebuildParts(content, block))
+        }
+    }
+
+    /**
+     * 方案提交之后是否已经出现过用户消息。
+     *
+     * 有就说明用户已经就方案给过回应（采纳、改要求或另起话题），方案不再需要每轮注入——
+     * 它本身仍在会话历史里，模型需要时看得到。
+     */
+    private fun planSupersededByUser(messages: JSONArray): Boolean {
+        var lastPlanIndex = -1
+        for (i in 0 until messages.length()) {
+            val calls = messages.optJSONObject(i)?.optJSONArray("tool_calls") ?: continue
+            for (c in 0 until calls.length()) {
+                val name = calls.optJSONObject(c)
+                    ?.optJSONObject("function")
+                    ?.optString("name")
+                    .orEmpty()
+                if (name == SUBMIT_PLAN_TOOL) lastPlanIndex = i
+            }
+        }
+        if (lastPlanIndex < 0) return false
+        for (i in lastPlanIndex + 1 until messages.length()) {
+            if (messages.optJSONObject(i)?.optString("role") == ROLE_USER) return true
+        }
+        return false
+    }
+
+    /**
+     * 把消息序列里的文本拼起来。
+     *
+     * 用于判断某条历史结论是否已经在会话里出现过（见 [AgentRecallFormat.probeOf]）：
+     * 早先的工具结果就在历史里，重复注入它没有意义。
+     */
+    private fun historyTextOf(messages: JSONArray): String = buildString {
+        for (i in 0 until messages.length()) {
+            val message = messages.optJSONObject(i) ?: continue
+            when (val content = message.opt("content")) {
+                is String -> append(content)
+                is JSONArray -> for (part in 0 until content.length()) {
+                    append(content.optJSONObject(part)?.optString("text").orEmpty())
+                }
+            }
+            append('\n')
         }
     }
 

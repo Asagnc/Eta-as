@@ -25,6 +25,18 @@ class AgentPlanFormatTest {
     }
 
     @Test
+    fun `pending plan drops out once the user has replied`() {
+        // 用户就方案给过回应之后，方案仍在会话历史里、卡片也还在屏幕上，
+        // 再每轮注入只是重复占预算。
+        assertNull(AgentPlanFormat.injectedLines(pendingPlan, null, supersededByUser = true))
+        // 已采纳的不受影响：它是执行中的方向，仍按清单是否做完来判。
+        assertTrue(
+            AgentPlanFormat.injectedLines(approvedPlan, openTaskPlan, supersededByUser = true)!!
+                .isNotEmpty(),
+        )
+    }
+
+    @Test
     fun `approved plan drops out once the task plan is settled`() {
         assertNull(AgentPlanFormat.injectedLines(approvedPlan, settledTaskPlan))
         // 清单还没做完，方案仍是方向；清单为空说明执行还没开始，同样要注入。

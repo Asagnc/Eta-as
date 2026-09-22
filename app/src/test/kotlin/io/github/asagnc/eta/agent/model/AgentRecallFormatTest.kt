@@ -93,6 +93,35 @@ class AgentRecallFormatTest {
         assertTrue(lines[1].contains("第一行 第二行 第三行"))
     }
 
+    @Test
+    fun capsSingleSummaryLength() {
+        // 写库侧的 summary 本该是一句话，但子智能体可能把整份报告塞进去（实测一条 1900 字）。
+        // 注入侧必须兜底截断，否则一条历史结论每轮都吃掉上千字的注意力预算。
+        val lines = AgentRecallFormat.injectedLines(listOf(entry(summary = "结".repeat(900))), now)!!
+
+        val item = lines.first { it.startsWith(AgentRecallFormat.ITEM_PREFIX) }
+        assertTrue(item.contains("已截断"))
+        assertTrue(item.length < AgentRecallFormat.MAX_SUMMARY_CHARS + 100)
+    }
+
+    @Test
+    fun skipsEntriesAlreadyInContext() {
+        // 会话里已经出现过的结论不必再注入：模型已经从工具结果里读到过它。
+        val lines = AgentRecallFormat.injectedLines(
+            listOf(entry(summary = "已经在会话里的结论"), entry(summary = "新结论")),
+            now,
+            alreadyInContext = { probe -> probe.startsWith("已经在会话里") },
+        )!!
+
+        assertTrue(lines.none { it.contains("已经在会话里的结论") })
+        assertTrue(lines.any { it.contains("新结论") })
+    }
+
+    @Test
+    fun probeIsNormalizedPrefix() {
+        assertEquals("一句话结论", AgentRecallFormat.probeOf("  一句话结论  \n"))
+    }
+
     private fun entry(
         summary: String,
         ageMs: Long = 60_000L,

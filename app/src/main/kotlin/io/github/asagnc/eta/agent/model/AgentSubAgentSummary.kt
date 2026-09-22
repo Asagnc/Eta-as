@@ -49,6 +49,20 @@ internal object AgentSubAgentSummary {
     private const val EVIDENCE_LABEL = "证据"
     private const val UNCERTAINTY_LABEL = "不确定"
 
+    /**
+     * 段落标签前缀：标签 + 可选括注 + 冒号。
+     *
+     * 括注必须允许：模型经常在标签后补一句限定（实测 `**证据**（均为 Eta 自身，非问题所指外部产品）：`）。
+     * 只认 `证据：` 会让这一行识别不出来，后面的证据、不确定、乃至结尾备注就全部并进结论段——
+     * 结论从一句话膨胀成整份报告，再被当作历史结论每轮注入。
+     */
+    private val LABEL_PREFIX =
+        Regex("""^(${CONCLUSION_LABEL}|${EVIDENCE_LABEL}|${UNCERTAINTY_LABEL})(?:[（(][^）)]*[）)])?[：:]\s*""")
+
+    /** 整行只有一个标签：后面既没冒号也没内容。 */
+    private val BARE_LABEL =
+        Regex("""^(${CONCLUSION_LABEL}|${EVIDENCE_LABEL}|${UNCERTAINTY_LABEL})$""")
+
     /** `路径:行号`，路径里允许出现盘符与空格之外的大多数字符。 */
     private val FILE_PATTERN = Regex("""^(.+?):(\d+)$""")
 
@@ -62,21 +76,22 @@ internal object AgentSubAgentSummary {
 
         val sections = linkedMapOf<String, MutableList<String>>()
         var current: String? = null
-        raw.lines().forEach { line ->
-            val label = labelOf(line)
-            if (label != null) {
-                current = label
-                sections.getOrPut(label) { mutableListOf() }
-                // 标签后面同一行还可能直接跟内容（`结论：xxx`）。
-                // 不能写成 substringAfter('：').substringAfter(':')：后者在没有半角冒号时
-                // 会返回默认值，把前一步取到的内容吞掉。按实际出现的分隔符取一次即可。
-                val separator = if (line.contains('：')) '：' else ':'
-                val inline = line.substringAfter(separator, "").trim()
-                if (inline.isNotEmpty()) sections.getValue(label).add(inline)
-            } else if (current != null) {
-                sections.getValue(current!!).add(line)
+        // `---` 是摘要与结尾备注（模型自己加的「给主智能体的提示」之类）的分界：它后面的内容
+        // 不属于三段，直接截断，不然这些内部备注会混进「不确定」段一起入库。
+        raw.lineSequence()
+            .takeWhile { !it.trimStart().startsWith("---") }
+            .forEach { line ->
+                val label = labelOf(line)
+                if (label != null) {
+                    current = label
+                    sections.getOrPut(label) { mutableListOf() }
+                    // 标签后面同一行还可能直接跟内容（`结论：xxx`）。
+                    val inline = inlineOf(line)
+                    if (inline.isNotEmpty()) sections.getValue(label).add(inline)
+                } else if (current != null) {
+                    sections.getValue(current!!).add(line)
+                }
             }
-        }
 
         val conclusion = sections[CONCLUSION_LABEL]?.joinToString(" ")?.trim().orEmpty()
         val evidence = sections[EVIDENCE_LABEL].orEmpty()
@@ -95,31 +110,40 @@ internal object AgentSubAgentSummary {
     }
 
     /**
-     * 识别一行是不是段落标签；兼容 `结论：`、`结论:`、`**结论**：` 等写法。
+     * 去掉加粗星号与行首的标题/列表符号。
      *
-     * 先去掉全部 `*`（不只是首尾）：模型常写成 `**证据**：路径`，加粗的收尾星号夹在
+     * 去掉的是**全部** `*`（不只是首尾）：模型常写成 `**证据**：路径`，加粗的收尾星号夹在
      * 标签与冒号之间，只 trim 首尾是除不掉的。
      */
-    private fun labelOf(line: String): String? {
-        val cleaned = line.trim()
+    private fun normalize(line: String): String =
+        line.trim()
             .replace("*", "")
             .trimStart('#', '-', ' ')
             .trim()
-        return when {
-            cleaned.startsWith("${CONCLUSION_LABEL}：") ||
-                cleaned.startsWith("${CONCLUSION_LABEL}:") -> CONCLUSION_LABEL
 
-            cleaned.startsWith("${EVIDENCE_LABEL}：") ||
-                cleaned.startsWith("${EVIDENCE_LABEL}:") -> EVIDENCE_LABEL
+    /** 识别一行是不是段落标签；兼容 `结论：`、`结论:`、`**结论**：`、`证据（说明）：` 等写法。 */
+    private fun labelOf(line: String): String? {
+        val cleaned = normalize(line)
+        BARE_LABEL.matchEntire(cleaned)?.let { return it.groupValues[1] }
+        return LABEL_PREFIX.find(cleaned)?.groupValues?.get(1)
+    }
 
-            cleaned.startsWith("${UNCERTAINTY_LABEL}：") ||
-                cleaned.startsWith("${UNCERTAINTY_LABEL}:") -> UNCERTAINTY_LABEL
-
-            cleaned == CONCLUSION_LABEL -> CONCLUSION_LABEL
-            cleaned == EVIDENCE_LABEL -> EVIDENCE_LABEL
-            cleaned == UNCERTAINTY_LABEL -> UNCERTAINTY_LABEL
-            else -> null
+    /**
+     * 标签行里跟在冒号后的内容（`结论：xxx` 里的 `xxx`）。
+     *
+     * 取「第一个不在括号里的冒号」：冒号可能落在括注之后（`证据（说明）：`），直接
+     * `substringAfter('：')` 会被括注里的冒号骗到。扫的是**原始行**，正文里的 `*` 要保留。
+     */
+    private fun inlineOf(line: String): String {
+        var depth = 0
+        for ((index, ch) in line.withIndex()) {
+            when (ch) {
+                '（', '(' -> depth++
+                '）', ')' -> if (depth > 0) depth--
+                '：', ':' -> if (depth == 0) return line.substring(index + 1).trim()
+            }
         }
+        return ""
     }
 
     /**

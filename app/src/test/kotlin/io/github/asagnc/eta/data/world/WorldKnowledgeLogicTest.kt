@@ -212,6 +212,28 @@ class WorldKnowledgeLogicTest {
         )
     }
 
+    @Test
+    fun detectsInconclusiveConclusions() {
+        // 「查不到」型的空集结论没有可复用的知识，却会被当作历史结论每轮注入
+        // （实测一条 1900 字的「无法给出结论……我也没有联网工具……」报告）。
+        assertTrue(
+            WorldKnowledgeLogic.isInconclusiveConclusion(
+                "无法给出结论。本环境只有 Eta 源码树，我也没有联网工具。",
+            ),
+        )
+        assertTrue(WorldKnowledgeLogic.isInconclusiveConclusion("无法得出结论，需要联网核实。"))
+        assertFalse(WorldKnowledgeLogic.isInconclusiveConclusion("备份导出只覆盖会话与角色数据。"))
+    }
+
+    @Test
+    fun onlyChecksTheOpeningForInconclusiveMarkers() {
+        // 判定只看开头一段：结论里顺带提到「没有联网工具」属正常（那是诚实标注边界），
+        // 不能因此把一条有用的结论整条丢掉。
+        val useful = "结论：" + "证据见源码与单测。".repeat(12) + "当时没有联网工具，外部做法未核对。"
+
+        assertFalse(WorldKnowledgeLogic.isInconclusiveConclusion(useful))
+    }
+
     private companion object {
         const val ROOT = "/data/local/tmp/eta"
     }

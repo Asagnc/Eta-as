@@ -58,6 +58,44 @@ class AgentSubAgentSummaryTest {
     }
 
     @Test
+    fun acceptsLabelWithParentheticalNote() {
+        // 实测踩到：模型写成 `**证据**（均为 Eta 自身，非问题所指外部产品）：`，
+        // 标签与冒号之间夹了括注。只认 `证据：` 会让这一行识别不出来——后面的证据、
+        // 不确定与结尾备注全部并进结论段，结论从一句话膨胀成整份报告。
+        val summary = AgentSubAgentSummary.parse(
+            """
+            结论：一句话结论
+            **证据**（均为 Eta 自身，非问题所指外部产品）：
+            - pkg/Foo.kt:7
+            **不确定**（无来源，不给推测）：
+            - 没有联网工具，无法核实。
+            """.trimIndent(),
+        )
+
+        assertEquals("一句话结论", summary.conclusion)
+        assertEquals("pkg/Foo.kt", summary.evidence.single().target)
+        assertEquals(listOf("没有联网工具，无法核实。"), summary.uncertainty)
+    }
+
+    @Test
+    fun dropsTrailingNotesAfterHorizontalRule() {
+        // `---` 是摘要与结尾备注（模型自己加的「给主智能体的提示」之类）的分界：
+        // 它后面的内容不属于三段，不能被当成不确定项收进去。
+        val summary = AgentSubAgentSummary.parse(
+            """
+            结论：一句话结论
+            不确定：
+            - 没有验证并发写入
+            ---
+            给主智能体的提示：需要联网才能查。
+            """.trimIndent(),
+        )
+
+        assertEquals("一句话结论", summary.conclusion)
+        assertEquals(listOf("没有验证并发写入"), summary.uncertainty)
+    }
+
+    @Test
     fun keepsEvidenceWithoutLineNumbersAsFiles() {
         // 只给路径不给行号也应当作文件依赖，它是新鲜度校验的输入。
         val summary = AgentSubAgentSummary.parse(

@@ -31,6 +31,34 @@ internal object WorldKnowledgeLogic {
     }
 
     /**
+     * 「查不到」型的结论标记：结论一开头就声明自己没查出来。
+     *
+     * 这类结论没有可复用的知识，却会被当作历史结论每轮注入——实测一条 1900 字的
+     * 「无法给出结论……我也没有联网工具……」报告，每轮都在吃掉上千字的注意力预算，
+     * 而它对任何后续任务都没有价值。判定只看**开头一段**：结论里顺带提到「无法核实」
+     * 属正常（那是它诚实标注边界），只有一上来就交白卷才算空集。
+     *
+     * 用关键词而不是语义判定：宁可漏判（照旧入库），也不要误杀正常结论。
+     */
+    private val INCONCLUSIVE_MARKERS = listOf(
+        "无法给出结论",
+        "无法得出结论",
+        "无法回答",
+        "没有联网工具",
+        "无联网工具",
+        "不具备联网",
+    )
+
+    /** 结论开头多少个字符内命中标记才算空集。 */
+    private const val INCONCLUSIVE_HEAD_CHARS = 80
+
+    /** 这条结论是不是「查不到」型的空集结论（不该入库）。 */
+    fun isInconclusiveConclusion(conclusion: String): Boolean {
+        val head = conclusion.replace(Regex("\\s+"), " ").trim().take(INCONCLUSIVE_HEAD_CHARS)
+        return INCONCLUSIVE_MARKERS.any { head.contains(it) }
+    }
+
+    /**
      * 把依赖列表编码成 JSON 数组。
      *
      * 空列表编码成空串而不是 `[]`：数据库里空串代表"没有依赖"，读回时不用区分

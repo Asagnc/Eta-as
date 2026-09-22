@@ -58,13 +58,19 @@ internal object AgentPlanFormat {
     /**
      * 注入用的行。
      *
-     * 尚未采纳的方案永远注入——模型得知道自己提过什么方案、用户还没采纳，避免重复提案或
-     * 误当成已批准。已采纳的方案只在清单还没做完时注入：做完之后它不再是方向，继续占上下文
-     * 只是噪音。
+     * 尚未采纳的方案只在它还是「最新提议」时注入：一旦用户就它给过回应（[supersededByUser]），
+     * 方案本身仍在会话历史里、卡片也还在屏幕上，再每轮注入只是重复占预算。
+     * 已采纳的方案只在清单还没做完时注入：做完之后它不再是方向，继续占上下文只是噪音。
      */
-    fun injectedLines(planJson: String?, taskPlanJson: String?): List<String>? {
+    fun injectedLines(
+        planJson: String?,
+        taskPlanJson: String?,
+        supersededByUser: Boolean = false,
+    ): List<String>? {
         val plan = parse(planJson) ?: return null
-        if (plan.status == APPROVED && isTaskPlanSettled(taskPlanJson)) return null
+        val approved = plan.status == APPROVED
+        if (approved && isTaskPlanSettled(taskPlanJson)) return null
+        if (!approved && supersededByUser) return null
         return buildList {
             add("$HEADER_PREFIX（${statusLabel(plan.status)}）：")
             add("${ITEM_PREFIX}标题：${plan.title}")
