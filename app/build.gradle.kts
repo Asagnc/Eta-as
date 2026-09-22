@@ -29,7 +29,8 @@ android {
 
     defaultConfig {
         applicationId = "io.github.asagnc.sta"
-        minSdk = 34
+        // 只跑 Android 16（API 36）及以上：不维护低版本兼容分支，也不适配低端设备。
+        minSdk = 36
         targetSdk = 36
         // versionCode 规则：yyyyMMdd + 两位当日序号（01 起），发版时随 versionName 一起手动递增。
         // versionName 后缀是本 fork 的构建序号，与上游版本号区分：

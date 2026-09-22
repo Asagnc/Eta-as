@@ -998,17 +998,15 @@ class AgentAccessibilityService : AccessibilityService() {
             "RECENTS" -> GLOBAL_ACTION_RECENTS
             "NOTIFICATIONS" -> GLOBAL_ACTION_NOTIFICATIONS
             "QUICK_SETTINGS" -> GLOBAL_ACTION_QUICK_SETTINGS
-            // DPAD 全局动作是 API 33、MENU 是 API 36 引入的常量；低版本上取不到，按不支持处理。
-            "MENU" -> if (Build.VERSION.SDK_INT >= 36) GLOBAL_ACTION_MENU else -1
-            "DPAD_UP" -> if (Build.VERSION.SDK_INT >= 33) GLOBAL_ACTION_DPAD_UP else -1
-            "DPAD_DOWN" -> if (Build.VERSION.SDK_INT >= 33) GLOBAL_ACTION_DPAD_DOWN else -1
-            "DPAD_LEFT" -> if (Build.VERSION.SDK_INT >= 33) GLOBAL_ACTION_DPAD_LEFT else -1
-            "DPAD_RIGHT" -> if (Build.VERSION.SDK_INT >= 33) GLOBAL_ACTION_DPAD_RIGHT else -1
-            "DPAD_CENTER" -> if (Build.VERSION.SDK_INT >= 33) GLOBAL_ACTION_DPAD_CENTER else -1
+            // minSdk 36 起，DPAD 系列（API 33）与 MENU（API 36）全局动作必然可用，
+            // 不再需要按版本回退成「不支持」。
+            "MENU" -> GLOBAL_ACTION_MENU
+            "DPAD_UP" -> GLOBAL_ACTION_DPAD_UP
+            "DPAD_DOWN" -> GLOBAL_ACTION_DPAD_DOWN
+            "DPAD_LEFT" -> GLOBAL_ACTION_DPAD_LEFT
+            "DPAD_RIGHT" -> GLOBAL_ACTION_DPAD_RIGHT
+            "DPAD_CENTER" -> GLOBAL_ACTION_DPAD_CENTER
             else -> return NodeActionResult.failure("INVALID_ARGUMENT", "不支持的系统动作")
-        }
-        if (action < 0) {
-            return NodeActionResult.failure("ACTION_UNAVAILABLE", "当前系统版本不支持该系统动作")
         }
         return runNodeActionOnMainSync {
             if (performGlobalAction(action)) {

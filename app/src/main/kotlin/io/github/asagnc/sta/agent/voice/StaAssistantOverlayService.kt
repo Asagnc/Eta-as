@@ -299,7 +299,8 @@ internal class StaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING or
                 WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN
             title = "StaAssistantOverlay"
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && wm.isCrossWindowBlurEnabled) {
+            // minSdk 36 起 isCrossWindowBlurEnabled（API 31 引入）必然可读，去掉版本判断。
+            if (wm.isCrossWindowBlurEnabled) {
                 flags = flags or WindowManager.LayoutParams.FLAG_BLUR_BEHIND
                 blurBehindRadius = 24
             }
@@ -895,11 +896,10 @@ internal class StaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
                     Intent.FLAG_ACTIVITY_SINGLE_TOP or
                     Intent.FLAG_ACTIVITY_NO_ANIMATION,
             )
+        // minSdk 36 起该字段必然存在（API 35 引入），不再需要版本判断。
         val creatorOptions = ActivityOptions.makeBasic().apply {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                pendingIntentCreatorBackgroundActivityStartMode =
-                    ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-            }
+            pendingIntentCreatorBackgroundActivityStartMode =
+                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
         }
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -908,13 +908,11 @@ internal class StaAssistantOverlayService : Service(), LifecycleOwner, SavedStat
             PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             creatorOptions.toBundle(),
         )
+        // minSdk 36 起 ALLOW_IF_VISIBLE（API 36 引入）必然可用，不再回退到更宽松的 ALLOWED——
+        // 那会让后台启动在 36+ 上失去可见性约束。
         val senderOptions = ActivityOptions.makeBasic().apply {
             pendingIntentBackgroundActivityStartMode =
-                if (Build.VERSION.SDK_INT >= 36) {
-                    ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE
-                } else {
-                    ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                }
+                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_IF_VISIBLE
         }
         runCatching { pendingIntent.send(senderOptions.toBundle()) }
             .onFailure {
