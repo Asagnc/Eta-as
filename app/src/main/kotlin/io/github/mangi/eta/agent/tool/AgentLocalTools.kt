@@ -591,6 +591,10 @@ internal class AgentLocalTools(
             limit = limit,
             readContent = ::readWorkspaceFile,
             nowMs = now,
+            // 带上当前工作区坐标：同空间的结论会被排在前面（依据见 WorldScore）。
+            // 用 DEFAULT_FILE_WORKSPACE 而不是另设常量：它与文件工具的工作区是同一个
+            // 概念，两处若各写一份，将来改工作区会漏改一处，检索排序就会与文件工具脱节。
+            currentScope = DEFAULT_FILE_WORKSPACE,
         )
         if (entries.isEmpty()) {
             return withWorldHealth(
@@ -606,7 +610,7 @@ internal class AgentLocalTools(
                 .put("ok", true)
                 .put("tool", "world_recall")
                 .put("count", entries.size)
-                .put("results", WorldKnowledgeLogic.formatRecall(entries, now)),
+                .put("results", WorldKnowledgeLogic.formatRecall(entries, now, DEFAULT_FILE_WORKSPACE)),
         )
     }
 

@@ -143,6 +143,7 @@ internal object WorldKnowledgeLogic {
     fun formatRecall(
         entries: List<WorldKnowledgeStore.Recalled>,
         nowMs: Long,
+        currentScope: String = "",
     ): String {
         if (entries.isEmpty()) return ""
         return entries.mapNotNull { entry ->
@@ -153,9 +154,14 @@ internal object WorldKnowledgeLogic {
                 Freshness.STALE -> "，依赖的文件已变更，结论可能失效"
                 Freshness.MISSING -> "，依赖的文件已不存在，结论可能失效"
             }
+            // 只在跨空间时标注来源：同空间的条目不需要额外说明（它们就是"这里的"），
+            // 而给每一条都加前缀会稀释真正需要引起注意的信息。这与「标注而非过滤」的
+            // 取法一致——异空间的结论仍然给出，只是明写出来源，让模型自己判断。
+            val origin = originLabel(entry.scope, currentScope)
             buildString {
                 append("- （").append(age).append("前")
                 if (marker.isNotEmpty()) append(marker)
+                if (origin.isNotEmpty()) append("，来自 ").append(origin)
                 append("）").append(oneLine(entry.summary))
                 if (entry.evidence.isNotBlank()) {
                     append("｜证据：").append(oneLine(entry.evidence))
@@ -165,6 +171,18 @@ internal object WorldKnowledgeLogic {
                 }
             }
         }.joinToString("\n")
+    }
+
+    /**
+     * 异空间来源的简短标注；同空间或坐标未知时返回空串。
+     *
+     * 只取路径末段而不是完整路径：注入的是给模型看的上下文，`/data/local/tmp/eta/Eta-src`
+     * 这种前缀在这里不携带信息（所有条目都共享它），末段才是区分点。
+     */
+    fun originLabel(scope: String, currentScope: String): String {
+        if (scope.isBlank() || currentScope.isBlank()) return ""
+        if (scope == currentScope) return ""
+        return scope.trimEnd('/').substringAfterLast('/').ifBlank { scope }
     }
 
     /** 把时间差说成人话：模型不需要精确到毫秒的年龄。 */

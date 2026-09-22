@@ -90,6 +90,9 @@ internal object WorldKnowledgeStore {
             val dependencies = WorldKnowledgeLogic.decodeDependencies(entity.dependencies)
             val freshness = WorldKnowledgeLogic.checkFreshness(dependencies, readContent)
             Recalled(
+                id = entity.id,
+                kind = entity.kind,
+                scope = entity.scope,
                 summary = entity.summary,
                 evidence = entity.evidence,
                 uncertainty = entity.uncertainty,
@@ -154,6 +157,12 @@ internal object WorldKnowledgeStore {
 
     /** 读回的一条观测，附带新鲜度判定。 */
     data class Recalled(
+        /** 条目 id：排序后要按它把结果映射回原文，也是图上节点的端点。 */
+        val id: String,
+        /** 条目种类：参与重要度打分。 */
+        val kind: String,
+        /** 空间坐标：参与空间距离打分。 */
+        val scope: String,
         val summary: String,
         val evidence: String,
         val uncertainty: String,
@@ -163,7 +172,7 @@ internal object WorldKnowledgeStore {
     )
 
     /**
-     * 按关键词检索历史结论。
+     * 按关键词检索历史结论，并按四项打分排序后返回。
      *
      * 检索同时覆盖结论、证据与不确定项，并逐条做新鲜度校验：读回来的是「可以拿去做判断的
      * 结论」，不是一段未经核实的旧文本——依赖已变更的条目会被标注出来（见 [formatRecall]），
@@ -171,6 +180,10 @@ internal object WorldKnowledgeStore {
      *
      * 关键词用 `LIKE %词%` 而不是全文索引：本库是运行副观察，规模在几百条量级，
      * 全文索引带来的维护成本（额外的影子表与同步逻辑）大于收益。
+     *
+     * **先取宽候选窗再排序**：SQL 只按时间倒序，若直接按 [limit] 截断，排序就只能在
+     * 「最近的若干条」里做，而真正相关的那条可能排在第 20 位——等于排序没起作用。
+     * 多取的代价只是几十行的实体化，收益是排序真的作用在全部命中上。
      */
     fun search(
         context: Context?,
@@ -178,19 +191,64 @@ internal object WorldKnowledgeStore {
         limit: Int = DEFAULT_SEARCH_LIMIT,
         readContent: (String) -> String? = { null },
         nowMs: Long = System.currentTimeMillis(),
+        currentScope: String = "",
     ): List<Recalled> {
         if (context == null || query.isBlank()) return emptyList()
         return try {
             val pattern = "%${escapeLike(query.trim())}%"
-            runBlocking(Dispatchers.IO) {
+            val window = (limit * CANDIDATE_MULTIPLIER).coerceAtMost(MAX_CANDIDATE_WINDOW)
+            val candidates = runBlocking(Dispatchers.IO) {
                 WorldDatabaseProvider.get(context).knowledgeDao()
-                    .search(nowMs, pattern, limit)
+                    .search(nowMs, pattern, window)
             }.map { entity -> entity.toRecalled(readContent) }
+            rank(candidates, query, currentScope, nowMs).take(limit)
         } catch (error: Throwable) {
             // 返回空列表与「真的没查到」无法区分，必须留痕。
             WorldHealth.recordDegradation("knowledge.search", error)
             emptyList()
         }
+    }
+
+    /**
+     * 按四项打分重排候选：recency / importance / relevance / space。
+     *
+     * 公式与取值依据见 [WorldScore]。只有一条候选时直接返回——单条候选下 min-max 归一
+     * 会把每一项都归成 1，排序结果与不排序相同，省掉一次无意义的计算。
+     */
+    private fun rank(
+        candidates: List<Recalled>,
+        query: String,
+        currentScope: String,
+        nowMs: Long,
+    ): List<Recalled> {
+        if (candidates.size <= 1) return candidates
+        val terms = WorldScore.termsOf(query)
+        val scored = WorldScore.rank(
+            candidates = candidates.map { entry ->
+                WorldScore.Candidate(
+                    id = entry.id,
+                    scope = entry.scope,
+                    // 用创建时间当「上次访问时间」：本库目前不记录访问，而创建时间是
+                    // 唯一可靠的时间信号。记录访问需要在每次检索时回写，那是写放大，
+                    // 收益只是让 recency 更精确一点，不划算。
+                    lastAccessMs = entry.createdAt,
+                    importance = WorldScore.importanceOf(
+                        kind = entry.kind,
+                        hasEvidence = entry.evidence.isNotBlank(),
+                        hasUncertainty = entry.uncertainty.isNotBlank(),
+                    ),
+                    relevance = WorldScore.relevanceFor(
+                        text = "${entry.summary}\n${entry.evidence}\n${entry.uncertainty}",
+                        terms = terms,
+                    ),
+                )
+            },
+            currentScope = currentScope,
+            nowMs = nowMs,
+        )
+        // 按 id 映射回原文：打分只携带 id，避免把整条文本在排序里搬来搬去。
+        val byId = candidates.associateBy { it.id }
+        return scored.mapNotNull { byId[it.id] }
     }
 
     /**
@@ -222,6 +280,9 @@ internal object WorldKnowledgeStore {
     private fun WorldKnowledgeEntity.toRecalled(readContent: (String) -> String?): Recalled {
         val dependencies = WorldKnowledgeLogic.decodeDependencies(dependencies)
         return Recalled(
+            id = id,
+            kind = kind,
+            scope = scope,
             summary = summary,
             evidence = evidence,
             uncertainty = uncertainty,
@@ -237,6 +298,17 @@ internal object WorldKnowledgeStore {
 
     /** 一次检索最多返回多少条。 */
     const val DEFAULT_SEARCH_LIMIT = 8
+
+    /**
+     * 候选窗放大倍数：多取几倍候选交给排序，最后再截到 [DEFAULT_SEARCH_LIMIT]。
+     *
+     * 直接按 limit 截断会让排序失去意义——SQL 只能按时间倒序，真正相关的那条若排在
+     * 第 20 位就永远进不了视野。取 4 倍是在「排序有效」与「多实体化的成本」之间的平衡。
+     */
+    private const val CANDIDATE_MULTIPLIER = 4
+
+    /** 候选窗上限：再多也不值得为一次检索全部读出来。 */
+    private const val MAX_CANDIDATE_WINDOW = 64
 
     /** 启动时最多注入多少条历史结论。 */
     const val DEFAULT_INJECT_LIMIT = 5

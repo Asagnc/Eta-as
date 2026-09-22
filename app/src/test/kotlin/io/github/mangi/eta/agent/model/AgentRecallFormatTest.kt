@@ -99,6 +99,9 @@ class AgentRecallFormatTest {
         freshness: WorldKnowledgeLogic.Freshness = WorldKnowledgeLogic.Freshness.FRESH,
         sensitive: Boolean = false,
     ) = WorldKnowledgeStore.Recalled(
+        id = "id-$summary",
+        kind = WorldKnowledgeStore.KIND_FINDING,
+        scope = "",
         summary = summary,
         evidence = "",
         uncertainty = "",
