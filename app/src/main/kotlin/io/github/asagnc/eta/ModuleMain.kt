@@ -12,8 +12,6 @@ import io.github.asagnc.eta.core.ModuleLogger
 import io.github.asagnc.eta.core.safeLogType
 import io.github.asagnc.eta.hook.aimemory.ColorOsMemoryHooks
 import io.github.asagnc.eta.hook.breeno.BreenoHooks
-import io.github.asagnc.eta.hook.google.GoogleAppHooks
-import io.github.asagnc.eta.hook.google.GoogleEligibilityHooks
 import io.github.asagnc.eta.hook.system.SystemServerHooks
 import io.github.asagnc.eta.hook.xiaoai.XiaoAiHooks
 
@@ -51,20 +49,6 @@ class ModuleMain : XposedModule() {
 
     override fun onPackageReady(param: PackageReadyParam) {
         when (param.packageName) {
-            ModuleConfig.GOOGLE_PACKAGE -> {
-                if (isCurrentPackageProcess(ModuleConfig.GOOGLE_PACKAGE)) {
-                    recordInstallation(
-                        HookInstallation.combine(
-                            group = "Google",
-                            installations = listOf(
-                                GoogleEligibilityHooks.install(this, logger, param.classLoader),
-                                GoogleAppHooks.install(this, logger, param.classLoader)
-                            )
-                        )
-                    )
-                }
-            }
-
             ModuleConfig.BREENO_PACKAGE -> {
                 if (isCurrentPackageProcess(ModuleConfig.BREENO_PACKAGE)) {
                     recordInstallation(BreenoHooks.install(this, logger, param.classLoader))
@@ -104,8 +88,7 @@ class ModuleMain : XposedModule() {
     private fun shouldKeepLifecycleCallbacks(param: ModuleLoadedParam): Boolean {
         if (param.isSystemServer) return true
         val processName = param.processName
-        return isPackageProcess(processName, ModuleConfig.GOOGLE_PACKAGE) ||
-            isPackageProcess(processName, ModuleConfig.BREENO_PACKAGE) ||
+        return isPackageProcess(processName, ModuleConfig.BREENO_PACKAGE) ||
             processName == ModuleConfig.COLOROS_MEMORY_PACKAGE ||
             isPackageProcess(processName, ModuleConfig.XIAOAI_PACKAGE)
     }

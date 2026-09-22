@@ -307,55 +307,6 @@ internal object AssistantManager {
         }
     }
 
-    fun resumeSoftwareHotwordDetection(
-        logger: ModuleLogger,
-        source: String,
-        logFailures: Boolean = false
-    ): Boolean {
-        val stub = voiceInteractionManagerStub ?: run {
-            logShowSessionFailure(
-                logger,
-                "${source}_hotword_stub_missing",
-                logFailures
-            ) { "$source: mServiceStub 尚未就绪，无法恢复软件热词检测" }
-            return false
-        }
-
-        return runCatching {
-            synchronized(stub) {
-                val impl = HookSupport.getFieldValue(stub, "mImpl") ?: return@synchronized false
-                val component = HookSupport.getFieldValue(impl, "mComponent") as? ComponentName
-                if (component?.packageName != ModuleConfig.GOOGLE_PACKAGE) {
-                    return@synchronized false
-                }
-
-                val session = findSoftwareHotwordSession(impl) ?: return@synchronized false
-                val running = HookSupport.getFieldValue(
-                    session,
-                    "mPerformingSoftwareHotwordDetection"
-                ) as? Boolean ?: false
-                if (running) {
-                    return@synchronized false
-                }
-
-                val callback = HookSupport.getFieldValue(session, "mSoftwareCallback")
-                    ?: return@synchronized false
-                val startListeningMethod = impl.javaClass.declaredMethods.firstOrNull {
-                    it.name == "startListeningFromMicLocked" && it.parameterTypes.size == 2
-                }?.apply { isAccessible = true } ?: return@synchronized false
-
-                startListeningMethod.invoke(impl, null, callback)
-                true
-            }
-        }.getOrElse { throwable ->
-            logShowSessionFailure(
-                logger,
-                "${source}_hotword_resume_failed",
-                logFailures
-            ) { "$source: 恢复软件热词检测失败，type=${throwable.safeLogType()}" }
-            false
-        }
-    }
 
     private fun scheduleAssistantConfiguration(
         context: Context,
@@ -1136,24 +1087,6 @@ internal object AssistantManager {
         systemContext = context
     }
 
-    private fun findSoftwareHotwordSession(impl: Any): Any? {
-        val connection = HookSupport.getFieldValue(impl, "mHotwordDetectionConnection") ?: return null
-        val detectorSessions = HookSupport.getFieldValue(connection, "mDetectorSessions") ?: return null
-        val sizeMethod = HookSupport.findMethod(detectorSessions.javaClass, "size") ?: return null
-        val valueAtMethod = HookSupport.findMethod(
-            detectorSessions.javaClass,
-            "valueAt",
-            Int::class.javaPrimitiveType!!
-        ) ?: return null
-        val size = sizeMethod.invoke(detectorSessions) as? Int ?: return null
-        repeat(size) { index ->
-            val session = valueAtMethod.invoke(detectorSessions, index) ?: return@repeat
-            if (session.javaClass.name == "com.android.server.voiceinteraction.SoftwareTrustedHotwordDetectorSession") {
-                return session
-            }
-        }
-        return null
-    }
 
     private fun beginConfiguration(key: ConfigurationKey): Boolean = synchronized(configurationLock) {
         if (configurationsInFlight.any { it.userId == key.userId }) {

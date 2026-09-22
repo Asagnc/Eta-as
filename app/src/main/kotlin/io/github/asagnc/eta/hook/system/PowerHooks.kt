@@ -174,23 +174,6 @@ internal object PowerHooks {
         val now = SystemClock.uptimeMillis()
         return when (target) {
             PowerAssistantTarget.OEM -> false
-            PowerAssistantTarget.GEMINI -> startAssistantActivity(
-                context = context,
-                binding = binding,
-                logger = logger,
-                phoneWindowManager = phoneWindowManager,
-                source = source,
-                now = now,
-                action = Intent.ACTION_ASSIST,
-            ) || startAssistantActivity(
-                context = context,
-                binding = binding,
-                logger = logger,
-                phoneWindowManager = phoneWindowManager,
-                source = source,
-                now = now,
-                action = Intent.ACTION_VOICE_COMMAND,
-            )
             PowerAssistantTarget.ETA -> {
                 if (!AssistantManager.isAssistantConfigured(context, target)) {
                     false

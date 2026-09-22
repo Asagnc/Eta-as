@@ -27,12 +27,7 @@ internal object Prefs {
     /** 所有功能开关 key。默认值按功能风险独立定义。 */
     object Keys {
         const val POWER_KEY_ASSISTANT_TARGET = "power_key_assistant_target"
-        // 兼容旧版布尔协议；新 UI 不再写入，缺少三态配置时 true 仍表示 Gemini。
-        const val POWER_KEY_TAKEOVER = "power_key_takeover"
         const val ASSISTANT_AUTO_CONFIG = "assistant_auto_config"
-        const val HOTWORD_SELF_HEAL = "hotword_self_heal"
-        const val LOCKSCREEN_VOICE_COMMAND = "lockscreen_voice_command"
-        const val SCREEN_ON_VOICE_COMMAND = "screen_on_voice_command"
         const val AGENT_CUSTOM_MODEL = "agent_custom_model"
         const val AGENT_REQUIRE_PREFIX = "agent_require_prefix"
         const val AGENT_TERMINAL_TOOLS = "agent_terminal_tools"
@@ -53,11 +48,7 @@ internal object Prefs {
 
         /** 全部布尔开关及其默认值。 */
         val BOOLEAN_DEFAULTS: Map<String, Boolean> = mapOf(
-            POWER_KEY_TAKEOVER to false,
             ASSISTANT_AUTO_CONFIG to false,
-            HOTWORD_SELF_HEAL to false,
-            LOCKSCREEN_VOICE_COMMAND to false,
-            SCREEN_ON_VOICE_COMMAND to false,
             AGENT_CUSTOM_MODEL to true,
             AGENT_REQUIRE_PREFIX to false,
             AGENT_TERMINAL_TOOLS to true,
@@ -141,11 +132,7 @@ internal object Prefs {
         val persistedValue = runCatching {
             preferences?.getString(Keys.POWER_KEY_ASSISTANT_TARGET, null)
         }.getOrNull()
-        val legacyDefault = Keys.BOOLEAN_DEFAULTS.getValue(Keys.POWER_KEY_TAKEOVER)
-        val legacyTakeover = runCatching {
-            preferences?.getBoolean(Keys.POWER_KEY_TAKEOVER, legacyDefault)
-        }.getOrNull() ?: legacyDefault
-        return PowerAssistantTarget.resolve(persistedValue, legacyTakeover)
+        return PowerAssistantTarget.resolve(persistedValue)
     }
 
     /**

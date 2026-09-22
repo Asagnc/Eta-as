@@ -12,12 +12,6 @@ internal data class AssistantBinding(
 
 internal fun assistantBindingFor(target: PowerAssistantTarget): AssistantBinding? = when (target) {
     PowerAssistantTarget.OEM -> null
-    PowerAssistantTarget.GEMINI -> AssistantBinding(
-        target = target,
-        packageName = ModuleConfig.GOOGLE_PACKAGE,
-        componentName = ModuleConfig.GOOGLE_ASSISTANT_COMPONENT,
-        displayName = "Gemini",
-    )
     PowerAssistantTarget.ETA -> AssistantBinding(
         target = target,
         packageName = ModuleConfig.ETA_PACKAGE,

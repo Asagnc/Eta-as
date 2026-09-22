@@ -14,8 +14,6 @@ internal object ModuleConfig {
     val XIAOMI_LAUNCHER_PACKAGES = setOf(XIAOMI_LAUNCHER_PACKAGE, XIAOMI_GLOBAL_LAUNCHER_PACKAGE)
     const val XIAOAI_CORE_PROCESS = "$XIAOAI_PACKAGE:core"
     val AGENT_RUNTIME_ENTRY_PACKAGES = setOf(BREENO_PACKAGE, XIAOAI_PACKAGE)
-    const val GOOGLE_ASSISTANT_COMPONENT =
-        "$GOOGLE_PACKAGE/com.google.android.voiceinteraction.GsaVoiceInteractionService"
     const val ETA_VOICE_INTERACTION_COMPONENT =
         "$ETA_PACKAGE/io.github.asagnc.eta.agent.voice.EtaVoiceInteractionService"
     const val ASSISTANT_ROLE = "android.app.role.ASSISTANT"
@@ -33,10 +31,4 @@ internal object ModuleConfig {
 
     const val OP_LUS_ASSIST_MESSAGE_WHAT = 0x3F3
     const val INTERCEPT_DEDUP_WINDOW_MS = 1_000L
-
-    const val SPOOF_MANUFACTURER = "samsung"
-    const val SPOOF_BRAND = "samsung"
-    const val SPOOF_MODEL = "SM-S928B"
-    const val SPOOF_PRODUCT = "e3s"
-    const val SPOOF_DEVICE = "e3s"
 }
