@@ -15,12 +15,12 @@ class AgentPlanFormatTest {
     private val openTaskPlan = """[{"id":"1","content":"改代码","status":"in_progress"}]"""
 
     @Test
-    fun `pending plan always injects and forbids touching anything`() {
+    fun `pending plan always injects without blocking`() {
         val lines = AgentPlanFormat.injectedLines(pendingPlan, null)!!
 
         assertTrue(lines.first(), lines.first().startsWith(AgentPlanFormat.HEADER_PREFIX))
-        assertTrue(lines.toString(), lines.any { it.contains("待确认") })
-        assertTrue(lines.toString(), lines.any { it.contains("不要修改任何文件") })
+        assertTrue(lines.toString(), lines.any { it.contains("用户尚未采纳") })
+        assertTrue(lines.toString(), lines.any { it.contains("不要当成已批准") })
         assertTrue(lines.toString(), lines.any { it.contains("1. 改数据层；2. 写工具") })
     }
 

@@ -58,8 +58,9 @@ internal object AgentPlanFormat {
     /**
      * 注入用的行。
      *
-     * 待确认的方案永远注入——模型得知道自己正停在等确认这一步，否则会当成用户没回话而继续
-     * 动手。已确认的方案只在清单还没做完时注入：做完之后它不再是方向，继续占上下文只是噪音。
+     * 尚未采纳的方案永远注入——模型得知道自己提过什么方案、用户还没采纳，避免重复提案或
+     * 误当成已批准。已采纳的方案只在清单还没做完时注入：做完之后它不再是方向，继续占上下文
+     * 只是噪音。
      */
     fun injectedLines(planJson: String?, taskPlanJson: String?): List<String>? {
         val plan = parse(planJson) ?: return null
@@ -92,11 +93,12 @@ internal object AgentPlanFormat {
     }
 
     private fun statusLabel(status: String): String =
-        if (status == APPROVED) "已确认，执行中" else "待确认"
+        if (status == APPROVED) "已采纳，执行中" else "用户尚未采纳"
 
     private fun hint(status: String): String = if (status == APPROVED) {
-        "方案已确认，按步骤执行，进度写进任务清单；清单是进度的唯一来源，方案不再改。"
+        "方案已采纳，按步骤执行，进度写进任务清单；清单是进度的唯一来源，方案不再改。"
     } else {
-        "方案尚未确认，正在等用户回复。这一步不要修改任何文件。"
+        "方案已给出，用户还没决定是否采纳；按用户的最新指令做事即可，不要当成已批准，" +
+            "也不用因为提过方案就停手。"
     }
 }

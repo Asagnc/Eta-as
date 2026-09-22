@@ -53,7 +53,7 @@ internal fun AgentPlanPanel(
     // 正文区限高：面板挂在会话顶部且自身不滚动，不限高时一份长方案会把卡片撑到屏幕之外，
     // 排在正文之后的按钮跟着落到看不见也点不到的位置。
     val bodyMaxHeight = (LocalConfiguration.current.screenHeightDp * PLAN_BODY_MAX_SCREEN_RATIO).dp
-    // 待确认的方案默认展开：它正等着用户看一眼。确认之后默认收起，把屏幕让回对话。
+    // 尚未采纳的方案默认展开：用户还没看过。采纳之后默认收起，把屏幕让回对话。
     var expanded by rememberSaveable(plan.title, plan.status) { mutableStateOf(pending) }
     Card(
         modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
@@ -68,7 +68,7 @@ internal fun AgentPlanPanel(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = if (pending) "方案待确认 · ${plan.title}" else "方案 · ${plan.title}",
+                text = "方案 · ${plan.title}",
                 style = MiuixTheme.textStyles.body2,
                 fontWeight = FontWeight.Medium,
                 color = MiuixTheme.colorScheme.onSurfaceContainer,

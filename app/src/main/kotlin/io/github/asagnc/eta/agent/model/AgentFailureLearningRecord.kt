@@ -20,14 +20,6 @@ internal object AgentFailureLearningRecord {
     /** 回注给模型的历史条目上限：够说明"上次是什么情况"，不至于把旧记录整篇搬进上下文。 */
     const val MAX_HISTORY_CHARS = 600
 
-    /**
-     * 属于「流程按预期拦下」而不是工具失败的错误码。
-     *
-     * 它们进观测库只会污染经验：这类结果每次都长一样，既不指向模型自己的调用习惯，
-     * 也没有可复用的修复入口。PLAN_PENDING 就是典型——方案待确认期间拒绝写工具是设计行为。
-     */
-    private val FLOW_CONTROL_CODES = setOf("PLAN_PENDING")
-
     data class Entry(
         val toolName: String,
         val code: String,
@@ -70,8 +62,6 @@ internal object AgentFailureLearningRecord {
                 ?.let { "EXIT_$it" }
                 .orEmpty()
         }
-        // 流程性拦下不是失败，见 [FLOW_CONTROL_CODES]。
-        if (code in FLOW_CONTROL_CODES) return null
         return Entry(
             toolName = toolName,
             code = code,

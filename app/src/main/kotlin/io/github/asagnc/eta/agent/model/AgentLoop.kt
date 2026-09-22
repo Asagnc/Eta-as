@@ -49,11 +49,6 @@ internal class AgentLoop(
      * 可能带表格，每轮注入全文会让请求持续膨胀。
      */
     private val planSnapshot: (() -> String?)? = null,
-    /**
-     * 本轮是否该结束。方案提交后返回 true：本轮到此为止，等用户确认后再开新一轮——
-     * 让它继续跑只会撞上 PLAN_PENDING 拦截，白费一次往返。
-     */
-    private val runShouldStop: (() -> Boolean)? = null,
     initialSupplementIndex: Int = 0,
 ) {
     data class Result(
@@ -277,11 +272,6 @@ internal class AgentLoop(
                 publishTranscript()
                 appendToolImages(round, outcomes)
                 publishTranscript()
-                // 方案已提交：本轮到此为止，走和自然结束一样的收尾。继续跑只会撞上
-                // PLAN_PENDING 拦截，白费一次往返；用户确认后走的是新一轮，方案与清单都已落库。
-                if (runShouldStop?.invoke() == true) {
-                    return finishRun(round, assistantMessage.optString("content").trim(), roundTools)
-                }
                 noticeRepeatedToolCalls(round, toolCalls)
                 compactOnRequest(outcomes, roundTools)
                 round += 1

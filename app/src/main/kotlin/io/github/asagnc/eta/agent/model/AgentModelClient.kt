@@ -108,11 +108,6 @@ internal object AgentModelClient {
         taskPlanSnapshot: (() -> String?)? = null,
         /** 当前方案（submit_plan 快照）：与清单一同注入，注入的是 digest 而不是正文。 */
         planSnapshot: (() -> String?)? = null,
-        /**
-         * 本轮是否该结束。方案提交后返回 true：本轮到此为止，等用户确认后再开新一轮——
-         * 让它继续跑只会撞上 PLAN_PENDING 拦截，白费一次往返。
-         */
-        runShouldStop: (() -> Boolean)? = null,
         onContextSnapshot: (AgentContextSnapshot) -> Unit = {},
         onTranscript: (List<ConversationMessage>) -> Unit = {},
         runStats: AgentRunStats? = null,
@@ -199,7 +194,6 @@ internal object AgentModelClient {
             roleplayContext = roleplayContext,
             taskPlanSnapshot = taskPlanSnapshot,
             planSnapshot = planSnapshot,
-            runShouldStop = runShouldStop,
             initialSupplementIndex = initialSupplementIndex,
             runStats = runStats,
             maxParallelToolCalls = config.maxParallelToolCalls,

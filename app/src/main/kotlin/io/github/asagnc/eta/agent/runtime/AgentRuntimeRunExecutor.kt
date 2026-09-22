@@ -433,7 +433,6 @@ internal class AgentRuntimeRunExecutor(
                 roleplayContext = roleplayContext,
                 taskPlanSnapshot = { latestTaskPlan },
                 planSnapshot = { latestPlan },
-                runShouldStop = { executor.hasPendingPlan() },
                 rewriteReply = request.operation == AgentRuntimeWire.OP_REWRITE_REPLY,
                 compactOnly = request.operation == AgentRuntimeWire.OP_COMPACT,
                 compactUntilMessageId = request.compactUntilMessageId,
