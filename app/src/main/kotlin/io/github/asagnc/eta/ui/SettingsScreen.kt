@@ -527,16 +527,6 @@ internal fun SettingsScreen(
                         },
                         onClick = { onNavigate(AppRoute.DataBackup) },
                     )
-
-                    ArrowPreference(
-                        title = stringResource(R.string.stats_page_title),
-                        startAction = {
-                            PreferenceIcon(
-                                icon = Icons.Rounded.QueryStats,
-                            )
-                        },
-                        onClick = { onNavigate(AppRoute.UsageStats) },
-                    )
                 }
             }
 

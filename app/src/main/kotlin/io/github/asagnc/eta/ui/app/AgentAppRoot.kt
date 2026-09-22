@@ -59,7 +59,6 @@ import io.github.asagnc.eta.ui.navigation.AgentNavigator
 import io.github.asagnc.eta.ui.navigation.AppRoute
 import io.github.asagnc.eta.ui.pages.providers.ModelProviderDetailScreen
 import io.github.asagnc.eta.ui.pages.providers.ModelProviderListScreen
-import io.github.asagnc.eta.ui.screens.stats.UsageStatsScreen
 import io.github.asagnc.eta.ui.screens.backup.DataBackupScreen
 import io.github.asagnc.eta.ui.screens.browser.AgentBrowserScreen
 import io.github.asagnc.eta.ui.screens.chat.AgentChatScreen
@@ -599,9 +598,6 @@ fun AgentAppRoot(
                     onExport = agentState::exportBackup,
                     onImport = agentState::importBackup,
                 )
-            }
-            entry<AppRoute.UsageStats>(swipeDismiss = swipeDismiss) {
-                UsageStatsScreen(onBack = ::popRoute)
             }
             entry<AppRoute.Memory>(swipeDismiss = swipeDismiss) {
                 LaunchedEffect(Unit) {

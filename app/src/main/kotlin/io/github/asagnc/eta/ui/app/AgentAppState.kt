@@ -56,7 +56,6 @@ import io.github.asagnc.eta.data.repository.EtaBackupSummary
 import io.github.asagnc.eta.data.datastore.SettingsDataStore
 import io.github.asagnc.eta.data.repository.ProviderRepository
 import io.github.asagnc.eta.data.repository.ModelUsageDelta
-import io.github.asagnc.eta.data.repository.UsageStatsRepository
 import io.github.asagnc.eta.data.repository.RuntimeConfigRepository
 import io.github.asagnc.eta.ui.model.AgentChatHomeUiState
 import io.github.asagnc.eta.ui.model.AgentSubAgentProjector
@@ -2235,7 +2234,6 @@ internal class AgentAppState(
                     event.round,
                     event.usage.toUi(estimatedContextTokens = event.estimatedContextTokens),
                 )
-                recordModelUsage(runId, event.round, event.usage)
                 if (event.windowTokens != null) {
                     modelPickerState = modelPickerState.copy(contextWindowHint = event.windowTokens)
                 }
@@ -2427,31 +2425,6 @@ internal class AgentAppState(
         refreshConversationSummaries()
     }
 
-    private fun recordModelUsage(runId: String, round: Int, usage: AgentTokenUsage) {
-        val model = modelPickerState.selectedModel ?: return
-        val input = (usage.inputTokens ?: 0).toLong()
-        val output = (usage.outputTokens ?: 0).toLong()
-        val cached = (usage.cachedTokens ?: 0).toLong()
-        if (input <= 0L && output <= 0L) return
-        val conversationId = conversationIdForRun(runId) ?: selectedConversationId
-        scope.launch(Dispatchers.IO) {
-            runCatching {
-                UsageStatsRepository.recordModelUsage(
-                    ModelUsageDelta(
-                        providerId = model.providerId,
-                        providerName = model.providerName,
-                        modelId = model.modelId,
-                        modelDisplayName = model.displayName.ifBlank { model.modelId },
-                        inputTokens = input,
-                        outputTokens = output,
-                        cachedTokens = cached,
-                        conversationId = conversationId,
-                        round = round,
-                    ),
-                )
-            }
-        }
-    }
 
     /**
      * 删除会话前把它的历史用量转入"退役累计"，这样用量统计里的历史 token、
