@@ -73,9 +73,7 @@ fun AgentAppShell(
     onConversationRename: (ConversationSummaryUi) -> Unit,
     onConversationExport: (ConversationSummaryUi) -> Unit,
     onConversationDelete: (ConversationSummaryUi) -> Unit,
-    onOpenTools: () -> Unit,
     onOpenSkills: () -> Unit,
-    onOpenCharacters: () -> Unit,
     onOpenPermissions: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenModelProviders: () -> Unit,
@@ -134,9 +132,7 @@ fun AgentAppShell(
                 onConversationDelete = onConversationDelete,
                 onOpenSettings = onOpenSettings,
                 onOpenModelProviders = onOpenModelProviders,
-                onOpenTools = onOpenTools,
                 onOpenSkills = onOpenSkills,
-                onOpenCharacters = onOpenCharacters,
                 onOpenPermissions = onOpenPermissions,
             ) {
                 pageContent()

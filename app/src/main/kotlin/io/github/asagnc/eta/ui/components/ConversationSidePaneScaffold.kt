@@ -170,9 +170,7 @@ fun ConversationSidePaneScaffold(
     onConversationDelete: (ConversationSummaryUi) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenModelProviders: () -> Unit,
-    onOpenTools: () -> Unit,
     onOpenSkills: () -> Unit,
-    onOpenCharacters: () -> Unit,
     onOpenPermissions: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
@@ -263,9 +261,7 @@ fun ConversationSidePaneScaffold(
             onConversationDelete = onConversationDelete,
             onOpenSettings = onOpenSettings,
             onOpenModelProviders = onOpenModelProviders,
-            onOpenTools = onOpenTools,
             onOpenSkills = onOpenSkills,
-            onOpenCharacters = onOpenCharacters,
             onOpenPermissions = onOpenPermissions,
             modifier = Modifier.zIndex(0f),
         )
@@ -354,9 +350,7 @@ private fun ConversationPanePanel(
     onConversationDelete: (ConversationSummaryUi) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenModelProviders: () -> Unit,
-    onOpenTools: () -> Unit,
     onOpenSkills: () -> Unit,
-    onOpenCharacters: () -> Unit,
     onOpenPermissions: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -468,9 +462,7 @@ private fun ConversationPanePanel(
                     PaneDock(
                         onOpenSettings = onOpenSettings,
                         onOpenModelProviders = onOpenModelProviders,
-                        onOpenTools = onOpenTools,
                         onOpenSkills = onOpenSkills,
-                        onOpenCharacters = onOpenCharacters,
                         onOpenPermissions = onOpenPermissions,
                     )
                     Spacer(modifier = Modifier.height(DrawerMetrics.BottomInset))
@@ -773,9 +765,7 @@ private fun EmptyConversations(isSearching: Boolean) {
 private fun PaneDock(
     onOpenSettings: () -> Unit,
     onOpenModelProviders: () -> Unit,
-    onOpenTools: () -> Unit,
     onOpenSkills: () -> Unit,
-    onOpenCharacters: () -> Unit,
     onOpenPermissions: () -> Unit,
 ) {
     Row(
@@ -795,12 +785,6 @@ private fun PaneDock(
             modifier = Modifier.weight(1f),
         )
         DockEntry(
-            icon = Icons.Rounded.Inventory2,
-            label = "工具",
-            onClick = onOpenTools,
-            modifier = Modifier.weight(1f),
-        )
-        DockEntry(
             icon = Icons.Rounded.Extension,
             label = "Skills",
             onClick = onOpenSkills,
@@ -810,12 +794,6 @@ private fun PaneDock(
             icon = Icons.Rounded.Lock,
             label = "权限",
             onClick = onOpenPermissions,
-            modifier = Modifier.weight(1f),
-        )
-        DockEntry(
-            icon = Icons.Rounded.TheaterComedy,
-            label = "角色",
-            onClick = onOpenCharacters,
             modifier = Modifier.weight(1f),
         )
     }
