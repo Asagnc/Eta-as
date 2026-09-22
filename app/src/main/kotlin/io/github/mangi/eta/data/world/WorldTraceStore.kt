@@ -184,6 +184,54 @@ internal object WorldTraceStore {
     }
 
     /**
+     * 最近若干次委派，按空间距离重排后返回。
+     *
+     * 与 [recent] 的区别：这里优先返回**与当前工作区同空间**的记录。查委派树时，
+     * 「上次在这个项目里派过谁」比「上次随便哪次派过谁」更相关——依据同
+     * [WorldScore.spaceScore]（公共路径前缀 / 较深者深度）。
+     *
+     * 只按空间排序、不套用完整的四项打分：委派记录没有 kind（重要度无从计算），
+     * 而用户主动查委派树时时间与相关度都不是他关心的——他要的是「在这个项目里发生过
+     * 什么」。多套两项反而会把真正想看的记录压下去。
+     *
+     * 先取 [CANDIDATE_MULTIPLIER] 倍候选再排序：否则排序只能在最近 limit 条里做，
+     * 同空间的旧记录永远进不了视野（与 `WorldKnowledgeStore.search` 同一考虑）。
+     */
+    fun recentForScope(
+        context: Context?,
+        currentScope: String,
+        limit: Int = 20,
+    ): List<WorldTraceEntity> {
+        if (context == null) return emptyList()
+        return try {
+            val window = (limit * CANDIDATE_MULTIPLIER).coerceAtMost(MAX_CANDIDATE_WINDOW)
+            val candidates = runBlocking(Dispatchers.IO) {
+                WorldDatabaseProvider.get(context).traceDao().recent(window)
+            }
+            if (candidates.size <= 1) return candidates.take(limit)
+            candidates
+                .sortedWith(
+                    compareByDescending<WorldTraceEntity> {
+                        WorldScore.spaceScore(it.scope, currentScope)
+                    }
+                        // 同分时按开始时间倒序：空间分相同（如同属一个工作区）时，
+                        // 新的排前面才是符合直觉的。
+                        .thenByDescending { it.startedAt },
+                )
+                .take(limit)
+        } catch (error: Throwable) {
+            WorldHealth.recordDegradation("trace.recentForScope", error)
+            emptyList()
+        }
+    }
+
+    /** 候选窗放大倍数：先多取再按空间排序，避免同空间的旧记录进不了视野。 */
+    private const val CANDIDATE_MULTIPLIER = 4
+
+    /** 候选窗上限。 */
+    private const val MAX_CANDIDATE_WINDOW = 80
+
+    /**
      * 取一条记录的正文：库里没有就读文件。
      *
      * 读不到时返回空串而不是抛错——轨迹是排查用的补充材料，缺失不该打断调用方。

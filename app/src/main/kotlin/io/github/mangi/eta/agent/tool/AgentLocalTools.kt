@@ -666,9 +666,12 @@ internal class AgentLocalTools(
 
         val traceId = args.optString("trace").trim()
         val nodes = if (traceId.isNotEmpty()) {
+            // 指定了 trace 就是精确定位：要的是那一棵树本身，不该重排。
             WorldTraceStore.tree(context, traceId)
         } else {
-            WorldTraceStore.recent(context, MAX_TRACE_LIST)
+            // 不给参数时列最近几次委派，按空间距离重排——「上次在这个项目里派过谁」
+            // 比「上次随便哪次派过谁」更相关。
+            WorldTraceStore.recentForScope(context, DEFAULT_FILE_WORKSPACE, MAX_TRACE_LIST)
         }
         if (nodes.isEmpty()) {
             return withWorldHealth(
