@@ -45,8 +45,6 @@ sealed interface ProviderSetting {
     val createdAt: Long
     val hostedWebSearchEnabled: Boolean
         get() = false
-    val balanceOption: BalanceOption
-        get() = BalanceOption()
 }
 
 @Serializable
@@ -67,7 +65,6 @@ data class OpenAiCompatibleProviderSetting(
     override val createdAt: Long = System.currentTimeMillis(),
     val endpointMode: String = OpenAiEndpointMode.CHAT_COMPLETIONS,
     override val hostedWebSearchEnabled: Boolean = false,
-    override val balanceOption: BalanceOption = BalanceOption(),
 ) : ProviderSetting
 
 @Serializable
@@ -91,7 +88,6 @@ data class AnthropicProviderSetting(
     val promptCacheEnabled: Boolean = false,
     /** 让服务端按官方默认阈值清理较早的工具结果；需要上游透传 context-management beta 头。 */
     val contextEditingEnabled: Boolean = false,
-    override val balanceOption: BalanceOption = BalanceOption(),
 ) : ProviderSetting {
     companion object {
         const val DEFAULT_ANTHROPIC_VERSION = "2023-06-01"
@@ -116,7 +112,6 @@ data class CustomProviderSetting(
     override val createdAt: Long = System.currentTimeMillis(),
     val endpointMode: String = OpenAiEndpointMode.CHAT_COMPLETIONS,
     override val hostedWebSearchEnabled: Boolean = false,
-    override val balanceOption: BalanceOption = BalanceOption(),
 ) : ProviderSetting
 
 internal val ProviderSetting.runtimeProviderType: String
@@ -172,7 +167,3 @@ internal fun ProviderSetting.selectedOrFirstModel(modelId: String?): Model? =
     models.firstOrNull { it.id == modelId && it.isEnabled }
         ?: models.filter { it.isEnabled }.minByOrNull { it.sortOrder }
 
-internal fun ProviderSetting.canQueryBalance(): Boolean {
-    val resolved = balanceOption.resolved()
-    return resolved.enabled && resolved.apiPath.isNotBlank() && resolved.resultPath.isNotBlank()
-}
