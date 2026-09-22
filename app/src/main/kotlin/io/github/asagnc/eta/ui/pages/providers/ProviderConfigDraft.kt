@@ -44,7 +44,11 @@ internal data class ProviderConfigDraft(
             hostedWebSearchEnabled = provider.hostedWebSearchEnabled,
             anthropicVersion = (provider as? AnthropicProviderSetting)?.anthropicVersion
                 ?: AnthropicProviderSetting.DEFAULT_ANTHROPIC_VERSION,
-            promptCacheEnabled = (provider as? AnthropicProviderSetting)?.promptCacheEnabled ?: false,
+            promptCacheEnabled = when (provider) {
+                is OpenAiCompatibleProviderSetting -> provider.promptCacheEnabled
+                is CustomProviderSetting -> provider.promptCacheEnabled
+                is AnthropicProviderSetting -> provider.promptCacheEnabled
+            },
             contextEditingEnabled = (provider as? AnthropicProviderSetting)?.contextEditingEnabled ?: false,
         )
     }
@@ -111,6 +115,7 @@ internal fun buildUpdatedProvider(
             isEnabled = isEnabled,
             endpointMode = endpointMode,
             hostedWebSearchEnabled = hostedWebSearchEnabled,
+            promptCacheEnabled = promptCacheEnabled,
         )
         is CustomProviderSetting -> source.copy(
             customHeaders = customHeaders.map { it.copy(name = it.name.trim()) },
@@ -121,6 +126,7 @@ internal fun buildUpdatedProvider(
             isEnabled = isEnabled,
             endpointMode = endpointMode,
             hostedWebSearchEnabled = hostedWebSearchEnabled,
+            promptCacheEnabled = promptCacheEnabled,
         )
         is AnthropicProviderSetting -> source.copy(
             customHeaders = customHeaders.map { it.copy(name = it.name.trim()) },

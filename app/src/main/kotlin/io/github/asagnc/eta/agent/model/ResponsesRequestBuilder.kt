@@ -9,6 +9,7 @@ internal object ResponsesRequestBuilder {
         messages: JSONArray,
         tools: JSONArray,
         purpose: ProviderRequestPurpose,
+        sessionId: String = "",
     ): JSONObject {
         val input = buildInput(messages)
         val responseTools = buildTools(tools, config.hostedWebSearchEnabled)
@@ -35,6 +36,10 @@ internal object ResponsesRequestBuilder {
         request.remove("reasoning")
         config.maxOutputTokens?.takeIf { it > 0 }?.let { request.put("max_output_tokens", it) }
         ProviderReasoning.applyResponsesRequest(request, config, purpose, messages)
+        // 提示缓存：与 Chat Completions 路径同一个键语义（见 OpenAiChatCompletionsProvider）。
+        if (config.promptCacheEnabled && purpose == ProviderRequestPurpose.CHAT && sessionId.isNotBlank()) {
+            request.put("prompt_cache_key", sessionId)
+        }
         return request
     }
 

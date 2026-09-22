@@ -284,6 +284,13 @@ private fun ProviderConfigTab(
                     }
                 }
                 if (provider !is AnthropicProviderSetting) {
+                    HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+                    SwitchPreference(
+                        title = stringResource(R.string.provider_prompt_cache_title),
+                        summary = stringResource(R.string.provider_prompt_cache_summary),
+                        checked = draft.promptCacheEnabled,
+                        onCheckedChange = { onDraftChange(draft.copy(promptCacheEnabled = it)) },
+                    )
                     HorizontalDivider()
                     WindowSpinnerPreference(
                         items = listOf(

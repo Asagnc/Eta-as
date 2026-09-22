@@ -64,6 +64,12 @@ data class OpenAiCompatibleProviderSetting(
     override val customBody: List<CustomBody> = emptyList(),
     override val createdAt: Long = System.currentTimeMillis(),
     val endpointMode: String = OpenAiEndpointMode.CHAT_COMPLETIONS,
+    /**
+     * 上游支持提示缓存时才在请求体里放缓存字段：不认识该字段的网关会直接 400。
+     * OpenAI 兼容路径用 `prompt_cache_key`（稳定会话键），与 Anthropic 的顶层
+     * `cache_control` 是两套机制，因此两个 Provider 各有自己的开关。
+     */
+    val promptCacheEnabled: Boolean = false,
     override val hostedWebSearchEnabled: Boolean = false,
 ) : ProviderSetting
 
@@ -111,6 +117,8 @@ data class CustomProviderSetting(
     override val customBody: List<CustomBody> = emptyList(),
     override val createdAt: Long = System.currentTimeMillis(),
     val endpointMode: String = OpenAiEndpointMode.CHAT_COMPLETIONS,
+    /** 与 [OpenAiCompatibleProviderSetting.promptCacheEnabled] 同义。 */
+    val promptCacheEnabled: Boolean = false,
     override val hostedWebSearchEnabled: Boolean = false,
 ) : ProviderSetting
 

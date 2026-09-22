@@ -49,7 +49,7 @@ internal object OpenAiChatCompletionsProvider : AgentProviderClient {
             .also { ProviderRequestHeaders.mergeInto(it, config.baseUrl, config.customHeaders, request.sessionId) }
             .build()
 
-        val requestBody = buildRequestJson(config, request.messages, request.effectiveTools, request.purpose).apply {
+        val requestBody = buildRequestJson(config, request.messages, request.effectiveTools, request.purpose, request.sessionId).apply {
             if (!request.purpose.allowsTools) {
                 remove("tools")
                 remove("tool_choice")
@@ -100,6 +100,7 @@ internal object OpenAiChatCompletionsProvider : AgentProviderClient {
         messages: JSONArray,
         tools: JSONArray,
         purpose: ProviderRequestPurpose,
+        sessionId: String = "",
     ): JSONObject {
         val sourceType = ProviderSourceRegistry.resolve(
             providerId = config.providerId,
@@ -121,8 +122,18 @@ internal object OpenAiChatCompletionsProvider : AgentProviderClient {
                 mergeExtraBody(request, config.extraBodyJson)
                 RequestBodyMerge.mergeCustomBody(request, config.customBody)
                 ProviderReasoning.applyOpenAiCompatibleRequest(request, config, purpose, messages)
+                // 提示缓存：OpenAI 兼容路径靠一个稳定的请求键让服务端把同一会话的前缀缓存住。
+                // 键必须跨轮稳定（用会话 id），一旦掺入时间、轮次或消息哈希就每轮都命中不了。
+                // 上游不认识该字段会直接 400，所以只在开关打开时才发。
+                if (config.promptCacheEnabled && purpose == ProviderRequestPurpose.CHAT && sessionId.isNotBlank()) {
+                    request.put("prompt_cache_key", promptCacheKey(sessionId))
+                }
             }
     }
+
+    /** 会话键为空时退回固定字面量：宁可不命中，也不要发一个每轮都变的键。 */
+    private fun promptCacheKey(sessionId: String): String =
+        sessionId.takeIf { it.isNotBlank() } ?: "eta-default"
 
     private fun readStreamingAssistantMessage(
         stream: java.io.InputStream?,

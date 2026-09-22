@@ -34,7 +34,7 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
         require(config.openAiEndpointMode == OpenAiEndpointMode.RESPONSES) {
             "当前 Provider 未配置为 Responses API"
         }
-        val body = buildRequestJson(config, request.messages, request.effectiveTools, request.purpose)
+        val body = buildRequestJson(config, request.messages, request.effectiveTools, request.purpose, request.sessionId)
             .dropRejectedFields(request.dropFields)
             .toString()
             .toRequestBody(JSON_MEDIA_TYPE)
@@ -85,7 +85,8 @@ internal object OpenAiResponsesProvider : AgentProviderClient {
         messages: JSONArray,
         tools: JSONArray,
         purpose: ProviderRequestPurpose,
-    ): JSONObject = ResponsesRequestBuilder.build(config, messages, tools, purpose)
+        sessionId: String = "",
+    ): JSONObject = ResponsesRequestBuilder.build(config, messages, tools, purpose, sessionId)
 
     private fun readStreamingResponse(
         stream: java.io.InputStream?,
