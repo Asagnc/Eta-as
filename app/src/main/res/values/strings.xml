@@ -3,7 +3,7 @@
   <string name="settings_language">Language</string>
   <string name="settings_language_system">Follow system</string>
   <string name="app_name">Sta</string>
-  <string name="xposed_description">A system-level AI agent that takes over Breeno and Super XiaoAI, enables Gemini and Circle to Search, and integrates browser, terminal, and device tools.</string>
+  <string name="xposed_description">A system-level AI agent with browser, terminal, and device tools.</string>
   <string name="agent_accessibility_label">Sta Agent</string>
   <string name="agent_accessibility_description">Read screen content and perform taps, swipes, text input, and other actions to help the agent complete tasks.</string>
   <string name="notification_history_service_label">Sta notification history</string>
@@ -676,10 +676,7 @@
   <string name="injected_executing">Sta is working…</string>
   <string name="injected_completed">Sta completed this task</string>
   <string name="injected_failed">Sta could not complete the task. Try again later</string>
-  <string name="injected_breeno_custom_model_disabled">Enable Breeno custom models in Sta settings first</string>
-  <string name="injected_breeno_context_unavailable">Breeno context is unavailable</string>
   <string name="injected_runtime_failed">Agent Runtime failed</string>
-  <string name="injected_breeno_failed">Breeno custom model failed: %1$s</string>
   <string name="injected_using_tool">Using %1$s</string>
   <string name="injected_tool">tool</string>
   <string name="injected_system_tool">system tool</string>

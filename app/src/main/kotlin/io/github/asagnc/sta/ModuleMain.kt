@@ -11,9 +11,7 @@ import io.github.asagnc.sta.core.ModuleConfig
 import io.github.asagnc.sta.core.ModuleLogger
 import io.github.asagnc.sta.core.safeLogType
 import io.github.asagnc.sta.hook.aimemory.ColorOsMemoryHooks
-import io.github.asagnc.sta.hook.breeno.BreenoHooks
 import io.github.asagnc.sta.hook.system.SystemServerHooks
-import io.github.asagnc.sta.hook.xiaoai.XiaoAiHooks
 
 class ModuleMain : XposedModule() {
 
@@ -47,31 +45,13 @@ class ModuleMain : XposedModule() {
         recordInstallation(SystemServerHooks.install(this, logger, param.classLoader))
     }
 
+    // Sta 只适配 ColorOS 记忆。小爱（XiaoAI）与小布（Breeno）的适配已整体移除：
+    // 它们的 hook 目录、ModuleConfig 常量、注入文案与测试一并删除，不再保留空分支。
     override fun onPackageReady(param: PackageReadyParam) {
-        when (param.packageName) {
-            ModuleConfig.BREENO_PACKAGE -> {
-                if (isCurrentPackageProcess(ModuleConfig.BREENO_PACKAGE)) {
-                    recordInstallation(BreenoHooks.install(this, logger, param.classLoader))
-                }
-            }
-
-            ModuleConfig.COLOROS_MEMORY_PACKAGE -> {
-                if (currentProcessName == ModuleConfig.COLOROS_MEMORY_PACKAGE) {
-                    recordInstallation(ColorOsMemoryHooks.install(this, logger, param.classLoader))
-                }
-            }
-
-            ModuleConfig.XIAOAI_PACKAGE -> {
-                if (isCurrentXiaoAiProcess()) {
-                    recordInstallation(
-                        XiaoAiHooks.install(
-                            module = this,
-                            rootLogger = logger,
-                            classLoader = param.classLoader,
-                        )
-                    )
-                }
-            }
+        if (param.packageName == ModuleConfig.COLOROS_MEMORY_PACKAGE &&
+            currentProcessName == ModuleConfig.COLOROS_MEMORY_PACKAGE
+        ) {
+            recordInstallation(ColorOsMemoryHooks.install(this, logger, param.classLoader))
         }
     }
 
@@ -80,25 +60,8 @@ class ModuleMain : XposedModule() {
         logger.scoped(installation.report.group).info(installation.report.summary())
     }
 
-    private fun isCurrentPackageProcess(packageName: String): Boolean {
-        val processName = currentProcessName ?: return false
-        return isPackageProcess(processName, packageName)
-    }
-
     private fun shouldKeepLifecycleCallbacks(param: ModuleLoadedParam): Boolean {
         if (param.isSystemServer) return true
-        val processName = param.processName
-        return isPackageProcess(processName, ModuleConfig.BREENO_PACKAGE) ||
-            processName == ModuleConfig.COLOROS_MEMORY_PACKAGE ||
-            isPackageProcess(processName, ModuleConfig.XIAOAI_PACKAGE)
+        return param.processName == ModuleConfig.COLOROS_MEMORY_PACKAGE
     }
-
-    private fun isCurrentXiaoAiProcess(): Boolean {
-        val processName = currentProcessName ?: return false
-        return processName == ModuleConfig.XIAOAI_PACKAGE ||
-            processName == ModuleConfig.XIAOAI_CORE_PROCESS
-    }
-
-    private fun isPackageProcess(processName: String, packageName: String): Boolean =
-        processName == packageName || processName.startsWith("$packageName:")
 }
