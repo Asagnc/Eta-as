@@ -1,9 +1,9 @@
-name: Eta Build
+name: Sta Build
 
 on:
   push:
     branches:
-      - main
+      - sta
   workflow_dispatch:
 
 permissions:
