@@ -18,7 +18,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [34])
+@Config(application = Application::class, sdk = [36])
 class StartupSplashTest {
     @Test
     fun `仅在首帧必要配置未就绪时阻止绘制`() {

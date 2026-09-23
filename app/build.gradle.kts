@@ -32,16 +32,18 @@ android {
         // 只跑 Android 16（API 36）及以上：不维护低版本兼容分支，也不适配低端设备。
         minSdk = 36
         targetSdk = 36
-        // versionCode 规则：yyyyMMdd + 两位当日序号（01 起），发版时随 versionName 一起手动递增。
-        // versionName 后缀是本 fork 的构建序号，与上游版本号区分：
-        // CI 用 GitHub run number（前缀默认 as），本地备用出包用 etaBuildPrefix=ac 的独立序号，
-        // 两类版本名不会互相顶替（见 tools/build-release-local.sh）。
+        // versionCode 规则：yyyyMMdd + 两位当日序号（01 起），发版时手动递增。
+        // Sta 是独立产品（applicationId io.github.asagnc.sta），有自己的日期码基数：
+        // 首版 2026092301 > 分叉时继承来的 2026091202，保证升级不被应用市场/系统拒绝。
+        // versionName 是本产品的构建序号：CI 用 GitHub run number（前缀 as），
+        // 本地备用出包用 etaBuildPrefix=ac 的独立序号（见 tools/build-release-local.sh），
+        // 两类版本名不会互相顶替：sta-as1 / sta-ac1。
         val buildNumber = providers.gradleProperty("etaBuildNumber").orNull?.takeIf { it.isNotBlank() }
         val buildPrefix = providers.gradleProperty("etaBuildPrefix").orNull
             ?.takeIf { it.matches(Regex("[a-z]{1,4}")) }
             ?: "as"
-        versionCode = 2026091202
-        versionName = "3.0.4-$buildPrefix${buildNumber ?: 1}"
+        versionCode = 2026092301
+        versionName = "sta-$buildPrefix${buildNumber ?: 1}"
     }
 
     signingConfigs {
