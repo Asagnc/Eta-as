@@ -17,13 +17,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.app.LocalAppearanceSettings
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
+import io.github.asagnc.sta.ui.theme.StaStroke
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import io.github.asagnc.sta.ui.theme.StaStroke
 
 internal object SettingsIconColors {
     val Blue = Color(0xFF0080FF)
@@ -34,10 +36,10 @@ internal object SettingsIconColors {
 
 internal object SettingsItemLayout {
     val SidePadding = StaSpacing.lg
-    val IconSize = StaSpacing.xxl
+    val IconSize = StaIconSize.xl
     val IconTextGap = StaSpacing.lg
     val ContentStart = SidePadding + IconSize + IconTextGap
-    val RowMinHeight = 52.dp
+    val RowMinHeight = StaSize.s52
 }
 
 @Composable
@@ -87,7 +89,7 @@ internal fun SettingsPreferenceIcon(
 ) {
     // 满幅轮廓稍作光学校正，但所有图标都占相同宽度，保证正文和分割线对齐。
     val glyphSize = when (icon) {
-        Icons.Rounded.Extension, Icons.Rounded.TheaterComedy, Icons.AutoMirrored.Rounded.MenuBook -> 22.dp
+        Icons.Rounded.Extension, Icons.Rounded.TheaterComedy, Icons.AutoMirrored.Rounded.MenuBook -> StaIconSize.xl
         else -> SettingsItemLayout.IconSize
     }
     Box(Modifier.size(SettingsItemLayout.IconSize), contentAlignment = Alignment.Center) {

@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.app.LocalPlatformDensity
+import io.github.asagnc.sta.ui.theme.StaSize
 
 private val WideScreenMinWidth = 600.dp
 private val MaxPageContentWidth = 800.dp
@@ -41,9 +42,9 @@ fun WidePageContent(
     val isWideScreen = rememberIsWideScreen()
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val sidePadding = if (isWideScreen) {
-            ((maxWidth - MaxPageContentWidth) / 2).coerceAtLeast(0.dp)
+            ((maxWidth - MaxPageContentWidth) / 2).coerceAtLeast(StaSize.none)
         } else {
-            0.dp
+            StaSize.none
         }
         content(sidePadding)
     }

@@ -25,23 +25,24 @@ import io.github.asagnc.sta.R
 import io.github.asagnc.sta.agent.tool.AgentToolCapabilities
 import io.github.asagnc.sta.agent.tool.RootRequirement
 import io.github.asagnc.sta.ui.components.ItemDescriptionDialog
+import io.github.asagnc.sta.ui.components.StaCard
 import io.github.asagnc.sta.ui.components.iconForTool
 import io.github.asagnc.sta.ui.model.AgentToolsAction
 import io.github.asagnc.sta.ui.model.ToolItemUi
 import io.github.asagnc.sta.ui.model.actualToolName
 import io.github.asagnc.sta.ui.model.toolCardAction
 import io.github.asagnc.sta.ui.model.toolCardRequirement
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Card
-import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
-import io.github.asagnc.sta.ui.theme.StaColors
-import io.github.asagnc.sta.ui.theme.StaIconSize
 
 @Composable
 internal fun ToolCard(
@@ -79,7 +80,7 @@ internal fun ToolCard(
         },
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().heightIn(min = 40.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = StaSize.s40),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(

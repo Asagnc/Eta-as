@@ -77,13 +77,13 @@ import io.github.asagnc.sta.agent.browser.AgentBrowserSession
 import io.github.asagnc.sta.data.model.ReasoningEffort
 import io.github.asagnc.sta.ui.app.AgentConversationRevisionReducer
 import io.github.asagnc.sta.ui.app.LocalBlurEnabled
-import io.github.asagnc.sta.ui.model.AgentSubAgentItemUi
-import io.github.asagnc.sta.ui.model.AgentPlanUi
-import io.github.asagnc.sta.ui.model.AgentTaskPlanItemUi
 import io.github.asagnc.sta.ui.model.AgentChatMessageUi
 import io.github.asagnc.sta.ui.model.AgentContextUsageUi
 import io.github.asagnc.sta.ui.model.AgentMessageUi
 import io.github.asagnc.sta.ui.model.AgentModelPickerUiState
+import io.github.asagnc.sta.ui.model.AgentPlanUi
+import io.github.asagnc.sta.ui.model.AgentSubAgentItemUi
+import io.github.asagnc.sta.ui.model.AgentTaskPlanItemUi
 import io.github.asagnc.sta.ui.model.MessageEditUiState
 import io.github.asagnc.sta.ui.model.PendingFileReferenceUi
 import io.github.asagnc.sta.ui.model.PendingImageUi
@@ -92,8 +92,12 @@ import io.github.asagnc.sta.ui.model.ToolActivityMessageUi
 import io.github.asagnc.sta.ui.model.ToolSummaryMessageUi
 import io.github.asagnc.sta.ui.model.UserMessageUi
 import io.github.asagnc.sta.ui.model.latestContextUsage
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
+import io.github.asagnc.sta.ui.theme.StaStroke
 import kotlin.math.exp
 import kotlin.math.min
 import kotlinx.coroutines.CancellationException
@@ -117,9 +121,6 @@ import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
-import io.github.asagnc.sta.ui.theme.StaColors
-import io.github.asagnc.sta.ui.theme.StaIconSize
-import io.github.asagnc.sta.ui.theme.StaStroke
 
 /**
  * 聊天主体：消息流 + 底部输入框。
@@ -655,7 +656,7 @@ internal fun AgentConversationMessages(
                 .overScrollVertical(),
             contentPadding = PaddingValues(
                 top = StaSpacing.lg,
-                bottom = bottomInset + 14.dp,
+                bottom = bottomInset + StaSpacing.lg,
             ),
             overscrollEffect = null,
         ) {
@@ -749,8 +750,8 @@ internal fun AgentConversationMessages(
                     }
                 },
                 backgroundColor = StaColors.surfaceRaisedHigh,
-                minWidth = 40.dp,
-                minHeight = 40.dp,
+                minWidth = StaSize.s40,
+                minHeight = StaSize.s40,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.ArrowDownward,
@@ -997,7 +998,7 @@ private fun AgentChatBottomBar(
     }
 }
 
-private val ChatBottomFrostHeight = 24.dp
+private val ChatBottomFrostHeight = StaSize.s24
 
 private const val ChatBottomSentinelKey = "agent-chat-bottom-sentinel"
 private const val BOTTOM_FOLLOW_RESPONSE_SECONDS = 0.085f
@@ -1087,7 +1088,7 @@ private fun EmptyChatState(
                 )
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(StaSpacing.xxxl))
 
             AnimatedVisibility(
                 visible = showSuggestions && !isCharacterConversation,
@@ -1152,7 +1153,7 @@ private fun SuggestionCard(
             modifier = Modifier.size(StaIconSize.md),
             tint = StaColors.onBackground,
         )
-        Spacer(modifier = Modifier.height(9.dp))
+        Spacer(modifier = Modifier.height(StaSpacing.compact))
         Text(
             text = item.title,
             style = MiuixTheme.textStyles.body2,

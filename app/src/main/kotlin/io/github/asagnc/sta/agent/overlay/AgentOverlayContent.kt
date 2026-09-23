@@ -83,7 +83,10 @@ import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownTypography
 import com.mikepenz.markdown.model.rememberMarkdownState
 import io.github.asagnc.sta.R
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -94,8 +97,7 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
-import io.github.asagnc.sta.ui.theme.StaColors
-import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaType
 
 // Miuix 未提供语义 success 色，沿用项目既有值；失败色走主题 error
 private val SuccessColor = Color(0xFF34C759)
@@ -243,7 +245,7 @@ private fun AssistantOrb(
     Box(
         modifier = modifier
             .then(tapModifier)
-            .size(56.dp)
+            .size(StaSize.s56)
             .drawBehind {
                 val outer = size.minDimension
                 val center = Offset(outer / 2f, outer / 2f)
@@ -372,14 +374,14 @@ internal fun AgentOverlayBubble(
                         .clip(CircleShape)
                         .background(accent),
                 )
-                Spacer(modifier = Modifier.width(7.dp))
+                Spacer(modifier = Modifier.width(StaSpacing.sm))
                 Text(
                     text = statusText,
                     color = StaColors.textPrimary,
-                    fontSize = 13.sp,
+                    fontSize = StaType.code,
                     fontWeight = FontWeight.Medium,
                     maxLines = 2,
-                    lineHeight = 17.sp,
+                    lineHeight = StaType.lineHeightTight,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -486,8 +488,8 @@ private fun OverlayControlButton(
     IconButton(
         onClick = onClick,
         backgroundColor = StaColors.surfaceRaisedHigh,
-        minWidth = 32.dp,
-        minHeight = 32.dp,
+        minWidth = StaSize.s32,
+        minHeight = StaSize.s32,
         cornerRadius = StaRadius.xl,
     ) {
         Icon(
@@ -524,7 +526,7 @@ private fun SupplementInput(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 44.dp, max = 112.dp)
+                .heightIn(min = StaSize.s44, max = StaSize.s112)
                 .clip(RoundedCornerShape(StaRadius.xl))
                 .background(fieldBg)
                 .padding(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
@@ -534,8 +536,8 @@ private fun SupplementInput(
                 Text(
                     text = stringResource(R.string.overlay_supplement_hint),
                     color = textColor.copy(alpha = 0.45f),
-                    fontSize = 14.sp,
-                    lineHeight = 18.sp,
+                    fontSize = StaType.body,
+                    lineHeight = StaType.lineHeightCompact,
                 )
             }
             BasicTextField(
@@ -546,8 +548,8 @@ private fun SupplementInput(
                     .focusRequester(focusRequester),
                 textStyle = TextStyle(
                     color = textColor,
-                    fontSize = 14.sp,
-                    lineHeight = 18.sp,
+                    fontSize = StaType.body,
+                    lineHeight = StaType.lineHeightCompact,
                 ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                 cursorBrush = SolidColor(StaColors.accent),
@@ -563,8 +565,8 @@ private fun SupplementInput(
             TextButton(
                 text = stringResource(R.string.action_cancel),
                 onClick = onCancel,
-                minWidth = 44.dp,
-                minHeight = 32.dp,
+                minWidth = StaSize.s44,
+                minHeight = StaSize.s32,
                 insideMargin = PaddingValues(horizontal = StaSpacing.compact, vertical = StaSpacing.xxs),
             )
             Spacer(modifier = Modifier.width(StaSpacing.sm))
@@ -572,8 +574,8 @@ private fun SupplementInput(
                 text = stringResource(R.string.overlay_send),
                 onClick = onSend,
                 enabled = value.isNotBlank(),
-                minWidth = 44.dp,
-                minHeight = 32.dp,
+                minWidth = StaSize.s44,
+                minHeight = StaSize.s32,
                 insideMargin = PaddingValues(horizontal = StaSpacing.compact, vertical = StaSpacing.xxs),
                 colors = ButtonDefaults.textButtonColorsPrimary(),
             )
@@ -651,15 +653,15 @@ internal fun AgentResultCard(
                         Text(
                             text = statusLabel,
                             color = StaColors.textSecondary,
-                            fontSize = 13.sp,
+                            fontSize = StaType.code,
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         // 关闭直接交给 Service，不经 Compose 协程延迟
                         IconButton(
                             onClick = onClose,
                             backgroundColor = Color.Transparent,
-                            minWidth = 32.dp,
-                            minHeight = 32.dp,
+                            minWidth = StaSize.s32,
+                            minHeight = StaSize.s32,
                             cornerRadius = StaRadius.xl,
                         ) {
                             Icon(
@@ -676,16 +678,16 @@ internal fun AgentResultCard(
                     // Markdown 结果，可滚动
                     val markdownState = rememberMarkdownState(content = content, retainState = true)
                     val typography = markdownTypography(
-                        h1 = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor),
-                        h2 = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = textColor),
-                        h3 = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor),
-                        text = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, color = textColor),
-                        paragraph = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, color = textColor),
-                        ordered = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, color = textColor),
-                        bullet = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, color = textColor),
-                        list = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, color = textColor),
+                        h1 = TextStyle(fontSize = StaType.headline, fontWeight = FontWeight.Bold, color = textColor),
+                        h2 = TextStyle(fontSize = StaType.titleLarge, fontWeight = FontWeight.Bold, color = textColor),
+                        h3 = TextStyle(fontSize = StaType.title, fontWeight = FontWeight.Bold, color = textColor),
+                        text = TextStyle(fontSize = StaType.title, lineHeight = StaType.lineHeightBody, color = textColor),
+                        paragraph = TextStyle(fontSize = StaType.title, lineHeight = StaType.lineHeightBody, color = textColor),
+                        ordered = TextStyle(fontSize = StaType.title, lineHeight = StaType.lineHeightBody, color = textColor),
+                        bullet = TextStyle(fontSize = StaType.title, lineHeight = StaType.lineHeightBody, color = textColor),
+                        list = TextStyle(fontSize = StaType.title, lineHeight = StaType.lineHeightBody, color = textColor),
                         code = TextStyle(
-                            fontSize = 13.sp,
+                            fontSize = StaType.code,
                             fontFamily = FontFamily.Monospace,
                             color = textColor,
                         ),
@@ -698,10 +700,10 @@ internal fun AgentResultCard(
                             .heightIn(max = 280.dp)
                             .verticalScroll(rememberScrollState()),
                         loading = {
-                            Text(text = content, color = textColor, fontSize = 16.sp, modifier = it)
+                            Text(text = content, color = textColor, fontSize = StaType.title, modifier = it)
                         },
                         error = {
-                            Text(text = content, color = textColor, fontSize = 16.sp, modifier = it)
+                            Text(text = content, color = textColor, fontSize = StaType.title, modifier = it)
                         },
                     )
                 }

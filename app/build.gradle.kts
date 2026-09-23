@@ -96,7 +96,7 @@ android {
             keepDebugSymbols += setOf(
                 "**/libproot_exec.so",
                 "**/libproot_loader.so",
-                "**/libeta_pty.so",
+                "**/libsta_pty.so",
                 // ripgrep 是已 stripped 的静态二进制，别让 AGP 再动它。
                 "**/librg.so",
             )

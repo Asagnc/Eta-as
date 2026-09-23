@@ -22,11 +22,12 @@ import io.github.asagnc.sta.ui.components.ListEmptyState
 import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.PreferenceIcon
+import io.github.asagnc.sta.ui.components.StaCard
 import io.github.asagnc.sta.ui.model.AgentSkillsAction
 import io.github.asagnc.sta.ui.model.AgentSkillsUiState
 import io.github.asagnc.sta.ui.model.SkillItemUi
 import io.github.asagnc.sta.ui.model.canDeleteUserSkill
-import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaIconSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -34,10 +35,9 @@ import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.window.WindowDialog
-import io.github.asagnc.sta.ui.theme.StaIconSize
 
-private val CardHorizontalPadding = 12.dp
-private val CardBottomPadding = 12.dp
+private val CardHorizontalPadding = StaSpacing.md
+private val CardBottomPadding = StaSpacing.md
 
 @Composable
 fun AgentSkillsScreen(

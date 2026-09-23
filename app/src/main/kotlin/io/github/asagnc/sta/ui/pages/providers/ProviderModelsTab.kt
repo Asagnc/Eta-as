@@ -57,8 +57,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import io.github.asagnc.sta.StaApp
 import io.github.asagnc.sta.R
+import io.github.asagnc.sta.StaApp
 import io.github.asagnc.sta.data.model.Model
 import io.github.asagnc.sta.data.model.ModelReasoningCapabilities
 import io.github.asagnc.sta.data.model.ProviderSetting
@@ -68,12 +68,14 @@ import io.github.asagnc.sta.data.repository.RemoteModelFetcher
 import io.github.asagnc.sta.data.repository.RuntimeConfigRepository
 import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.PreferenceIcon
+import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.components.StaCardDefaults
 import io.github.asagnc.sta.ui.components.StatusError
 import io.github.asagnc.sta.ui.components.StatusSuccess
 import io.github.asagnc.sta.ui.model.formatCompactTokenCount
-import io.github.asagnc.sta.ui.components.StaCard
-import io.github.asagnc.sta.ui.components.StaCardDefaults
+import io.github.asagnc.sta.ui.theme.StaColors
 import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -99,7 +101,6 @@ import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
-import io.github.asagnc.sta.ui.theme.StaColors
 
 private val modelSearchSeparators = Regex("""[^\p{L}\p{N}]+""")
 private val editableReasoningEfforts = listOf(
@@ -114,7 +115,7 @@ private val editableReasoningEfforts = listOf(
 )
 
 private val modelDialogBodyMaxHeight = 520.dp
-private val modelDialogChromeHeight = 112.dp
+private val modelDialogChromeHeight = StaSize.s112
 
 private fun Modifier.modelDialogScrollableBody(): Modifier = layout { measurable, constraints ->
     // 从弹窗实际约束中为标题、间距和操作栏让出空间，避免横屏时底部按钮被内容挤出边界。
@@ -418,7 +419,7 @@ internal fun ProviderModelsTab(
                 // 多选操作栏悬浮在底部时，预留高度避免遮挡最后一个列表项；其余情况与大圆角屏幕下沿保持间距
                 Spacer(
                     modifier = Modifier
-                        .height(if (selectionMode) 88.dp else 24.dp)
+                        .height(if (selectionMode) StaSize.s88 else StaSize.s24)
                         .navigationBarsPadding(),
                 )
             }
@@ -587,10 +588,10 @@ private fun ModelListGroupItem(
     val surfaceModifier = if (isFirst || isLast) {
         Modifier.squircleSurface(
             color = surfaceColor,
-            topStart = if (isFirst) cornerRadius else 0.dp,
-            topEnd = if (isFirst) cornerRadius else 0.dp,
-            bottomEnd = if (isLast) cornerRadius else 0.dp,
-            bottomStart = if (isLast) cornerRadius else 0.dp,
+            topStart = if (isFirst) cornerRadius else StaRadius.none,
+            topEnd = if (isFirst) cornerRadius else StaRadius.none,
+            bottomEnd = if (isLast) cornerRadius else StaRadius.none,
+            bottomStart = if (isLast) cornerRadius else StaRadius.none,
         )
     } else {
         Modifier.background(surfaceColor)

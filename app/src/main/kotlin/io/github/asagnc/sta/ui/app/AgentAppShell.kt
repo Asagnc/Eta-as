@@ -36,6 +36,7 @@ import io.github.asagnc.sta.ui.components.topBarContainerColor
 import io.github.asagnc.sta.ui.model.ConversationPaneUiState
 import io.github.asagnc.sta.ui.model.ConversationSummaryUi
 import io.github.asagnc.sta.ui.navigation.AppRoute
+import io.github.asagnc.sta.ui.theme.StaIconSize
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Icon
@@ -193,7 +194,7 @@ private fun AgentTopBar(
     }
 }
 
-private val TopBarMenuIconSize = 20.dp
+private val TopBarMenuIconSize = StaIconSize.lg
 
 /**
  * 首页顶栏溢出菜单。WindowListPopup 以父布局为锚点，因此与触发按钮包在同一个 Box 中，

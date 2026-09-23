@@ -75,8 +75,12 @@ import io.github.asagnc.sta.ui.model.AgentContextUsageUi
 import io.github.asagnc.sta.ui.model.AgentModelPickerUiState
 import io.github.asagnc.sta.ui.model.PendingFileReferenceUi
 import io.github.asagnc.sta.ui.model.PendingImageUi
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
+import io.github.asagnc.sta.ui.theme.StaStroke
 import kotlin.math.roundToInt
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
@@ -90,14 +94,12 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowListPopup
-import io.github.asagnc.sta.ui.theme.StaColors
-import io.github.asagnc.sta.ui.theme.StaIconSize
-import io.github.asagnc.sta.ui.theme.StaStroke
+import io.github.asagnc.sta.ui.theme.StaType
 
 private val SendButtonVisualSize = ChatInputActionIconSize
-private val SendIconSize = 16.dp
-private val StopIconSize = 10.dp
-private val ThinkingIconSize = 21.dp
+private val SendIconSize = StaIconSize.md
+private val StopIconSize = StaIconSize.xs
+private val ThinkingIconSize = StaIconSize.lg
 private val InputContainerShape = RoundedCornerShape(StaRadius.xxl)
 
 /**
@@ -247,7 +249,7 @@ internal fun AgentChatInputBar(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .defaultMinSize(minHeight = 40.dp)
+                        .defaultMinSize(minHeight = StaSize.s40)
                         .padding(horizontal = StaSpacing.sm, vertical = StaSpacing.xs),
                     contentAlignment = Alignment.TopStart,
                 ) {
@@ -266,8 +268,8 @@ internal fun AgentChatInputBar(
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                         textStyle = TextStyle(
                             color = StaColors.textPrimary,
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
+                            fontSize = StaType.title,
+                            lineHeight = StaType.lineHeightBody,
                         ),
                         cursorBrush = SolidColor(StaColors.accent),
                         lineLimits = TextFieldLineLimits.MultiLine(
@@ -496,7 +498,7 @@ private fun PendingImageStrip(
         images.forEach { image ->
             Box(
                 modifier = Modifier
-                    .size(60.dp)
+                    .size(StaSize.s60)
                     .clip(RoundedCornerShape(StaRadius.md))
                     .background(StaColors.surfaceRaised),
             ) {

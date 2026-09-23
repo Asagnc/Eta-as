@@ -25,20 +25,20 @@ import io.github.asagnc.sta.R
 import io.github.asagnc.sta.agent.tool.AgentToolCapabilities
 import io.github.asagnc.sta.ui.app.rememberDeviceCapabilities
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
+import io.github.asagnc.sta.ui.components.StaCard
 import io.github.asagnc.sta.ui.model.AgentToolsAction
 import io.github.asagnc.sta.ui.model.AgentToolsUiState
 import io.github.asagnc.sta.ui.model.ToolItemUi
 import io.github.asagnc.sta.ui.model.projectToolGroups
 import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Card
-import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TabRow
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 
 private object ToolsMetrics {
-    val GridHorizontalPadding = 20.dp
-    val GridGap = 12.dp
+    val GridHorizontalPadding = StaSpacing.xl
+    val GridGap = StaSpacing.md
 }
 
 @Composable

@@ -79,11 +79,15 @@ import io.github.asagnc.sta.R
 import io.github.asagnc.sta.agent.browser.AgentBrowserSession
 import io.github.asagnc.sta.agent.browser.BrowserSessionSnapshot
 import io.github.asagnc.sta.ui.components.MiuixDialogActions
-import io.github.asagnc.sta.ui.components.StatusError
 import io.github.asagnc.sta.ui.components.StaCard
 import io.github.asagnc.sta.ui.components.StaCardDefaults
+import io.github.asagnc.sta.ui.components.StatusError
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
+import io.github.asagnc.sta.ui.theme.StaStroke
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -99,9 +103,6 @@ import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
-import io.github.asagnc.sta.ui.theme.StaColors
-import io.github.asagnc.sta.ui.theme.StaIconSize
-import io.github.asagnc.sta.ui.theme.StaStroke
 
 /**
  * Agent 与用户共享的浏览器会话。
@@ -624,7 +625,7 @@ private fun BrowserOverlayIcon(
 ) {
     Box(
         modifier = modifier
-            .size(64.dp)
+            .size(StaSize.s64)
             .squircleSurface(
                 color = tint.copy(alpha = 0.10f),
                 cornerRadius = StaRadius.xxl,
@@ -634,7 +635,7 @@ private fun BrowserOverlayIcon(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier.size(StaSize.s28),
             tint = tint,
         )
     }
@@ -745,7 +746,7 @@ private fun BrowserFailedState(
                 textAlign = TextAlign.Center,
             )
         }
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(StaSpacing.lg))
         TextButton(
             text = stringResource(R.string.ui_reload_5982c4),
             onClick = onRetry,

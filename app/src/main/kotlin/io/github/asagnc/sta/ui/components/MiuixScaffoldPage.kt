@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.layout.WidePageContent
 import io.github.asagnc.sta.ui.layout.horizontalCutoutPadding
+import io.github.asagnc.sta.ui.theme.StaSize
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
@@ -127,7 +128,7 @@ fun MiuixScaffold(
 fun MiuixPageBottomSpacer(modifier: Modifier = Modifier) {
     Spacer(
         modifier = modifier
-            .height(24.dp)
+            .height(StaSize.s24)
             .navigationBarsPadding(),
     )
 }

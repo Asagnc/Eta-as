@@ -22,8 +22,10 @@ import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.app.CharacterLibraryStore
 import io.github.asagnc.sta.ui.components.ListEmptyState
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
-import io.github.asagnc.sta.ui.navigation.AppRoute
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.navigation.AppRoute
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Icon
@@ -37,9 +39,8 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
-import io.github.asagnc.sta.ui.theme.StaColors
 
-internal val CharacterCardPadding = 12.dp
+internal val CharacterCardPadding = StaSpacing.md
 
 @Composable
 internal fun CharacterLibraryScreen(
@@ -96,7 +97,7 @@ internal fun CharacterLibraryScreen(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        InfiniteProgressIndicator(size = 28.dp)
+                        InfiniteProgressIndicator(size = StaSize.s28)
                     }
                 }
             }

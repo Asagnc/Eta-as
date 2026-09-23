@@ -46,8 +46,12 @@ import io.github.asagnc.sta.ui.model.AgentModelOptionUi
 import io.github.asagnc.sta.ui.model.AgentModelPickerUiState
 import io.github.asagnc.sta.ui.model.defaultExpandedModelProviderIds
 import io.github.asagnc.sta.ui.model.formatContextUsage
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
+import io.github.asagnc.sta.ui.theme.StaStroke
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
@@ -67,9 +71,6 @@ import top.yukonga.miuix.kmp.basic.rememberTooltipState
 import top.yukonga.miuix.kmp.overlay.OverlayListPopup
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import io.github.asagnc.sta.ui.theme.StaColors
-import io.github.asagnc.sta.ui.theme.StaIconSize
-import io.github.asagnc.sta.ui.theme.StaStroke
 
 @Composable
 internal fun AgentModelPickerButton(
@@ -88,7 +89,7 @@ internal fun AgentModelPickerButton(
         if (!enabled) showPopup = false
     }
     val density = LocalDensity.current
-    val popupWindowInsetPx = with(density) { 14.dp.roundToPx() }
+    val popupWindowInsetPx = with(density) { StaSpacing.lg.roundToPx() }
     val popupPositionProvider = remember(popupAnchorTopPx, popupWindowInsetPx) {
         InputPopupPositionProvider(
             inputContainerTopPx = popupAnchorTopPx,
@@ -313,8 +314,8 @@ internal fun AgentContextUsageButton(
                                 onCompact()
                                 tooltipState.dismiss()
                             },
-                            minWidth = 0.dp,
-                            minHeight = 34.dp,
+                            minWidth = StaSize.none,
+                            minHeight = StaSize.s34,
                             cornerRadius = StaRadius.xl,
                             colors = ButtonDefaults.textButtonColorsPrimary(),
                             insideMargin = PaddingValues(horizontal = StaSpacing.lg, vertical = StaSpacing.xs),

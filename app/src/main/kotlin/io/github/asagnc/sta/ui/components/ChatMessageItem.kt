@@ -23,6 +23,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -60,15 +61,14 @@ import androidx.compose.material.icons.rounded.ExpandMore
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -103,17 +103,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import io.github.asagnc.sta.ui.theme.StaRadius
-import io.github.asagnc.sta.ui.theme.StaSpacing
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.takeOrElse
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -151,17 +146,26 @@ import io.github.asagnc.sta.agent.model.AgentFileReferencePromptCodec
 import io.github.asagnc.sta.agent.overlay.toolDisplayName
 import io.github.asagnc.sta.ui.model.AgentChatMessageUi
 import io.github.asagnc.sta.ui.model.AgentMessageUi
+import io.github.asagnc.sta.ui.model.AgentSubAgentItemUi
+import io.github.asagnc.sta.ui.model.AgentSubAgentPhase
 import io.github.asagnc.sta.ui.model.RunTraceMessageUi
 import io.github.asagnc.sta.ui.model.SuggestionChipsMessageUi
 import io.github.asagnc.sta.ui.model.SystemNoticeCode
 import io.github.asagnc.sta.ui.model.SystemNoticeMessageUi
-import io.github.asagnc.sta.ui.model.AgentSubAgentItemUi
-import io.github.asagnc.sta.ui.model.AgentSubAgentPhase
 import io.github.asagnc.sta.ui.model.ThinkingMessageUi
 import io.github.asagnc.sta.ui.model.ToolActivityMessageUi
 import io.github.asagnc.sta.ui.model.ToolActivityStatusUi
 import io.github.asagnc.sta.ui.model.ToolSummaryMessageUi
 import io.github.asagnc.sta.ui.model.UserMessageUi
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSize
+import io.github.asagnc.sta.ui.theme.StaSpacing
+import io.github.asagnc.sta.ui.theme.StaStroke
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
@@ -190,9 +194,12 @@ import top.yukonga.miuix.kmp.basic.rememberTooltipState
 import top.yukonga.miuix.kmp.squircle.squircleBorder
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import io.github.asagnc.sta.ui.theme.StaColors
-import io.github.asagnc.sta.ui.theme.StaIconSize
-import io.github.asagnc.sta.ui.theme.StaStroke
+import io.github.asagnc.sta.ui.theme.StaMarkdownGap
+import io.github.asagnc.sta.ui.theme.StaTextMetrics
+import io.github.asagnc.sta.ui.theme.StaCompactTypeScale
+import io.github.asagnc.sta.ui.theme.StaAnswerTypeScale
+import io.github.asagnc.sta.ui.theme.StaTypeScale
+import io.github.asagnc.sta.ui.theme.StaType
 
 @Composable
 internal fun rememberDataUrlBitmap(dataUrl: String) = remember(dataUrl) {
@@ -656,7 +663,7 @@ private fun UserMessageBubble(
                     .then(
                         if (isEditing) {
                             Modifier.squircleBorder(
-                                width = 1.dp,
+                                width = StaStroke.hairline,
                                 color = StaColors.accent,
                                 cornerRadius = StaRadius.xxl,
                             )
@@ -678,7 +685,7 @@ private fun UserMessageBubble(
                                     bitmap = bitmap,
                                     contentDescription = null,
                                     modifier = Modifier
-                                        .size(100.dp)
+                                        .size(StaSize.s100)
                                         .clip(RoundedCornerShape(StaRadius.lg)),
                                     contentScale = ContentScale.Crop,
                                 )
@@ -690,7 +697,7 @@ private fun UserMessageBubble(
                     SentFileReferenceFlow(
                         references = visiblePrompt.references,
                         modifier = Modifier.padding(
-                            bottom = if (visiblePrompt.request.isNotBlank()) 8.dp else 0.dp
+                            bottom = if (visiblePrompt.request.isNotBlank()) StaSpacing.sm else StaSpacing.none
                         ),
                     )
                 }
@@ -909,8 +916,8 @@ private fun AgentMessageBlock(
                         clipboardManager.setText(AnnotatedString(message.content))
                         copied = true
                     },
-                    minWidth = 30.dp,
-                    minHeight = 30.dp,
+                    minWidth = StaSize.s30,
+                    minHeight = StaSize.s30,
                 ) {
                     Icon(
                         imageVector = if (copied) Icons.Rounded.Check
@@ -928,7 +935,7 @@ private fun AgentMessageBlock(
                 }
                 if (showMessageActions) {
                     if (message.characterEditable) {
-                        IconButton(onClick = onEdit, enabled = messageActionsEnabled, minWidth = 30.dp, minHeight = 30.dp) {
+                        IconButton(onClick = onEdit, enabled = messageActionsEnabled, minWidth = StaSize.s30, minHeight = StaSize.s30) {
                             Icon(
                                 imageVector = Icons.Rounded.Edit,
                                 contentDescription = "编辑角色回复",
@@ -941,8 +948,8 @@ private fun AgentMessageBlock(
                         IconButton(
                             onClick = onRegenerate,
                             enabled = messageActionsEnabled,
-                            minWidth = 30.dp,
-                            minHeight = 30.dp,
+                            minWidth = StaSize.s30,
+                            minHeight = StaSize.s30,
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Refresh,
@@ -957,8 +964,8 @@ private fun AgentMessageBlock(
                             IconButton(
                                 onClick = onCompactUntilHere,
                                 enabled = messageActionsEnabled,
-                                minWidth = 30.dp,
-                                minHeight = 30.dp,
+                                minWidth = StaSize.s30,
+                                minHeight = StaSize.s30,
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Compress,
@@ -973,8 +980,8 @@ private fun AgentMessageBlock(
                         IconButton(
                             onClick = onDelete,
                             enabled = messageActionsEnabled,
-                            minWidth = 30.dp,
-                            minHeight = 30.dp,
+                            minWidth = StaSize.s30,
+                            minHeight = StaSize.s30,
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Delete,
@@ -996,7 +1003,7 @@ private fun AgentMessageBlock(
                             IconButton(
                                 onClick = { onSelectCandidate(message.selectedCandidate - 1) },
                                 enabled = messageActionsEnabled && message.selectedCandidate > 0,
-                                minWidth = 28.dp, minHeight = 28.dp,
+                                minWidth = StaSize.s28, minHeight = StaSize.s28,
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.ChevronLeft,
@@ -1010,12 +1017,12 @@ private fun AgentMessageBlock(
                                 style = MiuixTheme.textStyles.footnote1,
                                 color = StaColors.textSecondary,
                                 textAlign = TextAlign.Center,
-                                modifier = Modifier.widthIn(min = 30.dp),
+                                modifier = Modifier.widthIn(min = StaSize.s30),
                             )
                             IconButton(
                                 onClick = { onSelectCandidate(message.selectedCandidate + 1) },
                                 enabled = messageActionsEnabled && message.selectedCandidate < message.candidateCount - 1,
-                                minWidth = 28.dp, minHeight = 28.dp,
+                                minWidth = StaSize.s28, minHeight = StaSize.s28,
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.ChevronRight,
@@ -1248,7 +1255,7 @@ private fun ChatMarkdownDocument(
             val gap = with(density) {
                 markdownBlockSpacing(previousType, node.type).toDp()
             }
-            if (gap > 0.dp) Spacer(Modifier.height(gap))
+            if (gap > StaSpacing.none) Spacer(Modifier.height(gap))
             key(node.startOffset, node.type.name) {
                 MarkdownElement(
                     node = node,
@@ -1265,23 +1272,23 @@ internal fun topLevelMarkdownBlocks(root: ASTNode): List<ASTNode> =
     root.children.filterNot { node -> node.type == MarkdownTokenTypes.EOL }
 
 internal fun markdownBlockSpacing(previous: IElementType?, current: IElementType): TextUnit {
-    if (previous == null) return 0.sp
-    if (previous.isMarkdownHeading() && current.isMarkdownHeading()) return 12.sp
+    if (previous == null) return StaMarkdownGap.none
+    if (previous.isMarkdownHeading() && current.isMarkdownHeading()) return StaMarkdownGap.headingToHeading
     if (current.isMarkdownHeading()) {
         return if (current == MarkdownElementTypes.ATX_1 ||
             current == MarkdownElementTypes.SETEXT_1 ||
             current == MarkdownElementTypes.ATX_2 ||
             current == MarkdownElementTypes.SETEXT_2
         ) {
-            24.sp
+            StaMarkdownGap.beforeMajorHeading
         } else {
-            20.sp
+            StaMarkdownGap.beforeMinorHeading
         }
     }
-    if (previous.isMarkdownHeading()) return 10.sp
-    if (previous.isMarkdownParagraph() && current.isMarkdownParagraph()) return 16.sp
-    if (previous.isMarkdownStructuredBlock() || current.isMarkdownStructuredBlock()) return 16.sp
-    return 14.sp
+    if (previous.isMarkdownHeading()) return StaMarkdownGap.afterHeading
+    if (previous.isMarkdownParagraph() && current.isMarkdownParagraph()) return StaMarkdownGap.block
+    if (previous.isMarkdownStructuredBlock() || current.isMarkdownStructuredBlock()) return StaMarkdownGap.block
+    return StaMarkdownGap.fallback
 }
 
 private fun IElementType.isMarkdownHeading(): Boolean = when (this) {
@@ -1337,61 +1344,51 @@ private enum class ChatMarkdownTone {
     Thinking,
 }
 
+private val ChatMarkdownTone.typeScale: StaTypeScale
+    get() = if (this == ChatMarkdownTone.Answer) StaAnswerTypeScale else StaCompactTypeScale
+
+@Composable
+private fun chatMarkdownHeadingStyle(
+    tone: ChatMarkdownTone,
+    metrics: StaTextMetrics,
+    weight: FontWeight,
+) = chatMarkdownBodyStyle(tone).copy(
+    fontSize = metrics.size,
+    lineHeight = metrics.lineHeight,
+    fontWeight = weight,
+)
+
 @Composable
 private fun chatMarkdownTypography(tone: ChatMarkdownTone) = markdownTypography(
-    h1 = chatMarkdownBodyStyle(tone).copy(
-        fontSize = if (tone == ChatMarkdownTone.Answer) 21.sp else 17.sp,
-        lineHeight = if (tone == ChatMarkdownTone.Answer) 29.sp else 25.sp,
-        fontWeight = FontWeight.Bold,
-    ),
-    h2 = chatMarkdownBodyStyle(tone).copy(
-        fontSize = if (tone == ChatMarkdownTone.Answer) 19.sp else 16.sp,
-        lineHeight = if (tone == ChatMarkdownTone.Answer) 27.sp else 24.sp,
-        fontWeight = FontWeight.Bold,
-    ),
-    h3 = chatMarkdownBodyStyle(tone).copy(
-        fontSize = if (tone == ChatMarkdownTone.Answer) 18.sp else 15.sp,
-        lineHeight = if (tone == ChatMarkdownTone.Answer) 26.sp else 23.sp,
-        fontWeight = FontWeight.SemiBold,
-    ),
-    h4 = chatMarkdownBodyStyle(tone).copy(
-        fontSize = if (tone == ChatMarkdownTone.Answer) 17.sp else 14.sp,
-        lineHeight = if (tone == ChatMarkdownTone.Answer) 25.sp else 22.sp,
-        fontWeight = FontWeight.SemiBold,
-    ),
-    h5 = chatMarkdownBodyStyle(tone).copy(
-        fontSize = if (tone == ChatMarkdownTone.Answer) 16.sp else 14.sp,
-        lineHeight = if (tone == ChatMarkdownTone.Answer) 24.sp else 22.sp,
-        fontWeight = FontWeight.SemiBold,
-    ),
-    h6 = chatMarkdownBodyStyle(tone).copy(
-        fontSize = if (tone == ChatMarkdownTone.Answer) 15.sp else 14.sp,
-        lineHeight = if (tone == ChatMarkdownTone.Answer) 23.sp else 22.sp,
-        fontWeight = FontWeight.SemiBold,
-    ),
+    h1 = chatMarkdownHeadingStyle(tone, tone.typeScale.h1, FontWeight.Bold),
+    h2 = chatMarkdownHeadingStyle(tone, tone.typeScale.h2, FontWeight.Bold),
+    h3 = chatMarkdownHeadingStyle(tone, tone.typeScale.h3, FontWeight.SemiBold),
+    h4 = chatMarkdownHeadingStyle(tone, tone.typeScale.h4, FontWeight.SemiBold),
+    h5 = chatMarkdownHeadingStyle(tone, tone.typeScale.h5, FontWeight.SemiBold),
+    h6 = chatMarkdownHeadingStyle(tone, tone.typeScale.h6, FontWeight.SemiBold),
     text = chatMarkdownBodyStyle(tone),
     paragraph = chatMarkdownBodyStyle(tone),
     ordered = chatMarkdownBodyStyle(tone),
     bullet = chatMarkdownBodyStyle(tone),
     list = chatMarkdownBodyStyle(tone),
     quote = MiuixTheme.textStyles.body2.copy(
-        fontSize = if (tone == ChatMarkdownTone.Answer) 15.sp else 14.sp,
-        lineHeight = if (tone == ChatMarkdownTone.Answer) 24.sp else 22.sp,
+        fontSize = tone.typeScale.quote.size,
+        lineHeight = tone.typeScale.quote.lineHeight,
         color = chatMarkdownTextColor(ChatMarkdownTone.Thinking),
     ),
     code = TextStyle(
-        fontSize = 13.sp,
-        lineHeight = 20.sp,
+        fontSize = tone.typeScale.code.size,
+        lineHeight = tone.typeScale.code.lineHeight,
         fontFamily = FontFamily.Monospace,
         color = chatMarkdownTextColor(tone),
     ),
     inlineCode = chatMarkdownBodyStyle(tone).copy(
-        fontSize = if (tone == ChatMarkdownTone.Answer) 14.sp else 13.sp,
+        fontSize = tone.typeScale.inlineCode.size,
         fontFamily = FontFamily.Monospace,
     ),
     table = MiuixTheme.textStyles.body2.copy(
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
+        fontSize = tone.typeScale.table.size,
+        lineHeight = tone.typeScale.table.lineHeight,
         color = chatMarkdownTextColor(tone),
     ),
     textLink = TextLinkStyles(
@@ -1403,20 +1400,19 @@ private fun chatMarkdownTypography(tone: ChatMarkdownTone) = markdownTypography(
 )
 
 @Composable
-private fun chatMarkdownBodyStyle(tone: ChatMarkdownTone) =
-    if (tone == ChatMarkdownTone.Answer) {
-        MiuixTheme.textStyles.body1.copy(
-            fontSize = 16.sp,
-            lineHeight = 26.sp,
-            color = chatMarkdownTextColor(tone),
-        )
+private fun chatMarkdownBodyStyle(tone: ChatMarkdownTone): TextStyle {
+    val metrics = tone.typeScale.body
+    val template = if (tone == ChatMarkdownTone.Answer) {
+        MiuixTheme.textStyles.body1
     } else {
-        MiuixTheme.textStyles.body2.copy(
-            fontSize = 14.sp,
-            lineHeight = 22.sp,
-            color = chatMarkdownTextColor(tone),
-        )
+        MiuixTheme.textStyles.body2
     }
+    return template.copy(
+        fontSize = metrics.size,
+        lineHeight = metrics.lineHeight,
+        color = chatMarkdownTextColor(tone),
+    )
+}
 
 @Composable
 private fun chatMarkdownTextColor(tone: ChatMarkdownTone): Color =
@@ -1439,18 +1435,18 @@ private fun chatMarkdownColors(tone: ChatMarkdownTone) = markdownColor(
 @Composable
 private fun chatMarkdownDimens() = markdownDimens(
     dividerThickness = StaStroke.hair,
-    codeBackgroundCornerSize = 10.dp,
+    codeBackgroundCornerSize = StaRadius.md,
     blockQuoteThickness = StaStroke.bar,
 )
 
 @Composable
 private fun chatMarkdownPadding() = markdownPadding(
     // 顶层块由 ChatMarkdownDocument 按语义分配留白，库的统一前置间距保持关闭。
-    block = 0.dp,
-    list = 3.dp,
-    listItemTop = 3.dp,
-    listItemBottom = 3.dp,
-    listIndent = 14.dp,
+    block = StaSpacing.none,
+    list = StaSpacing.xxs,
+    listItemTop = StaSpacing.xxs,
+    listItemBottom = StaSpacing.xxs,
+    listIndent = StaSpacing.lg,
     codeBlock = PaddingValues(horizontal = StaSpacing.md, vertical = StaSpacing.md),
     blockQuote = PaddingValues(horizontal = StaSpacing.md),
     blockQuoteText = PaddingValues(vertical = StaSpacing.xxs),
@@ -1897,8 +1893,8 @@ private fun ChatCodeBlock(
                     clipboardManager.setText(AnnotatedString(code))
                     copied = true
                 },
-                minWidth = 28.dp,
-                minHeight = 28.dp,
+                minWidth = StaSize.s28,
+                minHeight = StaSize.s28,
             ) {
                 Icon(
                     imageVector = if (copied) Icons.Rounded.Check
@@ -1945,7 +1941,7 @@ private fun ChatCodeBlock(
     }
 }
 
-private val ChatTableCellWidth = 112.dp
+private val ChatTableCellWidth = StaSize.s112
 
 /**
  * 表格：细描边容器 + 表头浅底加粗 + 行间发丝分隔线；列宽不足时整体横向滚动。
@@ -2101,7 +2097,7 @@ private fun ChatBlockQuote(model: MarkdownComponentModel) {
     val a11yLabels = LocalMarkdownA11yLabels.current
     val barColor = StaColors.accent.copy(alpha = 0.4f)
     val emptyLineHeight = with(LocalDensity.current) {
-        model.typography.quote.lineHeight.takeOrElse { 22.sp }.toDp()
+        model.typography.quote.lineHeight.takeOrElse { StaType.lineHeightBody }.toDp()
     }
 
     Column(
@@ -2312,7 +2308,7 @@ private fun ThinkingRow(
                     // 手动切换会改变列表高度，交由调用方暂停自动跟底，避免视口被拉回最新内容。
                     onThinkingToggle()
                 }
-                .padding(horizontal = if (compact) StaSpacing.xxs else 13.dp, vertical = if (compact) StaSpacing.xs else StaSpacing.compact),
+                .padding(horizontal = if (compact) StaSpacing.xxs else StaSpacing.md, vertical = if (compact) StaSpacing.xs else StaSpacing.compact),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -2373,10 +2369,10 @@ private fun ThinkingRow(
                 val contentModifier = Modifier
                     .fillMaxWidth()
                     .padding(
-                        start = if (compact) 27.dp else 13.dp,
+                        start = if (compact) 27.dp else StaSpacing.md,
                         end = StaSpacing.md,
-                        top = if (compact) 2.dp else 8.dp,
-                        bottom = if (compact) 8.dp else 12.dp,
+                        top = if (compact) StaSpacing.hair else StaSpacing.sm,
+                        bottom = if (compact) StaSpacing.sm else StaSpacing.md,
                     )
                 if (streamingState != null && (message.isStreaming || completedMarkdownState == null)) {
                     StreamingMarkdown(
@@ -2632,7 +2628,7 @@ private fun ToolActivityInline(
                         command = message.command,
                         context = message.argumentsSummary,
                         modifier = Modifier.padding(
-                            bottom = if (message.resultSummary.isNullOrBlank()) 0.dp else 10.dp,
+                            bottom = if (message.resultSummary.isNullOrBlank()) StaSpacing.none else StaSpacing.compact,
                         ),
                     )
                 }
@@ -2668,7 +2664,7 @@ private fun ToolActivityInline(
                             text = stringResource(R.string.ui_open_current_browser_58358e),
                             onClick = onOpenBrowser,
                             colors = ButtonDefaults.textButtonColorsPrimary(),
-                            minHeight = 36.dp,
+                            minHeight = StaSize.s36,
                             textStyle = MiuixTheme.textStyles.body2,
                         )
                     }
@@ -2739,7 +2735,7 @@ private fun BrowserPagePreview(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
+                    .height(StaSize.s64),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -2822,8 +2818,8 @@ private fun ToolCommandBlock(
                     clipboardManager.setText(AnnotatedString(command))
                     copied = true
                 },
-                minWidth = 28.dp,
-                minHeight = 28.dp,
+                minWidth = StaSize.s28,
+                minHeight = StaSize.s28,
             ) {
                 Icon(
                     imageVector = if (copied) Icons.Rounded.Check
@@ -2941,7 +2937,7 @@ private fun ToolSummaryInline(
                     modifier = Modifier.size(StaIconSize.sm),
                     tint = StaColors.accent
                 )
-                Spacer(modifier = Modifier.width(5.dp))
+                Spacer(modifier = Modifier.width(StaSpacing.xs))
                 Text(
                     text = toolDisplayName(tool),
                     style = MiuixTheme.textStyles.footnote2,

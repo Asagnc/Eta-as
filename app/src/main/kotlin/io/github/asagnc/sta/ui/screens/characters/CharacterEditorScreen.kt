@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.app.CharacterLibraryStore
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Icon
@@ -29,7 +31,6 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun CharacterEditorScreen(
@@ -85,8 +86,8 @@ internal fun CharacterEditorScreen(
                         store.updateDraft { it.withEdits(alternateGreetings = it.alternateGreetings.filterIndexed { i, _ -> i != index }) }
                     },
                     enabled = !store.busy,
-                    minWidth = 36.dp,
-                    minHeight = 36.dp,
+                    minWidth = StaSize.s36,
+                    minHeight = StaSize.s36,
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.Close,

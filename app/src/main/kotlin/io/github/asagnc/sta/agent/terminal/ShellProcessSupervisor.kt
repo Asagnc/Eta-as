@@ -11,7 +11,7 @@ internal class ShellProcessSupervisor(
     private val allowTreeFallback: Boolean = !isAndroidRuntime(),
     private val setsidCommand: String = "setsid",
     private val rootAvailable: () -> Boolean = { TerminalRuntime.rootAvailable },
-    private val userPtyExecutable: () -> File? = { TerminalRuntime.nativeExecutable("libeta_pty.so") },
+    private val userPtyExecutable: () -> File? = { TerminalRuntime.nativeExecutable("libsta_pty.so") },
 ) {
     private companion object {
         const val PROCESS_REAP_TIMEOUT_MS = 1_000L

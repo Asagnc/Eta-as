@@ -48,8 +48,12 @@ import io.github.asagnc.sta.R
 import io.github.asagnc.sta.agent.model.AgentFileReference
 import io.github.asagnc.sta.agent.model.AgentFileReferenceKind
 import io.github.asagnc.sta.ui.model.PendingFileReferenceUi
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
+import io.github.asagnc.sta.ui.theme.StaStroke
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -63,13 +67,10 @@ import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
 import top.yukonga.miuix.kmp.window.WindowListPopup
-import io.github.asagnc.sta.ui.theme.StaColors
-import io.github.asagnc.sta.ui.theme.StaIconSize
-import io.github.asagnc.sta.ui.theme.StaStroke
 
-internal val ChatInputPopupMargin = 8.dp
-internal val ChatInputActionSize = 40.dp
-internal val ChatInputActionIconSize = 24.dp
+internal val ChatInputPopupMargin = StaSpacing.sm
+internal val ChatInputActionSize = StaSize.s40
+internal val ChatInputActionIconSize = StaIconSize.xl
 
 @Composable
 internal fun AgentAttachmentPickerButton(
@@ -213,7 +214,7 @@ internal fun PendingFileReferenceStrip(
             val reference = pending.reference
             Row(
                 modifier = Modifier
-                    .height(42.dp)
+                    .height(StaSize.s42)
                     .widthIn(max = 250.dp)
                     .squircleSurface(
                         color = StaColors.surfaceRaisedHigh,
@@ -249,7 +250,7 @@ internal fun PendingFileReferenceStrip(
                 )
                 Box(
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(StaSize.s28)
                         .clip(CircleShape)
                         .clickable { onRemoveReference(pending.id) },
                     contentAlignment = Alignment.Center,
@@ -280,7 +281,7 @@ internal fun SentFileReferenceFlow(
         references.forEach { reference ->
             Row(
                 modifier = Modifier
-                    .height(38.dp)
+                    .height(StaSize.s38)
                     .widthIn(max = 280.dp)
                     .squircleSurface(
                         color = StaColors.surface,

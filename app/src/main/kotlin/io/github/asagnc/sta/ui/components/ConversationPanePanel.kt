@@ -43,9 +43,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -53,10 +52,15 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.ui.model.ConversationPaneUiState
 import io.github.asagnc.sta.ui.model.ConversationSummaryUi
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.DropdownDefaults
 import top.yukonga.miuix.kmp.basic.DropdownImpl
@@ -73,30 +77,29 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import top.yukonga.miuix.kmp.window.WindowListPopup
-import io.github.asagnc.sta.ui.theme.StaColors
 
 private object ConversationPanelMetrics {
-    val PaneHorizontalPadding = 16.dp
-    val TopInset = 6.dp
-    val AfterActionBar = 8.dp
-    val BottomInset = 2.dp
-    val ActionIconSize = 20.dp
-    val SectionTopPadding = 8.dp
-    val SectionBottomPadding = 10.dp
-    val SectionIconSize = 14.dp
-    val SectionIconGap = 8.dp
-    val SectionCountGap = 12.dp
-    val RowMinHeight = 48.dp
-    val RowGap = 4.dp
-    val RowCornerRadius = 12.dp
-    val RowHorizontalPadding = 12.dp
-    val RowVerticalPadding = 12.dp
-    val ActiveDotSize = 6.dp
-    val ActiveDotGap = 10.dp
+    val PaneHorizontalPadding = StaSpacing.lg
+    val TopInset = StaSpacing.xs
+    val AfterActionBar = StaSpacing.sm
+    val BottomInset = StaSpacing.hair
+    val ActionIconSize = StaIconSize.lg
+    val SectionTopPadding = StaSpacing.sm
+    val SectionBottomPadding = StaSpacing.compact
+    val SectionIconSize = StaIconSize.md
+    val SectionIconGap = StaIconSize.xs
+    val SectionCountGap = StaSpacing.md
+    val RowMinHeight = StaSize.s48
+    val RowGap = StaSpacing.xxs
+    val RowCornerRadius = StaRadius.lg
+    val RowHorizontalPadding = StaSpacing.md
+    val RowVerticalPadding = StaSpacing.md
+    val ActiveDotSize = StaIconSize.xxs
+    val ActiveDotGap = StaSpacing.compact
     val EmptyVerticalPadding = 28.dp
-    val DockTopGap = 2.dp
-    val DockEntryCornerRadius = 12.dp
-    val DockEntryIconSize = 20.dp
+    val DockTopGap = StaSpacing.hair
+    val DockEntryCornerRadius = StaRadius.lg
+    val DockEntryIconSize = StaIconSize.lg
 }
 
 @Composable
@@ -499,7 +502,7 @@ private fun DockEntry(
 ) {
     Box(
         modifier = modifier
-            .heightIn(min = 48.dp)
+            .heightIn(min = StaSize.s48)
             .clip(RoundedCornerShape(ConversationPanelMetrics.DockEntryCornerRadius))
             .clickable(onClickLabel = label, onClick = onClick),
         contentAlignment = Alignment.Center,

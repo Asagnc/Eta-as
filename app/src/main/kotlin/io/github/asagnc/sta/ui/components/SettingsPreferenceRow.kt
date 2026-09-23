@@ -26,6 +26,9 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaSize
 import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Switch
@@ -33,8 +36,6 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.basic.ArrowRight
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import io.github.asagnc.sta.ui.theme.StaColors
-import io.github.asagnc.sta.ui.theme.StaIconSize
 
 @Composable
 internal fun SettingsArrowPreference(
@@ -60,7 +61,7 @@ internal fun SettingsArrowPreference(
         Icon(
             imageVector = MiuixIcons.Basic.ArrowRight,
             contentDescription = null,
-            modifier = Modifier.size(StaIconSize.xs, 14.dp).graphicsLayer {
+            modifier = Modifier.size(StaIconSize.xs, StaIconSize.md).graphicsLayer {
                 scaleX = if (direction == LayoutDirection.Rtl) -1f else 1f
             },
             tint = if (enabled) StaColors.onBackground.copy(alpha = 0.3f)
@@ -97,8 +98,8 @@ internal fun SettingsSwitchPreference(
             // 整行提供无障碍状态，开关保留点击和拖动；缩放绘制不缩小行的触摸区域。
             modifier = Modifier.clearAndSetSemantics {}.layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
-                val width = 44.dp.roundToPx()
-                val height = 24.dp.roundToPx()
+                val width = StaSize.s44.roundToPx()
+                val height = StaSize.s24.roundToPx()
                 layout(width, height) {
                     placeable.placeWithLayer((width - placeable.width) / 2, (height - placeable.height) / 2) {
                         scaleX = width.toFloat() / placeable.width
@@ -152,7 +153,7 @@ internal fun SettingsPreferenceRow(
             }
             Spacer(Modifier.width(StaSpacing.md))
             Row(
-                modifier = Modifier.widthIn(max = actionMaxWidth.coerceAtLeast(44.dp)),
+                modifier = Modifier.widthIn(max = actionMaxWidth.coerceAtLeast(StaSize.s44)),
                 verticalAlignment = Alignment.CenterVertically,
                 content = endActions,
             )
