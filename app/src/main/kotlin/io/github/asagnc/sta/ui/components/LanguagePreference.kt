@@ -20,10 +20,10 @@ import io.github.asagnc.sta.R
 import io.github.asagnc.sta.data.repository.LanguageSettingsRepository
 import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.basic.DropdownItem
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
-internal fun LanguagePreference(iconTint: Color = MiuixTheme.colorScheme.onBackground) {
+internal fun LanguagePreference(iconTint: Color = StaColors.onBackground) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val repository = remember(context.applicationContext) {

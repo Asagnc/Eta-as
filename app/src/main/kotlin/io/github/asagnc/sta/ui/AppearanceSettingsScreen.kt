@@ -48,6 +48,7 @@ import top.yukonga.miuix.kmp.preference.OverlayDropdownPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
@@ -235,7 +236,7 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
                         Text(
                             text = "${scaleDraft.roundToInt()}%",
                             fontSize = MiuixTheme.textStyles.body2.fontSize,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                            color = StaColors.textAction,
                         )
                     },
                     bottomAction = {

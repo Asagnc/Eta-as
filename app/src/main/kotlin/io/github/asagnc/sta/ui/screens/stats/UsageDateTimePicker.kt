@@ -28,8 +28,8 @@ import java.time.format.TextStyle
 import java.util.Locale
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun UsageDateTimePickerDialog(
@@ -44,7 +44,7 @@ internal fun UsageDateTimePickerDialog(
     if (!show) return
     val initial = remember(current, endOfBound) { current.date ?: LocalDate.now() }
     var picked by remember(initial) { mutableStateOf(initial) }
-    val textColor = MiuixTheme.colorScheme.onSurface.toArgb()
+    val textColor = StaColors.textPrimary.toArgb()
     val view = LocalView.current
     WindowDialog(
         show = true,

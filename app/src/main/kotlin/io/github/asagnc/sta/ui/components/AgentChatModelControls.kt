@@ -67,6 +67,7 @@ import top.yukonga.miuix.kmp.basic.rememberTooltipState
 import top.yukonga.miuix.kmp.overlay.OverlayListPopup
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun AgentModelPickerButton(
@@ -195,7 +196,7 @@ private fun ModelProviderGroupHeader(
         Text(
             text = name,
             style = MiuixTheme.textStyles.footnote1,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            color = StaColors.textSecondary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -211,7 +212,7 @@ private fun ModelProviderGroupHeader(
             modifier = Modifier
                 .size(15.dp)
                 .graphicsLayer { rotationZ = arrowRotation },
-            tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+            tint = StaColors.textAction,
         )
     }
 }
@@ -228,7 +229,7 @@ private fun ModelPickerRow(
             .padding(horizontal = StaSpacing.sm, vertical = StaSpacing.hair)
             .squircleSurface(
                 color = if (selected) {
-                    MiuixTheme.colorScheme.surfaceContainerHigh
+                    StaColors.surfaceRaisedHigh
                 } else {
                     Color.Transparent
                 },
@@ -241,7 +242,7 @@ private fun ModelPickerRow(
         Text(
             text = model.displayName,
             style = MiuixTheme.textStyles.body2,
-            color = MiuixTheme.colorScheme.onSurface,
+            color = StaColors.textPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -252,7 +253,7 @@ private fun ModelPickerRow(
                 imageVector = Icons.Rounded.Check,
                 contentDescription = stringResource(R.string.ui_current_model_a0af8f),
                 modifier = Modifier.size(18.dp),
-                tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                tint = StaColors.textAction,
             )
         }
     }
@@ -269,10 +270,10 @@ internal fun AgentContextUsageButton(
     val tooltipState = rememberTooltipState(isPersistent = true)
     val progress = usage.progress
     val progressColor = when {
-        progress == null -> MiuixTheme.colorScheme.onSurfaceVariantActions
+        progress == null -> StaColors.textAction
         progress >= 0.95f -> StatusError
         progress >= 0.80f -> StatusWarning
-        else -> MiuixTheme.colorScheme.primary
+        else -> StaColors.accent
     }
     val locale = LocalConfiguration.current.locales[0]
     val summary = formatContextUsage(
@@ -343,7 +344,7 @@ internal fun AgentContextUsageButton(
                 colors = ProgressIndicatorDefaults.progressIndicatorColors(
                     foregroundColor = progressColor,
                     disabledForegroundColor = progressColor,
-                    backgroundColor = MiuixTheme.colorScheme.secondaryContainer,
+                    backgroundColor = StaColors.neutralContainer,
                 ),
                 strokeWidth = 2.5.dp,
                 size = ChatInputActionIconSize,
@@ -375,14 +376,14 @@ private fun ModelBrandMark(
         Box(
             modifier = Modifier
                 .size(size)
-                .background(MiuixTheme.colorScheme.primaryContainer, CircleShape),
+                .background(StaColors.accentContainer, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Rounded.Dns,
                 contentDescription = null,
                 modifier = Modifier.size(size * 0.56f),
-                tint = MiuixTheme.colorScheme.primary,
+                tint = StaColors.accent,
             )
         }
     }

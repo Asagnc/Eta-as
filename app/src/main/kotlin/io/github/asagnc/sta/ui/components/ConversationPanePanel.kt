@@ -73,6 +73,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import top.yukonga.miuix.kmp.window.WindowListPopup
+import io.github.asagnc.sta.ui.theme.StaColors
 
 private object ConversationPanelMetrics {
     val PaneHorizontalPadding = 16.dp
@@ -122,8 +123,8 @@ internal fun ConversationPanePanel(
         modifier = modifier
             .width(width)
             .fillMaxHeight(),
-        color = MiuixTheme.colorScheme.surface,
-        contentColor = MiuixTheme.colorScheme.onSurface,
+        color = StaColors.surface,
+        contentColor = StaColors.textPrimary,
     ) {
         // 搜索与工具条占据独立布局空间，列表只在中间视口内滚动和回弹。
         Column(modifier = Modifier.fillMaxSize()) {
@@ -207,7 +208,7 @@ internal fun ConversationPanePanel(
 private fun PaneFixedRegion(content: @Composable () -> Unit) {
     Box(
         modifier = Modifier.fillMaxWidth()
-            .background(MiuixTheme.colorScheme.surface),
+            .background(StaColors.surface),
     ) {
         content()
     }
@@ -259,19 +260,19 @@ private fun ConversationSectionHeader(
             imageVector = Icons.Rounded.Schedule,
             contentDescription = null,
             modifier = Modifier.size(ConversationPanelMetrics.SectionIconSize),
-            tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+            tint = StaColors.textAction,
         )
         Spacer(modifier = Modifier.width(ConversationPanelMetrics.SectionIconGap))
         Text(
             text = group.localizedLabel(),
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            color = StaColors.textSecondary,
             style = MiuixTheme.textStyles.footnote1,
             fontWeight = FontWeight.SemiBold,
         )
         Spacer(modifier = Modifier.width(ConversationPanelMetrics.SectionCountGap))
         Text(
             text = group.items.size.toString(),
-            color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+            color = StaColors.textAction,
             style = MiuixTheme.textStyles.footnote1,
             fontWeight = FontWeight.Medium,
         )
@@ -299,7 +300,7 @@ private fun ConversationTextRow(
                 .clip(RoundedCornerShape(ConversationPanelMetrics.RowCornerRadius))
                 .background(
                     if (selected) {
-                        MiuixTheme.colorScheme.surfaceContainerHigh
+                        StaColors.surfaceRaisedHigh
                     } else {
                         Color.Transparent
                     },
@@ -322,9 +323,9 @@ private fun ConversationTextRow(
             Text(
                 text = title,
                 color = if (selected) {
-                    MiuixTheme.colorScheme.primary
+                    StaColors.accent
                 } else {
-                    MiuixTheme.colorScheme.onSurface
+                    StaColors.textPrimary
                 },
                 style = MiuixTheme.textStyles.body1,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
@@ -333,7 +334,7 @@ private fun ConversationTextRow(
             )
             // 标题与角色名相同（如未改名的角色会话）时不再重复第二行。
             conversation.characterName?.takeIf { it != title }?.let { name ->
-                Text(name, style = MiuixTheme.textStyles.footnote1, color = MiuixTheme.colorScheme.onSurfaceVariantSummary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(name, style = MiuixTheme.textStyles.footnote1, color = StaColors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             }
             if (conversation.isActiveRun) {
@@ -342,7 +343,7 @@ private fun ConversationTextRow(
                         .padding(start = ConversationPanelMetrics.ActiveDotGap)
                         .size(ConversationPanelMetrics.ActiveDotSize)
                         .clip(CircleShape)
-                        .background(MiuixTheme.colorScheme.primary),
+                        .background(StaColors.accent),
                 )
             }
         }
@@ -388,15 +389,15 @@ private fun ConversationTextRow(
                             imageVector = Icons.Rounded.Delete,
                             contentDescription = null,
                             modifier = modifier.size(ConversationPanelMetrics.ActionIconSize),
-                            tint = MiuixTheme.colorScheme.error,
+                            tint = StaColors.danger,
                         )
                     },
                 )
             }
             val deleteColors = DropdownDefaults.dropdownColors(
-                contentColor = MiuixTheme.colorScheme.error,
-                selectedContentColor = MiuixTheme.colorScheme.error,
-                selectedIndicatorColor = MiuixTheme.colorScheme.error,
+                contentColor = StaColors.danger,
+                selectedContentColor = StaColors.danger,
+                selectedIndicatorColor = StaColors.danger,
             )
             ListPopupColumn {
                 DropdownImpl(
@@ -441,7 +442,7 @@ private fun EmptyConversations(isSearching: Boolean) {
         text = stringResource(
             if (isSearching) R.string.conversation_no_results else R.string.conversation_empty,
         ),
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+        color = StaColors.textSecondary,
         style = MiuixTheme.textStyles.body2,
         fontWeight = FontWeight.Medium,
         modifier = Modifier.padding(
@@ -507,7 +508,7 @@ private fun DockEntry(
             imageVector = icon,
             contentDescription = label,
             modifier = Modifier.size(ConversationPanelMetrics.DockEntryIconSize),
-            tint = MiuixTheme.colorScheme.onSurface,
+            tint = StaColors.textPrimary,
         )
     }
 }

@@ -190,6 +190,7 @@ import top.yukonga.miuix.kmp.basic.rememberTooltipState
 import top.yukonga.miuix.kmp.squircle.squircleBorder
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun rememberDataUrlBitmap(dataUrl: String) = remember(dataUrl) {
@@ -231,7 +232,7 @@ fun AITypingIndicator(modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .size(6.dp)
                     .graphicsLayer(alpha = alpha)
-                    .background(MiuixTheme.colorScheme.onSurfaceVariantSummary, CircleShape)
+                    .background(StaColors.textSecondary, CircleShape)
             )
         }
     }
@@ -448,12 +449,12 @@ internal fun AgentWorkProcess(
             .fillMaxWidth()
             .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xxs)
             .squircleSurface(
-                color = MiuixTheme.colorScheme.surface,
+                color = StaColors.surface,
                 cornerRadius = 14.dp,
             )
             .squircleBorder(
                 width = 0.5.dp,
-                color = MiuixTheme.colorScheme.outline.copy(alpha = 0.50f),
+                color = StaColors.outline.copy(alpha = 0.50f),
                 cornerRadius = 14.dp,
             ),
     ) {
@@ -478,9 +479,9 @@ internal fun AgentWorkProcess(
                     .size(15.dp)
                     .graphicsLayer(alpha = if (running) pulseAlpha else 1f),
                 tint = if (running) {
-                    MiuixTheme.colorScheme.primary
+                    StaColors.accent
                 } else {
-                    MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    StaColors.textSecondary
                 },
             )
             Spacer(modifier = Modifier.width(StaSpacing.sm))
@@ -501,9 +502,9 @@ internal fun AgentWorkProcess(
                 },
                 style = MiuixTheme.textStyles.body2,
                 color = if (running) {
-                    MiuixTheme.colorScheme.onSurface
+                    StaColors.textPrimary
                 } else {
-                    MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    StaColors.textSecondary
                 },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -516,7 +517,7 @@ internal fun AgentWorkProcess(
                     if (expanded) R.string.work_collapse else R.string.work_expand,
                 ),
                 modifier = Modifier.size(14.dp),
-                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.7f),
+                tint = StaColors.textSecondary.copy(alpha = 0.7f),
             )
         }
 
@@ -541,7 +542,7 @@ internal fun AgentWorkProcess(
                         .fillMaxWidth()
                         .padding(horizontal = 13.dp)
                         .height(0.5.dp)
-                        .background(MiuixTheme.colorScheme.outline.copy(alpha = 0.45f)),
+                        .background(StaColors.outline.copy(alpha = 0.45f)),
                 )
                 Column(modifier = Modifier.padding(top = StaSpacing.hair, bottom = StaRadius.sm)) {
                     messages.forEach { message ->
@@ -644,7 +645,7 @@ private fun UserMessageBubble(
                 modifier = Modifier
                     .widthIn(max = 320.dp)
                     .squircleSurface(
-                        color = MiuixTheme.colorScheme.surfaceContainerHigh,
+                        color = StaColors.surfaceRaisedHigh,
                         topStart = StaRadius.xxl,
                         topEnd = StaRadius.xxl,
                         bottomEnd = StaRadius.xs,
@@ -654,7 +655,7 @@ private fun UserMessageBubble(
                         if (isEditing) {
                             Modifier.squircleBorder(
                                 width = 1.dp,
-                                color = MiuixTheme.colorScheme.primary,
+                                color = StaColors.accent,
                                 cornerRadius = StaRadius.xxl,
                             )
                         } else {
@@ -696,7 +697,7 @@ private fun UserMessageBubble(
                         Text(
                             text = visiblePrompt.request,
                             style = MiuixTheme.textStyles.body1,
-                            color = MiuixTheme.colorScheme.onSurface,
+                            color = StaColors.textPrimary,
                         )
                     }
                 }
@@ -704,7 +705,7 @@ private fun UserMessageBubble(
                     Text(
                         text = stringResource(R.string.ui_edited_c36776),
                         style = MiuixTheme.textStyles.body2,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        color = StaColors.textSecondary,
                         modifier = Modifier.padding(top = StaSpacing.xxs),
                     )
                 }
@@ -730,12 +731,12 @@ private fun MessageTooltipAction(
             imageVector = icon,
             contentDescription = label,
             modifier = Modifier.size(16.dp),
-            tint = MiuixTheme.colorScheme.onSurface,
+            tint = StaColors.textPrimary,
         )
         Text(
             text = label,
             style = MiuixTheme.textStyles.body2,
-            color = MiuixTheme.colorScheme.onSurface,
+            color = StaColors.textPrimary,
         )
     }
 }
@@ -761,10 +762,10 @@ private fun ContextCompactionMarker(
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(percent = 50))
-                .background(MiuixTheme.colorScheme.surface)
+                .background(StaColors.surface)
                 .border(
                     0.5.dp,
-                    MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
+                    StaColors.outline.copy(alpha = 0.5f),
                     RoundedCornerShape(percent = 50),
                 )
                 .padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs),
@@ -777,9 +778,9 @@ private fun ContextCompactionMarker(
                     .size(12.dp)
                     .graphicsLayer(alpha = if (message.running) pulseAlpha else 1f),
                 tint = if (message.running) {
-                    MiuixTheme.colorScheme.primary
+                    StaColors.accent
                 } else {
-                    MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    StaColors.textSecondary
                 },
             )
             Spacer(modifier = Modifier.width(StaSpacing.xs))
@@ -787,7 +788,7 @@ private fun ContextCompactionMarker(
                 text = message.detail?.takeIf(String::isNotBlank)
                     ?: stringResource(R.string.context_compaction),
                 style = MiuixTheme.textStyles.footnote1,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -874,7 +875,7 @@ private fun AgentMessageBlock(
                     Text(
                         text = message.content,
                         style = MiuixTheme.textStyles.body1,
-                        color = MiuixTheme.colorScheme.onSurface,
+                        color = StaColors.textPrimary,
                     )
                 }
             }
@@ -896,7 +897,7 @@ private fun AgentMessageBlock(
                     Text(
                         text = formatMessageTimestamp(message.timestamp),
                         style = MiuixTheme.textStyles.footnote1,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.7f),
+                        color = StaColors.textSecondary.copy(alpha = 0.7f),
                         modifier = Modifier.padding(start = StaSpacing.xxs, end = 2.dp),
                     )
                 }
@@ -917,9 +918,9 @@ private fun AgentMessageBlock(
                         ),
                         modifier = Modifier.size(15.dp),
                         tint = if (copied) {
-                            MiuixTheme.colorScheme.primary
+                            StaColors.accent
                         } else {
-                            MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.75f)
+                            StaColors.textSecondary.copy(alpha = 0.75f)
                         },
                     )
                 }
@@ -930,7 +931,7 @@ private fun AgentMessageBlock(
                                 imageVector = Icons.Rounded.Edit,
                                 contentDescription = "编辑角色回复",
                                 modifier = Modifier.size(15.dp),
-                                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.75f),
+                                tint = StaColors.textSecondary.copy(alpha = 0.75f),
                             )
                         }
                     }
@@ -945,7 +946,7 @@ private fun AgentMessageBlock(
                                 imageVector = Icons.Rounded.Refresh,
                                 contentDescription = stringResource(R.string.ui_regenerate_reply_84a7d9),
                                 modifier = Modifier.size(15.dp),
-                                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.75f),
+                                tint = StaColors.textSecondary.copy(alpha = 0.75f),
                             )
                         }
                     }
@@ -961,7 +962,7 @@ private fun AgentMessageBlock(
                                     imageVector = Icons.Rounded.Compress,
                                     contentDescription = stringResource(R.string.context_compact_until_here),
                                     modifier = Modifier.size(15.dp),
-                                    tint = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.75f),
+                                    tint = StaColors.textSecondary.copy(alpha = 0.75f),
                                 )
                             }
                         }
@@ -977,7 +978,7 @@ private fun AgentMessageBlock(
                                 imageVector = Icons.Rounded.Delete,
                                 contentDescription = stringResource(R.string.ui_delete_this_conversation_3f351b),
                                 modifier = Modifier.size(15.dp),
-                                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.75f),
+                                tint = StaColors.textSecondary.copy(alpha = 0.75f),
                             )
                         }
                     }
@@ -987,7 +988,7 @@ private fun AgentMessageBlock(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(percent = 50))
-                                .background(MiuixTheme.colorScheme.surfaceContainerHigh)
+                                .background(StaColors.surfaceRaisedHigh)
                                 .padding(horizontal = 3.dp, vertical = StaSpacing.hair),
                         ) {
                             IconButton(
@@ -999,13 +1000,13 @@ private fun AgentMessageBlock(
                                     imageVector = Icons.Rounded.ChevronLeft,
                                     contentDescription = "上一条候选回复",
                                     modifier = Modifier.size(16.dp),
-                                    tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                    tint = StaColors.textSecondary,
                                 )
                             }
                             Text(
                                 text = "${message.selectedCandidate + 1}/${message.candidateCount}",
                                 style = MiuixTheme.textStyles.footnote1,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                color = StaColors.textSecondary,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.widthIn(min = 30.dp),
                             )
@@ -1018,7 +1019,7 @@ private fun AgentMessageBlock(
                                     imageVector = Icons.Rounded.ChevronRight,
                                     contentDescription = "下一条候选回复",
                                     modifier = Modifier.size(16.dp),
-                                    tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                    tint = StaColors.textSecondary,
                                 )
                             }
                         }
@@ -1393,7 +1394,7 @@ private fun chatMarkdownTypography(tone: ChatMarkdownTone) = markdownTypography(
     ),
     textLink = TextLinkStyles(
         style = SpanStyle(
-            color = MiuixTheme.colorScheme.primary,
+            color = StaColors.accent,
             fontWeight = FontWeight.Medium,
         ),
     ),
@@ -1418,18 +1419,18 @@ private fun chatMarkdownBodyStyle(tone: ChatMarkdownTone) =
 @Composable
 private fun chatMarkdownTextColor(tone: ChatMarkdownTone): Color =
     if (tone == ChatMarkdownTone.Answer) {
-        MiuixTheme.colorScheme.onSurface
+        StaColors.textPrimary
     } else {
-        MiuixTheme.colorScheme.onSurfaceVariantSummary
+        StaColors.textSecondary
     }
 
 @Composable
 private fun chatMarkdownColors(tone: ChatMarkdownTone) = markdownColor(
     text = chatMarkdownTextColor(tone),
     // 代码块与表格的底色、描边由自定义组件绘制，这里只保留行内代码底色与分隔线。
-    codeBackground = MiuixTheme.colorScheme.surface,
-    inlineCodeBackground = MiuixTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
-    dividerColor = MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
+    codeBackground = StaColors.surface,
+    inlineCodeBackground = StaColors.surfaceRaisedHigh.copy(alpha = 0.6f),
+    dividerColor = StaColors.outline.copy(alpha = 0.5f),
     tableBackground = Color.Transparent,
 )
 
@@ -1644,7 +1645,7 @@ private fun ChatMarkdownList(
                             Text(
                                 text = "${initialListNumber + index}.",
                                 style = model.typography.ordered.copy(
-                                    color = MiuixTheme.colorScheme.primary,
+                                    color = StaColors.accent,
                                     fontWeight = FontWeight.SemiBold,
                                 ),
                             )
@@ -1661,9 +1662,9 @@ private fun ChatMarkdownList(
                                 },
                                 style = model.typography.bullet.copy(
                                     color = if (bulletDepth == 2) {
-                                        MiuixTheme.colorScheme.onSurfaceVariantSummary
+                                        StaColors.textSecondary
                                     } else {
-                                        MiuixTheme.colorScheme.primary
+                                        StaColors.accent
                                     },
                                 ),
                             )
@@ -1869,10 +1870,10 @@ private fun ChatCodeBlock(
             .fillMaxWidth()
             .padding(vertical = 5.dp)
             .clip(RoundedCornerShape(StaRadius.md))
-            .background(MiuixTheme.colorScheme.surface)
+            .background(StaColors.surface)
             .border(
                 0.5.dp,
-                MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
+                StaColors.outline.copy(alpha = 0.5f),
                 RoundedCornerShape(StaRadius.md),
             ),
     ) {
@@ -1885,7 +1886,7 @@ private fun ChatCodeBlock(
             Text(
                 text = language?.takeIf { it.isNotBlank() } ?: "code",
                 style = MiuixTheme.textStyles.footnote2,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 modifier = Modifier.weight(1f),
             )
             IconButton(
@@ -1905,9 +1906,9 @@ private fun ChatCodeBlock(
                     ),
                     modifier = Modifier.size(13.dp),
                     tint = if (copied) {
-                        MiuixTheme.colorScheme.primary
+                        StaColors.accent
                     } else {
-                        MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.8f)
+                        StaColors.textSecondary.copy(alpha = 0.8f)
                     },
                 )
             }
@@ -1917,7 +1918,7 @@ private fun ChatCodeBlock(
                 .fillMaxWidth()
                 .padding(horizontal = 13.dp)
                 .height(0.5.dp)
-                .background(MiuixTheme.colorScheme.outline.copy(alpha = 0.45f)),
+                .background(StaColors.outline.copy(alpha = 0.45f)),
         )
         val codeModifier = Modifier
             .fillMaxWidth()
@@ -1933,7 +1934,7 @@ private fun ChatCodeBlock(
             } else {
                 style
             },
-            color = MiuixTheme.colorScheme.onSurface,
+            color = StaColors.textPrimary,
             modifier = codeModifier,
             onTextLayout = revealState?.let { state ->
                 { layoutResult -> state.onTextLayout(code, layoutResult) }
@@ -1963,7 +1964,7 @@ private fun ChatMarkdownTable(
     }
     if (headerCells.isEmpty()) return
 
-    val borderColor = MiuixTheme.colorScheme.outline.copy(alpha = 0.5f)
+    val borderColor = StaColors.outline.copy(alpha = 0.5f)
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
@@ -1981,12 +1982,12 @@ private fun ChatMarkdownTable(
             })
                 .clip(RoundedCornerShape(StaRadius.md))
                 .border(0.5.dp, borderColor, RoundedCornerShape(StaRadius.md))
-                .background(MiuixTheme.colorScheme.surface),
+                .background(StaColors.surface),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MiuixTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f))
+                    .background(StaColors.surfaceRaisedHigh.copy(alpha = 0.45f))
                     .height(IntrinsicSize.Max),
             ) {
                 headerCells.forEach { cell ->
@@ -2075,7 +2076,7 @@ private fun ChatMarkdownTableCell(
     Text(
         text = text,
         style = style.copy(textMotion = TextMotion.Animated),
-        color = MiuixTheme.colorScheme.onSurface,
+        color = StaColors.textPrimary,
         maxLines = maxLines,
         overflow = overflow,
         modifier = Modifier.smoothTextReveal(revealState),
@@ -2096,7 +2097,7 @@ private fun ChatBlockQuote(model: MarkdownComponentModel) {
     val padding = LocalMarkdownPadding.current
     val dimens = LocalMarkdownDimens.current
     val a11yLabels = LocalMarkdownA11yLabels.current
-    val barColor = MiuixTheme.colorScheme.primary.copy(alpha = 0.4f)
+    val barColor = StaColors.accent.copy(alpha = 0.4f)
     val emptyLineHeight = with(LocalDensity.current) {
         model.typography.quote.lineHeight.takeOrElse { 22.sp }.toDp()
     }
@@ -2288,12 +2289,12 @@ private fun ThinkingRow(
             .fillMaxWidth()
             .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xxs)
             .squircleSurface(
-                color = MiuixTheme.colorScheme.surface,
+                color = StaColors.surface,
                 cornerRadius = 14.dp,
             )
             .squircleBorder(
                 width = 0.5.dp,
-                color = MiuixTheme.colorScheme.outline.copy(alpha = 0.50f),
+                color = StaColors.outline.copy(alpha = 0.50f),
                 cornerRadius = 14.dp,
             )
     }
@@ -2319,9 +2320,9 @@ private fun ThinkingRow(
                     .size(15.dp)
                     .graphicsLayer(alpha = if (message.isStreaming) pulseAlpha else 1f),
                 tint = if (message.isStreaming) {
-                    MiuixTheme.colorScheme.primary
+                    StaColors.accent
                 } else {
-                    MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    StaColors.textSecondary
                 },
             )
             Spacer(modifier = Modifier.width(StaSpacing.sm))
@@ -2339,9 +2340,9 @@ private fun ThinkingRow(
                 },
                 style = MiuixTheme.textStyles.body2,
                 color = if (message.isStreaming) {
-                    MiuixTheme.colorScheme.onSurface
+                    StaColors.textPrimary
                 } else {
-                    MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    StaColors.textSecondary
                 },
                 modifier = Modifier.weight(1f),
             )
@@ -2352,7 +2353,7 @@ private fun ThinkingRow(
                     if (expanded) R.string.reasoning_collapse else R.string.reasoning_expand,
                 ),
                 modifier = Modifier.size(14.dp),
-                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.7f),
+                tint = StaColors.textSecondary.copy(alpha = 0.7f),
             )
         }
 
@@ -2364,7 +2365,7 @@ private fun ThinkingRow(
                             .fillMaxWidth()
                             .padding(horizontal = 13.dp)
                             .height(0.5.dp)
-                            .background(MiuixTheme.colorScheme.outline.copy(alpha = 0.45f)),
+                            .background(StaColors.outline.copy(alpha = 0.45f)),
                     )
                 }
                 val contentModifier = Modifier
@@ -2425,17 +2426,17 @@ private fun SubAgentProgressRow(agent: AgentSubAgentItemUi) {
                 .clip(CircleShape)
                 .background(
                     when (agent.phase) {
-                        AgentSubAgentPhase.RUNNING -> MiuixTheme.colorScheme.primary
+                        AgentSubAgentPhase.RUNNING -> StaColors.accent
                         AgentSubAgentPhase.FAILED -> StatusError
                         AgentSubAgentPhase.FINISHED ->
-                            MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.7f)
+                            StaColors.textSecondary.copy(alpha = 0.7f)
                     },
                 ),
         )
         Text(
             text = agent.role,
             style = MiuixTheme.textStyles.footnote2,
-            color = MiuixTheme.colorScheme.onSurface,
+            color = StaColors.textPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -2446,7 +2447,7 @@ private fun SubAgentProgressRow(agent: AgentSubAgentItemUi) {
                 AgentSubAgentPhase.FAILED -> agent.errorCode.ifBlank { "失败" }
             },
             style = MiuixTheme.textStyles.footnote2,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.8f),
+            color = StaColors.textSecondary.copy(alpha = 0.8f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -2515,11 +2516,11 @@ private fun ToolActivityInline(
                 contentDescription = null,
                 modifier = Modifier.size(15.dp),
                 tint = when (message.status) {
-                    ToolActivityStatusUi.Running -> MiuixTheme.colorScheme.primary
+                    ToolActivityStatusUi.Running -> StaColors.accent
                     ToolActivityStatusUi.Failed -> StatusError
-                    ToolActivityStatusUi.Unknown -> MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    ToolActivityStatusUi.Unknown -> StaColors.textSecondary
                     ToolActivityStatusUi.Success ->
-                        MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.8f)
+                        StaColors.textSecondary.copy(alpha = 0.8f)
                 }
             )
 
@@ -2530,9 +2531,9 @@ private fun ToolActivityInline(
                     text = title,
                     style = MiuixTheme.textStyles.body2,
                     color = if (message.status == ToolActivityStatusUi.Running) {
-                        MiuixTheme.colorScheme.onSurface
+                        StaColors.textPrimary
                     } else {
-                        MiuixTheme.colorScheme.onSurfaceVariantSummary
+                        StaColors.textSecondary
                     },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -2545,7 +2546,7 @@ private fun ToolActivityInline(
                         color = if (failureSubtitle != null) {
                             StatusError
                         } else {
-                            MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.8f)
+                            StaColors.textSecondary.copy(alpha = 0.8f)
                         },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -2573,7 +2574,7 @@ private fun ToolActivityInline(
                             imageVector = Icons.Rounded.Check,
                             contentDescription = stringResource(R.string.tool_status_success),
                             modifier = Modifier.size(13.dp),
-                            tint = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.7f),
+                            tint = StaColors.textSecondary.copy(alpha = 0.7f),
                         )
                     } else {
                         Row(
@@ -2592,7 +2593,7 @@ private fun ToolActivityInline(
                             Text(
                                 text = status.statusLabel(),
                                 style = MiuixTheme.textStyles.footnote2,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.8f),
+                                color = StaColors.textSecondary.copy(alpha = 0.8f),
                             )
                         }
                     }
@@ -2602,7 +2603,7 @@ private fun ToolActivityInline(
                         else Icons.Rounded.ChevronRight,
                     contentDescription = null,
                     modifier = Modifier.size(13.dp),
-                    tint = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.5f),
+                    tint = StaColors.textSecondary.copy(alpha = 0.5f),
                 )
             }
         }
@@ -2613,7 +2614,7 @@ private fun ToolActivityInline(
                     .fillMaxWidth()
                     .padding(start = 27.dp, top = 2.dp, bottom = StaRadius.xs)
                     .squircleSurface(
-                        color = MiuixTheme.colorScheme.surfaceContainer,
+                        color = StaColors.surfaceRaised,
                         cornerRadius = StaRadius.md,
                     )
                     .padding(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
@@ -2637,13 +2638,13 @@ private fun ToolActivityInline(
                     Text(
                         text = stringResource(R.string.ui_result_0a2c91),
                         style = MiuixTheme.textStyles.footnote1,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        color = StaColors.textSecondary,
                         modifier = Modifier.padding(bottom = StaSpacing.hair)
                     )
                     Text(
                         text = message.resultSummary,
                         style = MiuixTheme.textStyles.footnote2,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        color = StaColors.textSecondary,
                         maxLines = 10,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -2701,7 +2702,7 @@ private fun BrowserPagePreview(
         modifier = modifier
             .fillMaxWidth()
             .squircleSurface(
-                color = MiuixTheme.colorScheme.surfaceContainer,
+                color = StaColors.surfaceRaised,
                 cornerRadius = StaRadius.md,
             ),
     ) {
@@ -2719,7 +2720,7 @@ private fun BrowserPagePreview(
             Text(
                 text = snapshot.host.ifBlank { snapshot.displayUrl },
                 style = MiuixTheme.textStyles.footnote2,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -2743,7 +2744,7 @@ private fun BrowserPagePreview(
                     imageVector = Icons.Rounded.Language,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
-                    tint = MiuixTheme.colorScheme.outline,
+                    tint = StaColors.outline,
                 )
             }
         }
@@ -2752,7 +2753,7 @@ private fun BrowserPagePreview(
                 Text(
                     text = snapshot.title,
                     style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.onSurface,
+                    color = StaColors.textPrimary,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -2761,7 +2762,7 @@ private fun BrowserPagePreview(
                 Text(
                     text = snapshot.displayUrl,
                     style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.8f),
+                    color = StaColors.textSecondary.copy(alpha = 0.8f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -2790,12 +2791,12 @@ private fun ToolCommandBlock(
         modifier = modifier
             .fillMaxWidth()
             .squircleSurface(
-                color = MiuixTheme.colorScheme.surface,
+                color = StaColors.surface,
                 cornerRadius = StaRadius.md,
             )
             .squircleBorder(
                 width = 0.5.dp,
-                color = MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
+                color = StaColors.outline.copy(alpha = 0.5f),
                 cornerRadius = StaRadius.md,
             ),
     ) {
@@ -2808,7 +2809,7 @@ private fun ToolCommandBlock(
             Text(
                 text = context.ifBlank { stringResource(R.string.shell_command) },
                 style = MiuixTheme.textStyles.footnote2,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
@@ -2830,9 +2831,9 @@ private fun ToolCommandBlock(
                     ),
                     modifier = Modifier.size(13.dp),
                     tint = if (copied) {
-                        MiuixTheme.colorScheme.primary
+                        StaColors.accent
                     } else {
-                        MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.8f)
+                        StaColors.textSecondary.copy(alpha = 0.8f)
                     },
                 )
             }
@@ -2842,13 +2843,13 @@ private fun ToolCommandBlock(
                 .fillMaxWidth()
                 .padding(horizontal = StaSpacing.md)
                 .height(0.5.dp)
-                .background(MiuixTheme.colorScheme.outline.copy(alpha = 0.45f)),
+                .background(StaColors.outline.copy(alpha = 0.45f)),
         )
         SelectionContainer {
             Text(
                 text = command,
                 style = MiuixTheme.textStyles.footnote2.copy(fontFamily = FontFamily.Monospace),
-                color = MiuixTheme.colorScheme.onSurface,
+                color = StaColors.textPrimary,
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
@@ -2871,10 +2872,10 @@ private fun RunTraceRow(
             .fillMaxWidth()
             .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xxs)
             .clip(RoundedCornerShape(StaRadius.lg))
-            .background(MiuixTheme.colorScheme.surface)
+            .background(StaColors.surface)
             .border(
                 0.5.dp,
-                MiuixTheme.colorScheme.outline.copy(alpha = 0.55f),
+                StaColors.outline.copy(alpha = 0.55f),
                 RoundedCornerShape(StaRadius.lg),
             )
             .clickable(onClick = onClick)
@@ -2885,20 +2886,20 @@ private fun RunTraceRow(
             imageVector = Icons.Rounded.Check,
             contentDescription = null,
             modifier = Modifier.size(15.dp),
-            tint = MiuixTheme.colorScheme.primary,
+            tint = StaColors.accent,
         )
         Spacer(modifier = Modifier.width(StaSpacing.sm))
         Text(
             text = stringResource(R.string.ui_available_capacity_743337),
             style = MiuixTheme.textStyles.body2,
-            color = MiuixTheme.colorScheme.onSurface,
+            color = StaColors.textPrimary,
             modifier = Modifier.weight(1f),
         )
         Icon(
             imageVector = Icons.Rounded.ChevronRight,
             contentDescription = null,
             modifier = Modifier.size(14.dp),
-            tint = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.7f),
+            tint = StaColors.textSecondary.copy(alpha = 0.7f),
         )
     }
 }
@@ -2923,10 +2924,10 @@ private fun ToolSummaryInline(
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(StaRadius.md))
-                    .background(MiuixTheme.colorScheme.surface)
+                    .background(StaColors.surface)
                     .border(
                         0.5.dp,
-                        MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        StaColors.outline.copy(alpha = 0.5f),
                         RoundedCornerShape(StaRadius.md),
                     )
                     .padding(horizontal = 9.dp, vertical = 5.dp),
@@ -2936,13 +2937,13 @@ private fun ToolSummaryInline(
                     imageVector = iconForTool(tool),
                     contentDescription = null,
                     modifier = Modifier.size(12.dp),
-                    tint = MiuixTheme.colorScheme.primary
+                    tint = StaColors.accent
                 )
                 Spacer(modifier = Modifier.width(5.dp))
                 Text(
                     text = toolDisplayName(tool),
                     style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    color = StaColors.textSecondary
                 )
             }
         }
@@ -2969,10 +2970,10 @@ private fun SuggestionChipsRow(
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(StaRadius.md))
-                    .background(MiuixTheme.colorScheme.surface)
+                    .background(StaColors.surface)
                     .border(
                         0.5.dp,
-                        MiuixTheme.colorScheme.outline.copy(alpha = 0.55f),
+                        StaColors.outline.copy(alpha = 0.55f),
                         RoundedCornerShape(StaRadius.md),
                     )
                     .clickable { onSuggestionClick(prompt) }
@@ -2983,13 +2984,13 @@ private fun SuggestionChipsRow(
                     imageVector = Icons.Rounded.AutoAwesome,
                     contentDescription = null,
                     modifier = Modifier.size(12.dp),
-                    tint = MiuixTheme.colorScheme.primary
+                    tint = StaColors.accent
                 )
                 Spacer(modifier = Modifier.width(StaSpacing.xs))
                 Text(
                     text = prompt,
                     style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.onSurface,
+                    color = StaColors.textPrimary,
                 )
             }
         }
@@ -3003,7 +3004,7 @@ private fun ToolActivityStatusUi.statusColor() = when (this) {
     ToolActivityStatusUi.Running -> StatusRunning
     ToolActivityStatusUi.Success -> StatusSuccess
     ToolActivityStatusUi.Failed -> StatusError
-    ToolActivityStatusUi.Unknown -> MiuixTheme.colorScheme.onSurfaceVariantSummary
+    ToolActivityStatusUi.Unknown -> StaColors.textSecondary
 }
 
 @Composable

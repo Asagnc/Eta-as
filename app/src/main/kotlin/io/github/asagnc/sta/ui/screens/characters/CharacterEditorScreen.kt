@@ -29,6 +29,7 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun CharacterEditorScreen(
@@ -90,7 +91,7 @@ internal fun CharacterEditorScreen(
                     Icon(
                         imageVector = Icons.Rounded.Close,
                         contentDescription = "移除此开场白",
-                        tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        tint = StaColors.textSecondary,
                     )
                 }
             }
@@ -167,7 +168,7 @@ internal fun CharacterFieldGroupLabel(text: String) {
     Text(
         text = text,
         style = MiuixTheme.textStyles.footnote1,
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+        color = StaColors.textSecondary,
         modifier = Modifier.padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xs),
     )
 }

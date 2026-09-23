@@ -36,6 +36,7 @@ import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 /**
  * Linux rootfs 只读文件浏览：目录列举与文件读取都经一次性 root Shell 完成，
@@ -227,7 +228,7 @@ private fun PathBar(path: String) {
     Text(
         text = path,
         style = MiuixTheme.textStyles.body2.copy(fontFamily = FontFamily.Monospace),
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+        color = StaColors.textSecondary,
         modifier = Modifier
             .padding(horizontal = StaSpacing.xxl)
             .padding(bottom = StaSpacing.sm),
@@ -239,7 +240,7 @@ private fun StateMessage(message: String) {
     Text(
         text = message,
         style = MiuixTheme.textStyles.body2,
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+        color = StaColors.textSecondary,
         modifier = Modifier.padding(horizontal = StaSpacing.xxl),
     )
 }
@@ -249,7 +250,7 @@ private fun HintText(message: String) {
     Text(
         text = message,
         style = MiuixTheme.textStyles.footnote1,
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+        color = StaColors.textSecondary,
         modifier = Modifier
             .padding(horizontal = StaSpacing.xxl)
             .padding(bottom = StaSpacing.sm),
@@ -273,7 +274,7 @@ private fun FileRow(
                 modifier = Modifier
                     .padding(end = StaSpacing.md)
                     .size(20.dp),
-                tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                tint = StaColors.textAction,
             )
         },
         onClick = onClick,

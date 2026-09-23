@@ -42,6 +42,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import top.yukonga.miuix.kmp.window.WindowDialog
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun AgentMemoryScreen(
@@ -134,18 +135,18 @@ internal fun AgentMemoryScreen(
                                     else -> ""
                                 },
                                 color = if (overLimit) {
-                                    MiuixTheme.colorScheme.error
+                                    StaColors.danger
                                 } else {
-                                    MiuixTheme.colorScheme.onSurfaceVariantSummary
+                                    StaColors.textSecondary
                                 },
                                 style = MiuixTheme.textStyles.footnote1,
                             )
                             Text(
                                 text = "${formatBytes(state.draftBytes)} / 1 MiB",
                                 color = if (overLimit) {
-                                    MiuixTheme.colorScheme.error
+                                    StaColors.danger
                                 } else {
-                                    MiuixTheme.colorScheme.onSurfaceVariantSummary
+                                    StaColors.textSecondary
                                 },
                                 style = MiuixTheme.textStyles.footnote1,
                             )

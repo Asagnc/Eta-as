@@ -40,8 +40,8 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.preference.ArrowPreference
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun DataBackupScreen(
@@ -224,7 +224,7 @@ private fun BackupIcon(icon: ImageVector, loading: Boolean) {
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
-                tint = MiuixTheme.colorScheme.onBackground,
+                tint = StaColors.onBackground,
             )
         }
     }

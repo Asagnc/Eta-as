@@ -33,6 +33,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.basic.ArrowRight
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun SettingsArrowPreference(
@@ -61,8 +62,8 @@ internal fun SettingsArrowPreference(
             modifier = Modifier.size(8.dp, 14.dp).graphicsLayer {
                 scaleX = if (direction == LayoutDirection.Rtl) -1f else 1f
             },
-            tint = if (enabled) MiuixTheme.colorScheme.onBackground.copy(alpha = 0.3f)
-                else MiuixTheme.colorScheme.disabledOnSurface,
+            tint = if (enabled) StaColors.onBackground.copy(alpha = 0.3f)
+                else StaColors.textDisabled,
         )
     }
 }
@@ -118,11 +119,10 @@ internal fun SettingsPreferenceRow(
     holdDownState: Boolean = false,
     endActions: @Composable RowScope.() -> Unit,
 ) {
-    val colors = MiuixTheme.colorScheme
     // 通用设置组件的最小高度固定为 56dp；首页单独布局，长文本仍可自然增高。
     BoxWithConstraints(
         modifier = Modifier.fillMaxWidth()
-            .background(if (holdDownState) colors.onBackground.copy(alpha = 0.06f) else Color.Transparent)
+            .background(if (holdDownState) StaColors.onBackground.copy(alpha = 0.06f) else Color.Transparent)
             .then(interaction),
     ) {
         val actionMaxWidth = (maxWidth - SettingsItemLayout.ContentStart - SettingsItemLayout.SidePadding) * 0.45f
@@ -139,13 +139,13 @@ internal fun SettingsPreferenceRow(
                     text = title,
                     style = MiuixTheme.textStyles.body1,
                     fontWeight = FontWeight.Medium,
-                    color = if (enabled) colors.onBackground else colors.disabledOnSurface,
+                    color = if (enabled) StaColors.onBackground else StaColors.textDisabled,
                 )
                 if (summary != null) {
                     Text(
                         text = summary,
                         style = MiuixTheme.textStyles.body2,
-                        color = if (enabled) colors.onSurfaceVariantSummary else colors.disabledOnSurface,
+                        color = if (enabled) StaColors.textSecondary else StaColors.textDisabled,
                     )
                 }
             }

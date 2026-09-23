@@ -31,6 +31,7 @@ import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 /** 分组标题 + 卡片的标准组合，Provider 相关页面统一使用。 */
 @Composable
@@ -119,12 +120,12 @@ internal fun TagChip(
     val foreground: Color
     when (tone) {
         TagChipTone.Normal -> {
-            background = MiuixTheme.colorScheme.secondaryContainer
-            foreground = MiuixTheme.colorScheme.onSecondaryContainer
+            background = StaColors.neutralContainer
+            foreground = StaColors.onNeutralContainer
         }
         TagChipTone.Emphasized -> {
-            background = MiuixTheme.colorScheme.primaryContainer
-            foreground = MiuixTheme.colorScheme.onPrimaryContainer
+            background = StaColors.accentContainer
+            foreground = StaColors.onAccentContainer
         }
     }
     Text(

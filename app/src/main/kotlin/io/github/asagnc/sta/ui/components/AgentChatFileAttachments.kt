@@ -63,6 +63,7 @@ import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
 import top.yukonga.miuix.kmp.window.WindowListPopup
+import io.github.asagnc.sta.ui.theme.StaColors
 
 internal val ChatInputPopupMargin = 8.dp
 internal val ChatInputActionSize = 40.dp
@@ -116,7 +117,7 @@ internal fun AgentAttachmentPickerButton(
                 imageVector = Icons.Rounded.Add,
                 contentDescription = stringResource(R.string.ui_add_attachment_dba9e8),
                 modifier = Modifier.size(ChatInputActionIconSize),
-                tint = MiuixTheme.colorScheme.onSurface,
+                tint = StaColors.textPrimary,
             )
         }
         WindowListPopup(
@@ -213,12 +214,12 @@ internal fun PendingFileReferenceStrip(
                     .height(42.dp)
                     .widthIn(max = 250.dp)
                     .squircleSurface(
-                        color = MiuixTheme.colorScheme.surfaceContainerHigh,
+                        color = StaColors.surfaceRaisedHigh,
                         cornerRadius = 14.dp,
                     )
                     .squircleBorder(
                         width = 0.5.dp,
-                        color = MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        color = StaColors.outline.copy(alpha = 0.5f),
                         cornerRadius = 14.dp,
                     )
                     .padding(start = StaSpacing.md, end = StaRadius.xs),
@@ -233,13 +234,13 @@ internal fun PendingFileReferenceStrip(
                     },
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = MiuixTheme.colorScheme.primary,
+                    tint = StaColors.accent,
                 )
                 Text(
                     text = reference.displayName +
                         if (reference.kind == AgentFileReferenceKind.Directory) "/" else "",
                     style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.onSurface,
+                    color = StaColors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
@@ -255,7 +256,7 @@ internal fun PendingFileReferenceStrip(
                         imageVector = Icons.Rounded.Close,
                         contentDescription = stringResource(R.string.ui_remove_file_reference_04bbfc),
                         modifier = Modifier.size(15.dp),
-                        tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                        tint = StaColors.textAction,
                     )
                 }
             }
@@ -280,12 +281,12 @@ internal fun SentFileReferenceFlow(
                     .height(38.dp)
                     .widthIn(max = 280.dp)
                     .squircleSurface(
-                        color = MiuixTheme.colorScheme.surface,
+                        color = StaColors.surface,
                         cornerRadius = StaRadius.lg,
                     )
                     .squircleBorder(
                         width = 0.5.dp,
-                        color = MiuixTheme.colorScheme.outline.copy(alpha = 0.45f),
+                        color = StaColors.outline.copy(alpha = 0.45f),
                         cornerRadius = StaRadius.lg,
                     )
                     .padding(horizontal = 11.dp),
@@ -300,13 +301,13 @@ internal fun SentFileReferenceFlow(
                     },
                     contentDescription = null,
                     modifier = Modifier.size(17.dp),
-                    tint = MiuixTheme.colorScheme.primary,
+                    tint = StaColors.accent,
                 )
                 Text(
                     text = reference.displayName +
                         if (reference.kind == AgentFileReferenceKind.Directory) "/" else "",
                     style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.onSurface,
+                    color = StaColors.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

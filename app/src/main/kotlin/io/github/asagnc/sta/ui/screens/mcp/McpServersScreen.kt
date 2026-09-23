@@ -56,6 +56,7 @@ import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun McpServersScreen(
@@ -166,7 +167,7 @@ internal fun McpServersScreen(
                 Text(
                     text = it,
                     style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.error,
+                    color = StaColors.danger,
                 )
             }
             MiuixDialogActions(

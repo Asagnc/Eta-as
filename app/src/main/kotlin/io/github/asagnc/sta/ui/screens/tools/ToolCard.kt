@@ -40,6 +40,7 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun ToolCard(
@@ -67,8 +68,8 @@ internal fun ToolCard(
         modifier = modifier.heightIn(min = 136.dp),
         insideMargin = PaddingValues(StaSpacing.lg),
         colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surfaceContainer,
-            contentColor = MiuixTheme.colorScheme.onSurfaceContainer,
+            color = StaColors.surfaceRaised,
+            contentColor = StaColors.onSurfaceRaised,
         ),
         pressFeedbackType = PressFeedbackType.Sink,
         showIndication = true,
@@ -84,7 +85,7 @@ internal fun ToolCard(
                 imageVector = iconForTool(tool.id),
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
-                tint = MiuixTheme.colorScheme.onSurfaceContainer,
+                tint = StaColors.onSurfaceRaised,
             )
             Spacer(modifier = Modifier.weight(1f))
             if (action != null) {
@@ -93,7 +94,7 @@ internal fun ToolCard(
                         imageVector = Icons.Rounded.Info,
                         contentDescription = stringResource(R.string.ui_description_named, tool.title),
                         modifier = Modifier.size(18.dp),
-                        tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                        tint = StaColors.textAction,
                     )
                 }
             }
@@ -103,7 +104,7 @@ internal fun ToolCard(
             text = tool.title,
             style = MiuixTheme.textStyles.body2,
             fontWeight = FontWeight.Medium,
-            color = MiuixTheme.colorScheme.onSurfaceContainer,
+            color = StaColors.onSurfaceRaised,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
@@ -111,7 +112,7 @@ internal fun ToolCard(
         Text(
             text = description,
             style = MiuixTheme.textStyles.footnote1,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            color = StaColors.textSecondary,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,
         )
@@ -120,7 +121,7 @@ internal fun ToolCard(
             Text(
                 text = it,
                 style = MiuixTheme.textStyles.footnote1,
-                color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                color = StaColors.textAction,
             )
         }
         Spacer(modifier = Modifier.height(StaSpacing.md))
@@ -128,8 +129,8 @@ internal fun ToolCard(
             Text(
                 text = actionText,
                 style = MiuixTheme.textStyles.footnote1,
-                color = if (action != null) MiuixTheme.colorScheme.primary
-                    else MiuixTheme.colorScheme.onSurfaceVariantActions,
+                color = if (action != null) StaColors.accent
+                    else StaColors.textAction,
                 modifier = Modifier.weight(1f),
             )
             if (action != null) {
@@ -137,7 +138,7 @@ internal fun ToolCard(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = MiuixTheme.colorScheme.primary,
+                    tint = StaColors.accent,
                 )
             }
         }

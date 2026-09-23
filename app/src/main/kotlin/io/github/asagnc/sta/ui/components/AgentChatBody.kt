@@ -117,6 +117,7 @@ import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import io.github.asagnc.sta.ui.theme.StaColors
 
 /**
  * 聊天主体：消息流 + 底部输入框。
@@ -318,7 +319,7 @@ private fun AgentChatScaffold(
     currentBrowserMessageId: String?,
     modifier: Modifier = Modifier,
 ) {
-    val surfaceColor = MiuixTheme.colorScheme.surface
+    val surfaceColor = StaColors.surface
     val frostEnabled = hasMessages && LocalBlurEnabled.current && isRuntimeShaderSupported()
     val messageBackdrop = rememberLayerBackdrop {
         // Backdrop 必须包含不透明底色，否则文字边缘模糊到透明区域时会出现黑边。
@@ -745,7 +746,7 @@ internal fun AgentConversationMessages(
                         scrollState.animateScrollToItem(bottomItemIndex)
                     }
                 },
-                backgroundColor = MiuixTheme.colorScheme.surfaceContainerHigh,
+                backgroundColor = StaColors.surfaceRaisedHigh,
                 minWidth = 40.dp,
                 minHeight = 40.dp,
             ) {
@@ -753,7 +754,7 @@ internal fun AgentConversationMessages(
                     imageVector = Icons.Rounded.ArrowDownward,
                     contentDescription = stringResource(R.string.ui_back_to_bottom_32282e),
                     modifier = Modifier.size(17.dp),
-                    tint = MiuixTheme.colorScheme.onSurface,
+                    tint = StaColors.textPrimary,
                 )
             }
         }
@@ -911,7 +912,7 @@ private fun AgentChatBottomBar(
         if (messageBackdrop != null) {
             val blurColors = BlurDefaults.blurColors(
                 blendColors = listOf(
-                    BlendColorEntry(MiuixTheme.colorScheme.surface.copy(alpha = 0.72f))
+                    BlendColorEntry(StaColors.surface.copy(alpha = 0.72f))
                 ),
             )
             Box(
@@ -948,7 +949,7 @@ private fun AgentChatBottomBar(
                         Brush.verticalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                MiuixTheme.colorScheme.surface,
+                                StaColors.surface,
                             ),
                         )
                     ),
@@ -957,7 +958,7 @@ private fun AgentChatBottomBar(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MiuixTheme.colorScheme.surface)
+                .background(StaColors.surface)
                 .navigationBarsPadding()
                 .padding(start = 14.dp, end = 14.dp, bottom = StaRadius.lg),
         ) {
@@ -1068,19 +1069,19 @@ private fun EmptyChatState(
                 Text(
                     text = characterName.orEmpty(),
                     style = MiuixTheme.textStyles.title2,
-                    color = MiuixTheme.colorScheme.onSurface,
+                    color = StaColors.textPrimary,
                 )
                 Spacer(modifier = Modifier.height(StaSpacing.sm))
                 Text(
                     text = "故事从这里开始",
                     style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    color = StaColors.textSecondary,
                 )
             } else {
                 Text(
                     text = stringResource(R.string.ui_how_can_i_help_you_e75391),
                     style = MiuixTheme.textStyles.headline1,
-                    color = MiuixTheme.colorScheme.onSurface,
+                    color = StaColors.textPrimary,
                 )
             }
 
@@ -1134,10 +1135,10 @@ private fun SuggestionCard(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(StaRadius.lg))
-            .background(MiuixTheme.colorScheme.surface)
+            .background(StaColors.surface)
             .border(
                 width = 0.5.dp,
-                color = MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
+                color = StaColors.outline.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(StaRadius.lg),
             )
             .clickable(onClick = onClick)
@@ -1147,13 +1148,13 @@ private fun SuggestionCard(
             imageVector = item.icon,
             contentDescription = null,
             modifier = Modifier.size(17.dp),
-            tint = MiuixTheme.colorScheme.onBackground,
+            tint = StaColors.onBackground,
         )
         Spacer(modifier = Modifier.height(9.dp))
         Text(
             text = item.title,
             style = MiuixTheme.textStyles.body2,
-            color = MiuixTheme.colorScheme.onSurface,
+            color = StaColors.textPrimary,
             maxLines = 1,
         )
     }

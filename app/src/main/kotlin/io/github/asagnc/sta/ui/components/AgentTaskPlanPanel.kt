@@ -37,6 +37,7 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
+import io.github.asagnc.sta.ui.theme.StaColors
 
 /**
  * 会话顶部的任务进度面板，点击整块展开或折叠。
@@ -72,8 +73,8 @@ internal fun AgentTaskPlanPanel(
         modifier = modifier.fillMaxWidth().padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs),
         insideMargin = PaddingValues(horizontal = 14.dp, vertical = StaSpacing.compact),
         colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surfaceContainer,
-            contentColor = MiuixTheme.colorScheme.onSurfaceContainer,
+            color = StaColors.surfaceRaised,
+            contentColor = StaColors.onSurfaceRaised,
         ),
         pressFeedbackType = PressFeedbackType.Sink,
         showIndication = true,
@@ -88,13 +89,13 @@ internal fun AgentTaskPlanPanel(
                 },
                 style = MiuixTheme.textStyles.body2,
                 fontWeight = FontWeight.Medium,
-                color = MiuixTheme.colorScheme.onSurfaceContainer,
+                color = StaColors.onSurfaceRaised,
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = if (expanded) "收起" else "展开",
                 style = MiuixTheme.textStyles.footnote1,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
             )
         }
         if (expanded) {
@@ -115,7 +116,7 @@ internal fun AgentTaskPlanPanel(
                 Text(
                     text = "从「${resumeTarget.content}」继续",
                     style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.primary,
+                    color = StaColors.accent,
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
@@ -146,14 +147,14 @@ private fun AgentTaskPlanRow(item: AgentTaskPlanItemUi) {
                 imageVector = Icons.Rounded.Check,
                 contentDescription = null,
                 modifier = Modifier.size(14.dp),
-                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                tint = StaColors.textSecondary,
             )
 
             AgentTaskPlanStatus.IN_PROGRESS -> Icon(
                 imageVector = Icons.Rounded.PlayArrow,
                 contentDescription = null,
                 modifier = Modifier.size(14.dp),
-                tint = MiuixTheme.colorScheme.primary,
+                tint = StaColors.accent,
             )
 
             // 未开始的一项不配图标，留出同宽空位保持各行文字对齐。
@@ -165,9 +166,9 @@ private fun AgentTaskPlanRow(item: AgentTaskPlanItemUi) {
                 text = item.content,
                 style = MiuixTheme.textStyles.footnote1,
                 color = if (item.status == AgentTaskPlanStatus.IN_PROGRESS) {
-                    MiuixTheme.colorScheme.onSurfaceContainer
+                    StaColors.onSurfaceRaised
                 } else {
-                    MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    StaColors.textSecondary
                 },
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -184,7 +185,7 @@ private fun AgentTaskPlanRow(item: AgentTaskPlanItemUi) {
                 Text(
                     text = detail,
                     style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    color = StaColors.textSecondary,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )

@@ -90,6 +90,7 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowListPopup
+import io.github.asagnc.sta.ui.theme.StaColors
 
 private val SendButtonVisualSize = ChatInputActionIconSize
 private val SendIconSize = 16.dp
@@ -207,7 +208,7 @@ internal fun AgentChatInputBar(
                     stringResource(R.string.chat_edit_replace_message)
                 },
                 style = MiuixTheme.textStyles.body2,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 modifier = Modifier.padding(start = StaSpacing.sm, bottom = StaRadius.xs),
             )
         }
@@ -231,12 +232,12 @@ internal fun AgentChatInputBar(
                         ),
                     )
                     .squircleSurface(
-                        color = MiuixTheme.colorScheme.surfaceContainer,
+                        color = StaColors.surfaceRaised,
                         cornerRadius = StaRadius.xxl,
                     )
                     .squircleBorder(
                         width = 0.5.dp,
-                        color = MiuixTheme.colorScheme.outline.copy(alpha = 0.55f),
+                        color = StaColors.outline.copy(alpha = 0.55f),
                         cornerRadius = StaRadius.xxl,
                     )
                     .padding(horizontal = StaSpacing.compact, vertical = StaSpacing.sm),
@@ -252,7 +253,7 @@ internal fun AgentChatInputBar(
                         Text(
                             text = if (isStreaming) stringResource(R.string.chat_eta_working) else stringResource(R.string.chat_input_hint),
                             style = MiuixTheme.textStyles.body1,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                            color = StaColors.textSecondary,
                         )
                     }
                     BasicTextField(
@@ -262,11 +263,11 @@ internal fun AgentChatInputBar(
                             .focusRequester(focusRequester),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                         textStyle = TextStyle(
-                            color = MiuixTheme.colorScheme.onSurface,
+                            color = StaColors.textPrimary,
                             fontSize = 16.sp,
                             lineHeight = 22.sp,
                         ),
-                        cursorBrush = SolidColor(MiuixTheme.colorScheme.primary),
+                        cursorBrush = SolidColor(StaColors.accent),
                         lineLimits = TextFieldLineLimits.MultiLine(
                             minHeightInLines = 1,
                             maxHeightInLines = 6,
@@ -288,7 +289,7 @@ internal fun AgentChatInputBar(
                                     imageVector = Icons.Rounded.Close,
                                     contentDescription = stringResource(R.string.ui_cancel_edit_c698df),
                                     modifier = Modifier.size(ChatInputActionIconSize),
-                                    tint = MiuixTheme.colorScheme.onSurface,
+                                    tint = StaColors.textPrimary,
                                 )
                             }
                         } else {
@@ -350,9 +351,9 @@ internal fun AgentChatInputBar(
                             // 保留统一的点击区域，仅让可见圆形与相邻操作图标保持同一尺寸。
                             val sendButtonColor by animateColorAsState(
                                 targetValue = when {
-                                    isStreaming -> MiuixTheme.colorScheme.onSurface
-                                    canSend -> MiuixTheme.colorScheme.primary
-                                    else -> MiuixTheme.colorScheme.surfaceContainerHigh
+                                    isStreaming -> StaColors.textPrimary
+                                    canSend -> StaColors.accent
+                                    else -> StaColors.surfaceRaisedHigh
                                 },
                                 animationSpec = tween(durationMillis = 160),
                                 label = "send_button_color",
@@ -390,9 +391,9 @@ internal fun AgentChatInputBar(
                                             if (streaming) StopIconSize else SendIconSize
                                         ),
                                         tint = when {
-                                            streaming -> MiuixTheme.colorScheme.surface
-                                            canSend -> MiuixTheme.colorScheme.onPrimary
-                                            else -> MiuixTheme.colorScheme.onSurfaceVariantActions
+                                            streaming -> StaColors.surface
+                                            canSend -> StaColors.onAccent
+                                            else -> StaColors.textAction
                                         },
                                     )
                                 }
@@ -427,9 +428,9 @@ private fun ThinkingEffortChip(
     }
     val contentColor by animateColorAsState(
         targetValue = if (active) {
-            MiuixTheme.colorScheme.primary
+            StaColors.accent
         } else {
-            MiuixTheme.colorScheme.onSurfaceVariantSummary
+            StaColors.textSecondary
         },
         animationSpec = tween(durationMillis = 160),
         label = "thinking_content",
@@ -495,7 +496,7 @@ private fun PendingImageStrip(
                 modifier = Modifier
                     .size(60.dp)
                     .clip(RoundedCornerShape(StaRadius.md))
-                    .background(MiuixTheme.colorScheme.surfaceContainer),
+                    .background(StaColors.surfaceRaised),
             ) {
                 rememberDataUrlBitmap(image.dataUrl)?.let { bitmap ->
                     Image(

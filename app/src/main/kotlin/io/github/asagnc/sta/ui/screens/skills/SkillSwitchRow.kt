@@ -34,6 +34,7 @@ import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun SkillSwitchRow(
@@ -69,7 +70,7 @@ internal fun SkillSwitchRow(
                     imageVector = Icons.Rounded.MoreHoriz,
                     contentDescription = stringResource(R.string.skills_more_named, skill.name),
                     modifier = Modifier.size(20.dp),
-                    tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                    tint = StaColors.textAction,
                 )
             }
             Spacer(modifier = Modifier.width(StaSpacing.xxs))
@@ -85,12 +86,12 @@ internal fun SkillSwitchRow(
             text = skill.name,
             style = MiuixTheme.textStyles.headline1,
             fontWeight = FontWeight.Medium,
-            color = if (enabled) MiuixTheme.colorScheme.onBackground else MiuixTheme.colorScheme.disabledOnSurface,
+            color = if (enabled) StaColors.onBackground else StaColors.textDisabled,
         )
         Text(
             text = description,
             style = MiuixTheme.textStyles.body2,
-            color = if (enabled) MiuixTheme.colorScheme.onSurfaceVariantSummary else MiuixTheme.colorScheme.disabledOnSurface,
+            color = if (enabled) StaColors.textSecondary else StaColors.textDisabled,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = StaSpacing.hair),

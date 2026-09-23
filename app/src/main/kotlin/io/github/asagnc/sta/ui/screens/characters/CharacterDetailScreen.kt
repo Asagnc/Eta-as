@@ -40,6 +40,7 @@ import top.yukonga.miuix.kmp.preference.RadioButtonPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
+import io.github.asagnc.sta.ui.theme.StaColors
 
 private const val DescriptionPreviewChars = 220
 private const val GreetingPreviewChars = 240
@@ -80,7 +81,7 @@ internal fun CharacterDetailScreen(
                         Text(
                             text = profile.card.tags.joinToString(" · "),
                             style = MiuixTheme.textStyles.body2,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                            color = StaColors.textSecondary,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -98,7 +99,7 @@ internal fun CharacterDetailScreen(
                         Text(
                             text = "阅读全文",
                             style = MiuixTheme.textStyles.footnote1,
-                            color = MiuixTheme.colorScheme.primary,
+                            color = StaColors.accent,
                             modifier = Modifier
                                 .padding(top = StaSpacing.xs)
                                 .clickable {
@@ -150,7 +151,7 @@ internal fun CharacterDetailScreen(
                                 Text(
                                     text = "阅读全文",
                                     style = MiuixTheme.textStyles.footnote1,
-                                    color = MiuixTheme.colorScheme.primary,
+                                    color = StaColors.accent,
                                     modifier = Modifier
                                         .padding(start = StaSpacing.lg, bottom = StaRadius.md)
                                         .clickable {
@@ -184,8 +185,8 @@ internal fun CharacterDetailScreen(
                 ArrowPreference(
                     title = "删除角色",
                     titleColor = BasicComponentColors(
-                        color = MiuixTheme.colorScheme.error,
-                        disabledColor = MiuixTheme.colorScheme.disabledOnSurface,
+                        color = StaColors.danger,
+                        disabledColor = StaColors.textDisabled,
                     ),
                     enabled = !store.busy,
                     onClick = { showDeleteConfirm = true },
@@ -229,7 +230,7 @@ internal fun CharacterDetailScreen(
                                 text = warning,
                                 modifier = Modifier.padding(horizontal = StaSpacing.lg, vertical = StaSpacing.sm),
                                 style = MiuixTheme.textStyles.body2,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                color = StaColors.textSecondary,
                             )
                         }
                     }

@@ -41,6 +41,8 @@ internal object SettingsItemLayout {
 
 @Composable
 internal fun SettingsPageTheme(content: @Composable () -> Unit) {
+    // 这里必须取原始色板：下面要根据 background 的亮度决定是否覆盖底色，
+    // 再把改过的色板交给 MiuixTheme。走 StaColors 会拿到覆盖后的值，判断就失效了。
     val colors = MiuixTheme.colorScheme
     val appearance = LocalAppearanceSettings.current
     val pageColors = if (!appearance.monetEnabled && colors.background.luminance() > 0.5f) {

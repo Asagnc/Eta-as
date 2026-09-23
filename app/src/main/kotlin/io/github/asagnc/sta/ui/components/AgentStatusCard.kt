@@ -28,6 +28,7 @@ import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 fun AgentStatusCard(
@@ -50,7 +51,7 @@ fun AgentStatusCard(
                     text = activeRun.title,
                     modifier = Modifier.weight(1f),
                     style = MiuixTheme.textStyles.headline1,
-                    color = MiuixTheme.colorScheme.onSurfaceContainer,
+                    color = StaColors.onSurfaceRaised,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -59,7 +60,7 @@ fun AgentStatusCard(
             Text(
                 text = activeRun.currentStep,
                 style = MiuixTheme.textStyles.body2,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
             )
             Spacer(modifier = Modifier.height(StaSpacing.md))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -67,7 +68,7 @@ fun AgentStatusCard(
                     text = activeRun.elapsedLabel,
                     modifier = Modifier.weight(1f),
                     style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                    color = StaColors.textAction,
                 )
                 if (activeRun.status == RunStatusUi.Running) {
                     TextButton(
@@ -86,25 +87,25 @@ private fun StatusIndicator(status: RunStatusUi) {
     when (status) {
         RunStatusUi.Running -> InfiniteProgressIndicator(
             modifier = Modifier.size(18.dp),
-            color = MiuixTheme.colorScheme.primary,
+            color = StaColors.accent,
         )
         RunStatusUi.Success -> Icon(
             imageVector = Icons.Rounded.Check,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
-            tint = MiuixTheme.colorScheme.primary,
+            tint = StaColors.accent,
         )
         RunStatusUi.Failed -> Icon(
             imageVector = Icons.Rounded.Close,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
-            tint = MiuixTheme.colorScheme.primary,
+            tint = StaColors.accent,
         )
         RunStatusUi.Cancelled -> Icon(
             imageVector = Icons.Rounded.MoreHoriz,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
-            tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+            tint = StaColors.textAction,
         )
     }
 }

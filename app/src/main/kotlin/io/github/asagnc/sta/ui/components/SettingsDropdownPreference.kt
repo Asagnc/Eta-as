@@ -23,6 +23,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.popup.OverlayDropdownPopup
 import top.yukonga.miuix.kmp.popup.WindowDropdownPopup
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun SettingsDropdownPreference(
@@ -40,8 +41,8 @@ internal fun SettingsDropdownPreference(
         if (!available) expanded = false
     }
     val haptics = LocalHapticFeedback.current
-    val color = if (available) MiuixTheme.colorScheme.onSurfaceVariantActions
-        else MiuixTheme.colorScheme.disabledOnSurface
+    val color = if (available) StaColors.textAction
+        else StaColors.textDisabled
     val entry = DropdownEntry(items.mapIndexed { index, item ->
         item.copy(selected = index == selectedIndex, onClick = {
             onSelectedIndexChange(index)

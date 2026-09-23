@@ -45,6 +45,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun ModelProviderListScreen(
@@ -127,7 +128,7 @@ internal fun ModelProviderListScreen(
                                 stringResource(R.string.provider_no_matches)
                             },
                             style = MiuixTheme.textStyles.body2,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                            color = StaColors.textSecondary,
                         )
                     }
                 } else {
@@ -205,14 +206,14 @@ private fun ProviderListItem(
             Text(
                 text = provider.name,
                 style = MiuixTheme.textStyles.headline1,
-                color = MiuixTheme.colorScheme.onSurface,
+                color = StaColors.textPrimary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = provider.baseUrl,
                 style = MiuixTheme.textStyles.body2,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = StaSpacing.hair),
@@ -224,14 +225,14 @@ private fun ProviderListItem(
                     stringResource(R.string.ui_built_in_09ceea).takeIf { provider.isBuiltIn },
                 ).joinToString(" · "),
                 style = MiuixTheme.textStyles.footnote1,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 modifier = Modifier.padding(top = StaSpacing.xs),
             )
             if (!provider.isEnabled) {
                 Text(
                     text = stringResource(R.string.ui_disabled_0fe5a9),
                     style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    color = StaColors.textSecondary,
                     modifier = Modifier.padding(top = StaSpacing.hair),
                 )
             }
@@ -244,7 +245,7 @@ private fun ProviderListItem(
                 } else {
                     stringResource(R.string.provider_set_current)
                 },
-                tint = if (isSelected) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceVariantActions,
+                tint = if (isSelected) StaColors.accent else StaColors.textAction,
             )
         }
     }

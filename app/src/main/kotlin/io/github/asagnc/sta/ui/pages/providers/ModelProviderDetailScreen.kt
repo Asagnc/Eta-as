@@ -77,6 +77,7 @@ import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun ModelProviderDetailScreen(
@@ -398,7 +399,7 @@ private fun ProviderConfigTab(
                     Text(
                         text = stringResource(R.string.ui_leave_blank_to_use_the_default_mobile_agent_prompt_w_21e7c8),
                         style = MiuixTheme.textStyles.footnote2,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        color = StaColors.textSecondary,
                         modifier = Modifier.padding(top = StaSpacing.sm),
                     )
                 }
@@ -524,7 +525,7 @@ private fun ProviderConfigTab(
                             text = if (provider.isBuiltIn) context.getString(R.string.page_reset_built_in_configuration_35b6ec) else context.getString(R.string.page_remove_provider_9f848f),
                             fontSize = MiuixTheme.textStyles.headline1.fontSize,
                             fontWeight = FontWeight.Medium,
-                            color = MiuixTheme.colorScheme.error,
+                            color = StaColors.danger,
                         )
                     }
                 }

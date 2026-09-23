@@ -81,6 +81,7 @@ import top.yukonga.miuix.kmp.basic.DropdownItem
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
+import io.github.asagnc.sta.ui.theme.StaColors
 
 /**
  * 模块配置界面。
@@ -393,9 +394,9 @@ private fun SettingsPageContent(
                                 ),
                                 fontSize = MiuixTheme.textStyles.body2.fontSize,
                                 color = if (overlayGranted) {
-                                    MiuixTheme.colorScheme.onSurfaceVariantActions
+                                    StaColors.textAction
                                 } else {
-                                    MiuixTheme.colorScheme.error
+                                    StaColors.danger
                                 },
                             )
                         },
@@ -430,9 +431,9 @@ private fun SettingsPageContent(
                                 ),
                                 fontSize = MiuixTheme.textStyles.body2.fontSize,
                                 color = if (enabled) {
-                                    MiuixTheme.colorScheme.onSurfaceVariantActions
+                                    StaColors.textAction
                                 } else {
-                                    MiuixTheme.colorScheme.primary
+                                    StaColors.accent
                                 },
                             )
                         },
@@ -506,7 +507,7 @@ private fun SettingsPageContent(
                             Text(
                                 text = "GitHub",
                                 fontSize = MiuixTheme.textStyles.body2.fontSize,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                                color = StaColors.textAction,
                             )
                         },
                         onClick = {

@@ -94,7 +94,7 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 // Miuix 未提供语义 success 色，沿用项目既有值；失败色走主题 error
 private val SuccessColor = Color(0xFF34C759)
@@ -103,10 +103,10 @@ private const val SupplementExitDelayMs = 380L
 
 @Composable
 private fun phaseAccent(phase: AgentOverlayPhase): Color = when (phase) {
-    AgentOverlayPhase.RUNNING -> MiuixTheme.colorScheme.primary
+    AgentOverlayPhase.RUNNING -> StaColors.accent
     AgentOverlayPhase.PAUSED -> Color(0xFFFF9F0A)
     AgentOverlayPhase.FINISHED -> SuccessColor
-    AgentOverlayPhase.FAILED -> MiuixTheme.colorScheme.error
+    AgentOverlayPhase.FAILED -> StaColors.danger
 }
 
 // 彩虹光圈颜色（青/黄/橙/粉循环）
@@ -359,7 +359,7 @@ internal fun AgentOverlayBubble(
             cornerRadius = StaRadius.xl,
             insideMargin = PaddingValues(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
             colors = CardDefaults.defaultColors(
-                color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.8f)
+                color = StaColors.surfaceRaised.copy(alpha = 0.8f)
             ),
         ) {
             // 阶段色由圆点承载，状态文字保持中性；运行中圆点呼吸，暂停/结束静止
@@ -374,7 +374,7 @@ internal fun AgentOverlayBubble(
                 Spacer(modifier = Modifier.width(7.dp))
                 Text(
                     text = statusText,
-                    color = MiuixTheme.colorScheme.onSurface,
+                    color = StaColors.textPrimary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 2,
@@ -432,28 +432,28 @@ internal fun AgentOverlayBubble(
                         onClick = ::enterSupplementMode,
                         icon = Icons.Rounded.Edit,
                         contentDescription = stringResource(R.string.overlay_supplement),
-                        tint = MiuixTheme.colorScheme.onSurface,
+                        tint = StaColors.textPrimary,
                     )
                     if (state.phase == AgentOverlayPhase.RUNNING) {
                         OverlayControlButton(
                             onClick = onPause,
                             icon = Icons.Rounded.Pause,
                             contentDescription = stringResource(R.string.overlay_pause),
-                            tint = MiuixTheme.colorScheme.onSurface,
+                            tint = StaColors.textPrimary,
                         )
                     } else if (state.phase == AgentOverlayPhase.PAUSED) {
                         OverlayControlButton(
                             onClick = onResume,
                             icon = Icons.Rounded.PlayArrow,
                             contentDescription = stringResource(R.string.overlay_resume),
-                            tint = MiuixTheme.colorScheme.primary,
+                            tint = StaColors.accent,
                         )
                     }
                     OverlayControlButton(
                         onClick = onStop,
                         icon = Icons.Rounded.Stop,
                         contentDescription = stringResource(R.string.action_stop),
-                        tint = MiuixTheme.colorScheme.error,
+                        tint = StaColors.danger,
                     )
                 }
             }
@@ -484,7 +484,7 @@ private fun OverlayControlButton(
 ) {
     IconButton(
         onClick = onClick,
-        backgroundColor = MiuixTheme.colorScheme.surfaceContainerHigh,
+        backgroundColor = StaColors.surfaceRaisedHigh,
         minWidth = 32.dp,
         minHeight = 32.dp,
         cornerRadius = StaRadius.xl,
@@ -507,8 +507,8 @@ private fun SupplementInput(
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
-    val textColor = MiuixTheme.colorScheme.onSurface
-    val fieldBg = MiuixTheme.colorScheme.surfaceContainer
+    val textColor = StaColors.textPrimary
+    val fieldBg = StaColors.surfaceRaised
 
     LaunchedEffect(Unit) {
         delay(180)
@@ -549,7 +549,7 @@ private fun SupplementInput(
                     lineHeight = 18.sp,
                 ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
-                cursorBrush = SolidColor(MiuixTheme.colorScheme.primary),
+                cursorBrush = SolidColor(StaColors.accent),
                 maxLines = 4,
             )
         }
@@ -602,7 +602,7 @@ internal fun AgentResultCard(
         if (isFailed) R.string.overlay_substatus_failed else R.string.overlay_substatus_finished,
     )
     val content = state.detailText.ifBlank { statusText }
-    val textColor = MiuixTheme.colorScheme.onSurface
+    val textColor = StaColors.textPrimary
 
     Box(
         modifier = Modifier
@@ -649,7 +649,7 @@ internal fun AgentResultCard(
                         Spacer(modifier = Modifier.width(StaSpacing.sm))
                         Text(
                             text = statusLabel,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                            color = StaColors.textSecondary,
                             fontSize = 13.sp,
                         )
                         Spacer(modifier = Modifier.weight(1f))
@@ -665,7 +665,7 @@ internal fun AgentResultCard(
                                 imageVector = Icons.Rounded.Close,
                                 contentDescription = stringResource(R.string.action_close),
                                 modifier = Modifier.size(16.dp),
-                                tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                                tint = StaColors.textAction,
                             )
                         }
                     }

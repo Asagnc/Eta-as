@@ -19,6 +19,7 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 internal fun LazyListScope.characterWorldbookEditor(
     store: CharacterLibraryStore,
@@ -137,7 +138,7 @@ private fun CharacterWorldbookEntryEditor(
             "此条目暂不参与匹配：${unsupported.joinToString("；")}",
             style = MiuixTheme.textStyles.body2,
             modifier = Modifier.padding(horizontal = StaSpacing.lg, vertical = StaSpacing.sm),
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            color = StaColors.textSecondary,
         )
     }
     CharacterFieldGroupLabel("内容")

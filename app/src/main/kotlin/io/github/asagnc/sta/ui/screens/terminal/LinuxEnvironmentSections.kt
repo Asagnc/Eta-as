@@ -24,6 +24,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun LinuxEnvironmentStatusCard(
@@ -46,7 +47,7 @@ internal fun LinuxEnvironmentStatusCard(
                 Text(
                     text = mode,
                     style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    color = StaColors.textSecondary,
                 )
             }
             Row(
@@ -57,7 +58,7 @@ internal fun LinuxEnvironmentStatusCard(
                 Text(
                     text = summary,
                     style = MiuixTheme.textStyles.body2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    color = StaColors.textSecondary,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -65,7 +66,7 @@ internal fun LinuxEnvironmentStatusCard(
                 Text(
                     text = it,
                     style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    color = StaColors.textSecondary,
                 )
             }
             actionText?.let {
@@ -137,7 +138,7 @@ internal fun LinuxEnvironmentConfiguration(
                     Text(
                         text = backend.displayName(),
                         style = MiuixTheme.textStyles.body2,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                        color = StaColors.textAction,
                     )
                 },
             )

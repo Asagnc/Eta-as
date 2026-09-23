@@ -54,6 +54,7 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
+import io.github.asagnc.sta.ui.theme.StaColors
 
 /**
  * 共享文件夹管理：把 Android 目录配置为 Linux 环境 /workspace/mounts/ 下的挂载点。
@@ -165,7 +166,7 @@ internal fun SharedFoldersScreen(
             Text(
                 text = stringResource(R.string.shared_folders_footer),
                 style = MiuixTheme.textStyles.footnote1,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 modifier = Modifier.padding(horizontal = StaSpacing.xxl),
             )
         }
@@ -333,7 +334,7 @@ private fun SharedFolderPickerDialog(
                 Text(
                     text = browseError.orEmpty(),
                     style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.error,
+                    color = StaColors.danger,
                     modifier = Modifier.padding(top = StaSpacing.xxs),
                 )
             }
@@ -363,7 +364,7 @@ private fun SharedFolderPickerDialog(
             Text(
                 text = stringResource(R.string.shared_folders_selected_source, path),
                 style = MiuixTheme.textStyles.footnote1.copy(fontFamily = FontFamily.Monospace),
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 modifier = Modifier.padding(top = StaSpacing.sm),
             )
             TextField(
@@ -382,7 +383,7 @@ private fun SharedFolderPickerDialog(
                 Text(
                     text = error,
                     style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.error,
+                    color = StaColors.danger,
                     modifier = Modifier.padding(top = StaSpacing.xxs),
                 )
             }

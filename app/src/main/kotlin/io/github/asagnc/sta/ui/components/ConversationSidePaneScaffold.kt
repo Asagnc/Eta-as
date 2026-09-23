@@ -53,7 +53,7 @@ import io.github.asagnc.sta.ui.model.ConversationSummaryUi
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 private object ConversationPaneMetrics {
     val PaneMaxWidth = 340.dp
@@ -201,7 +201,7 @@ fun ConversationSidePaneScaffold(
         Box(
             modifier = Modifier.fillMaxSize()
                 .clipToBounds()
-                .background(MiuixTheme.colorScheme.surface)
+                .background(StaColors.surface)
                 // 手势由共同容器拥有，侧栏和聊天舞台均可拖动；子级先处理滚动与选择。
                 .anchoredDraggable(
                     state = paneDragState,
@@ -243,7 +243,7 @@ fun ConversationSidePaneScaffold(
                                 val progress = conversationPaneMotion(paneDragState.offset, paneWidthPx).progress
                                 drawRect(Color.Black, alpha = ConversationPaneMetrics.ChatScrimAlpha * progress)
                             }
-                            .background(MiuixTheme.colorScheme.background),
+                            .background(StaColors.background),
                     ) {
                         Box(
                             modifier = Modifier

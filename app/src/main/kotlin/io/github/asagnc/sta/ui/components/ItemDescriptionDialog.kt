@@ -16,6 +16,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
+import io.github.asagnc.sta.ui.theme.StaColors
 
 @Composable
 internal fun ItemDescriptionDialog(
@@ -31,7 +32,7 @@ internal fun ItemDescriptionDialog(
             Text(
                 text = description,
                 style = MiuixTheme.textStyles.body2,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 modifier = Modifier.fillMaxWidth().weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
             )

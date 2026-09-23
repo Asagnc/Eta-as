@@ -32,6 +32,7 @@ import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
+import io.github.asagnc.sta.ui.theme.StaColors
 
 /**
  * 会话顶部的方案卡片，只读展示 submit_plan 提交的方案，给出「按此执行」和「重新规划」两个出口。
@@ -60,8 +61,8 @@ internal fun AgentPlanPanel(
         modifier = modifier.fillMaxWidth().padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs),
         insideMargin = PaddingValues(horizontal = 14.dp, vertical = StaSpacing.compact),
         colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surfaceContainer,
-            contentColor = MiuixTheme.colorScheme.onSurfaceContainer,
+            color = StaColors.surfaceRaised,
+            contentColor = StaColors.onSurfaceRaised,
         ),
         pressFeedbackType = PressFeedbackType.Sink,
         showIndication = true,
@@ -72,7 +73,7 @@ internal fun AgentPlanPanel(
                 text = "方案 · ${plan.title}",
                 style = MiuixTheme.textStyles.body2,
                 fontWeight = FontWeight.Medium,
-                color = MiuixTheme.colorScheme.onSurfaceContainer,
+                color = StaColors.onSurfaceRaised,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
@@ -80,7 +81,7 @@ internal fun AgentPlanPanel(
             Text(
                 text = if (expanded) "收起" else "展开",
                 style = MiuixTheme.textStyles.footnote1,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
             )
         }
         if (expanded) {
@@ -98,7 +99,7 @@ internal fun AgentPlanPanel(
                         text = "备选方案",
                         style = MiuixTheme.textStyles.footnote1,
                         fontWeight = FontWeight.Medium,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        color = StaColors.textSecondary,
                     )
                     Column(verticalArrangement = Arrangement.spacedBy(StaSpacing.xs)) {
                         plan.alternatives.forEach { alternative ->
@@ -112,7 +113,7 @@ internal fun AgentPlanPanel(
                                 Text(
                                     text = alternative.title,
                                     style = MiuixTheme.textStyles.footnote1,
-                                    color = MiuixTheme.colorScheme.primary,
+                                    color = StaColors.accent,
                                 )
                                 val detail = listOfNotNull(
                                     alternative.summary.takeIf { it.isNotBlank() },
@@ -122,7 +123,7 @@ internal fun AgentPlanPanel(
                                     Text(
                                         text = detail,
                                         style = MiuixTheme.textStyles.footnote1,
-                                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                        color = StaColors.textSecondary,
                                     )
                                 }
                             }
@@ -136,7 +137,7 @@ internal fun AgentPlanPanel(
                     text = "按此执行",
                     style = MiuixTheme.textStyles.body2,
                     fontWeight = FontWeight.Medium,
-                    color = MiuixTheme.colorScheme.primary,
+                    color = StaColors.accent,
                     modifier = Modifier.fillMaxWidth().clickable { onApprove() },
                 )
             }
@@ -145,7 +146,7 @@ internal fun AgentPlanPanel(
                 Text(
                     text = "重新规划",
                     style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    color = StaColors.textSecondary,
                     modifier = Modifier.fillMaxWidth().clickable { onReplan(REPLAN_PROMPT) },
                 )
             }

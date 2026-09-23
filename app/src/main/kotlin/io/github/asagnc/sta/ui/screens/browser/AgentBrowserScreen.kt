@@ -99,6 +99,7 @@ import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
+import io.github.asagnc.sta.ui.theme.StaColors
 
 /**
  * Agent 与用户共享的浏览器会话。
@@ -165,7 +166,7 @@ internal fun AgentBrowserScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MiuixTheme.colorScheme.surface)
+            .background(StaColors.surface)
             .padding(horizontal = StaSpacing.md)
             .padding(bottom = StaSpacing.md)
             .imePadding()
@@ -196,7 +197,7 @@ internal fun AgentBrowserScreen(
                     },
                     contentDescription = null,
                     modifier = Modifier.padding(start = StaSpacing.md).size(18.dp),
-                    tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    tint = StaColors.textSecondary,
                 )
             },
             trailingIcon = {
@@ -211,7 +212,7 @@ internal fun AgentBrowserScreen(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                         contentDescription = stringResource(R.string.ui_access_7f5641),
                         modifier = Modifier.size(19.dp),
-                        tint = MiuixTheme.colorScheme.onSurface,
+                        tint = StaColors.textPrimary,
                     )
                 }
             },
@@ -332,8 +333,8 @@ private fun BrowserWindow(
         modifier = modifier,
         insideMargin = PaddingValues(StaSpacing.none),
         colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surfaceContainer,
-            contentColor = MiuixTheme.colorScheme.onSurface,
+            color = StaColors.surfaceRaised,
+            contentColor = StaColors.textPrimary,
         ),
     ) {
         BrowserToolbar(
@@ -350,7 +351,7 @@ private fun BrowserWindow(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(0.5.dp)
-                .background(MiuixTheme.colorScheme.outline.copy(alpha = 0.45f)),
+                .background(StaColors.outline.copy(alpha = 0.45f)),
         )
         Box(
             modifier = Modifier
@@ -426,14 +427,14 @@ private fun BrowserToolbar(
                 text = snapshot.title.ifBlank { stringResource(R.string.browser_title) },
                 style = MiuixTheme.textStyles.body2,
                 fontWeight = FontWeight.Medium,
-                color = MiuixTheme.colorScheme.onSurface,
+                color = StaColors.textPrimary,
                 maxLines = 1,
             )
             if (snapshot.host.isNotBlank()) {
                 Text(
                     text = snapshot.host,
                     style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    color = StaColors.textSecondary,
                     maxLines = 1,
                 )
             }
@@ -441,7 +442,7 @@ private fun BrowserToolbar(
                 Text(
                     text = stringResource(R.string.browser_proxy_chip, proxy),
                     style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    color = StaColors.textSecondary,
                     maxLines = 1,
                 )
             }
@@ -491,7 +492,7 @@ private fun BrowserControlButton(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(18.dp),
-            tint = MiuixTheme.colorScheme.onSurface,
+            tint = StaColors.textPrimary,
         )
     }
 }
@@ -571,7 +572,7 @@ private fun ColumnScope.BrowserStatusBanner(snapshot: BrowserSessionSnapshot) {
     }
     val color = when {
         snapshot.error != null -> StatusError
-        else -> MiuixTheme.colorScheme.primary
+        else -> StaColors.accent
     }
     val icon = if (snapshot.error != null) {
         Icons.Rounded.GppMaybe
@@ -591,7 +592,7 @@ private fun ColumnScope.BrowserStatusBanner(snapshot: BrowserSessionSnapshot) {
             insideMargin = PaddingValues(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
             colors = CardDefaults.defaultColors(
                 color = color.copy(alpha = 0.10f),
-                contentColor = MiuixTheme.colorScheme.onSurface,
+                contentColor = StaColors.textPrimary,
             ),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -606,7 +607,7 @@ private fun ColumnScope.BrowserStatusBanner(snapshot: BrowserSessionSnapshot) {
                     text = message.orEmpty(),
                     modifier = Modifier.weight(1f),
                     style = MiuixTheme.textStyles.footnote1,
-                    color = MiuixTheme.colorScheme.onSurface,
+                    color = StaColors.textPrimary,
                 )
             }
         }
@@ -655,27 +656,27 @@ private fun BrowserEmptyState(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .consumeTouches()
-            .background(MiuixTheme.colorScheme.surfaceContainer)
+            .background(StaColors.surfaceRaised)
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         BrowserOverlayIcon(
             icon = Icons.Rounded.Language,
-            tint = MiuixTheme.colorScheme.primary,
+            tint = StaColors.accent,
         )
         Spacer(modifier = Modifier.height(StaSpacing.lg))
         Text(
             text = stringResource(R.string.ui_the_browser_has_not_opened_the_web_page_yet_31e095),
             style = MiuixTheme.textStyles.body1,
             fontWeight = FontWeight.Medium,
-            color = MiuixTheme.colorScheme.onSurface,
+            color = StaColors.textPrimary,
         )
         Spacer(modifier = Modifier.height(StaSpacing.xs))
         Text(
             text = stringResource(R.string.ui_enter_the_url_in_the_address_bar_or_let_the_agent_br_e2ae90),
             style = MiuixTheme.textStyles.body2,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            color = StaColors.textSecondary,
             textAlign = TextAlign.Center,
         )
     }
@@ -689,20 +690,20 @@ private fun BrowserLoadingState(
     Column(
         modifier = modifier
             .consumeTouches()
-            .background(MiuixTheme.colorScheme.surfaceContainer)
+            .background(StaColors.surfaceRaised)
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         InfiniteProgressIndicator(
-            color = MiuixTheme.colorScheme.primary,
+            color = StaColors.accent,
             size = 34.dp,
         )
         Spacer(modifier = Modifier.height(StaSpacing.lg))
         Text(
             text = if (host.isBlank()) stringResource(R.string.browser_opening) else stringResource(R.string.browser_opening_host, host),
             style = MiuixTheme.textStyles.body2,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            color = StaColors.textSecondary,
             maxLines = 1,
         )
     }
@@ -717,7 +718,7 @@ private fun BrowserFailedState(
     Column(
         modifier = modifier
             .consumeTouches()
-            .background(MiuixTheme.colorScheme.surfaceContainer)
+            .background(StaColors.surfaceRaised)
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -731,14 +732,14 @@ private fun BrowserFailedState(
             text = stringResource(R.string.ui_the_webpage_cannot_be_opened_3db06d),
             style = MiuixTheme.textStyles.body1,
             fontWeight = FontWeight.Medium,
-            color = MiuixTheme.colorScheme.onSurface,
+            color = StaColors.textPrimary,
         )
         if (!error.isNullOrBlank()) {
             Spacer(modifier = Modifier.height(StaSpacing.xs))
             Text(
                 text = error,
                 style = MiuixTheme.textStyles.body2,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 textAlign = TextAlign.Center,
             )
         }
@@ -754,7 +755,7 @@ private fun BrowserFailedState(
 @Composable
 private fun BrowserWebViewHost(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val backgroundColor = MiuixTheme.colorScheme.surfaceContainer.toArgb()
+    val backgroundColor = StaColors.surfaceRaised.toArgb()
     val container = remember(context) {
         FrameLayout(context).apply {
             layoutParams = ViewGroup.LayoutParams(

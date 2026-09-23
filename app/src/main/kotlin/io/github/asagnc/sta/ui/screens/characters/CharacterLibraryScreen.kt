@@ -37,6 +37,7 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
+import io.github.asagnc.sta.ui.theme.StaColors
 
 internal val CharacterCardPadding = 12.dp
 
@@ -154,7 +155,7 @@ internal fun CharacterLibraryScreen(
                         style = MiuixTheme.textStyles.body2,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        color = StaColors.textSecondary,
                     )
                 }
             }
@@ -182,6 +183,6 @@ internal fun CharacterPageMessage(text: String) {
         text = text,
         style = MiuixTheme.textStyles.body2,
         modifier = Modifier.fillMaxWidth().padding(horizontal = StaSpacing.xl, vertical = StaSpacing.md),
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+        color = StaColors.textSecondary,
     )
 }

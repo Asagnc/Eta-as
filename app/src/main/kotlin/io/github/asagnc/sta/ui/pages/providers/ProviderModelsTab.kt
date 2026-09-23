@@ -99,6 +99,7 @@ import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import io.github.asagnc.sta.ui.theme.StaColors
 
 private val modelSearchSeparators = Regex("""[^\p{L}\p{N}]+""")
 private val editableReasoningEfforts = listOf(
@@ -359,7 +360,7 @@ internal fun ProviderModelsTab(
                                     context.getString(R.string.page_no_matching_model_found_ae7e96)
                                 },
                                 style = MiuixTheme.textStyles.body2,
-                                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                                color = StaColors.textSecondary,
                             )
                         }
                     }
@@ -580,8 +581,8 @@ private fun ModelListGroupItem(
     isLast: Boolean,
     content: @Composable () -> Unit,
 ) {
-    val surfaceColor = MiuixTheme.colorScheme.surfaceContainer
-    val contentColor = MiuixTheme.colorScheme.onSurfaceContainer
+    val surfaceColor = StaColors.surfaceRaised
+    val contentColor = StaColors.onSurfaceRaised
     val cornerRadius = StaCardDefaults.CornerRadius
     val surfaceModifier = if (isFirst || isLast) {
         Modifier.squircleSurface(
@@ -636,7 +637,7 @@ private fun ModelSelectionBar(
                 Icon(
                     imageVector = Icons.Rounded.Close,
                     contentDescription = stringResource(R.string.ui_exit_multiple_selection_c194fd),
-                    tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                    tint = StaColors.textAction,
                 )
             }
             Text(
@@ -657,8 +658,8 @@ private fun ModelSelectionBar(
                 text = stringResource(R.string.ui_delete_3755f5),
                 enabled = selectedCount > 0 && enabled,
                 colors = ButtonDefaults.textButtonColorsPrimary(
-                    color = MiuixTheme.colorScheme.error,
-                    textColor = MiuixTheme.colorScheme.onError,
+                    color = StaColors.danger,
+                    textColor = StaColors.onDanger,
                 ),
                 onClick = onDelete,
             )
@@ -704,7 +705,7 @@ private fun ModelListItem(
             Text(
                 text = model.modelId,
                 style = MiuixTheme.textStyles.body2,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                color = StaColors.textSecondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = StaSpacing.hair),
@@ -733,7 +734,7 @@ private fun ModelListItem(
                     Icon(
                         imageVector = Icons.Rounded.Tune,
                         contentDescription = stringResource(R.string.ui_edit_model_parameters_ba4864),
-                        tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                        tint = StaColors.textAction,
                     )
                 }
                 IconButton(onClick = onSetCurrent, enabled = enabled) {
@@ -742,9 +743,9 @@ private fun ModelListItem(
                             else Icons.Rounded.RadioButtonUnchecked,
                         contentDescription = if (isSelected) context.getString(R.string.page_current_model_a0af8f) else context.getString(R.string.page_set_as_current_model_183d7d),
                         tint = if (isSelected) {
-                            MiuixTheme.colorScheme.primary
+                            StaColors.accent
                         } else {
-                            MiuixTheme.colorScheme.onSurfaceVariantActions
+                            StaColors.textAction
                         },
                     )
                 }
@@ -886,7 +887,7 @@ private fun ModelEditDialog(
                             else -> context.getString(R.string.page_automatic_no_context_cap_was_provided_by_the_remote__db027f)
                         },
                         style = MiuixTheme.textStyles.footnote2,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                        color = StaColors.textSecondary,
                         modifier = Modifier.weight(1f),
                     )
                     if (contextWindowOverrideText.isNotBlank()) {
@@ -907,7 +908,7 @@ private fun ModelEditDialog(
                 Text(
                     text = stringResource(R.string.ui_this_value_is_used_for_session_clipping_and_context__c3f9e7),
                     style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    color = StaColors.textSecondary,
                     modifier = Modifier.padding(top = StaSpacing.xxs, bottom = StaRadius.lg),
                 )
                 StaCard(modifier = Modifier.fillMaxWidth()) {
@@ -968,7 +969,7 @@ private fun ModelEditDialog(
                 Text(
                     text = stringResource(R.string.ui_only_check_the_ranges_actually_supported_by_the_mode_2c343d),
                     style = MiuixTheme.textStyles.footnote2,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    color = StaColors.textSecondary,
                     modifier = Modifier.padding(top = StaSpacing.sm),
                 )
                 error?.let { message ->
@@ -989,7 +990,7 @@ private fun ModelEditDialog(
                             Text(
                                 text = stringResource(R.string.ui_restore_automatic_8d4e1e),
                                 style = MiuixTheme.textStyles.body2,
-                                color = MiuixTheme.colorScheme.primary,
+                                color = StaColors.accent,
                                 modifier = Modifier
                                     .clickable(
                                         enabled = !isSaving,
@@ -1002,7 +1003,7 @@ private fun ModelEditDialog(
                             Text(
                                 text = stringResource(R.string.ui_delete_model_cf24da),
                                 style = MiuixTheme.textStyles.body2,
-                                color = MiuixTheme.colorScheme.error,
+                                color = StaColors.danger,
                                 modifier = Modifier
                                     .clickable(enabled = !isSaving, onClick = delete)
                                     .padding(vertical = StaSpacing.xxs),

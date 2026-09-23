@@ -90,6 +90,8 @@ fun AgentAppTheme(
                 platformDensity
             }
         }
+        // 这里是 Miuix→Material3 的桥接：markdown 渲染器只认 M3 色板，
+        // 所以必须读原始 Miuix 色板逐角色翻译，不能走 StaColors（那是给业务代码用的）。
         val miuixColors = MiuixTheme.colorScheme
         val materialColors = if (isDark) {
             darkColorScheme(

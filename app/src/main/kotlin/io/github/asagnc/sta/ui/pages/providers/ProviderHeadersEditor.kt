@@ -33,7 +33,7 @@ import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
 internal fun LazyListScope.providerHeadersEditor(
     headers: List<ProviderHeaderDraft>,
@@ -52,7 +52,7 @@ internal fun LazyListScope.providerHeadersEditor(
                     Icon(
                         imageVector = Icons.Rounded.ExpandMore,
                         contentDescription = if (expanded) "收起" else "展开",
-                        tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                        tint = StaColors.textAction,
                         modifier = Modifier.rotate(chevronRotation),
                     )
                 },
@@ -79,12 +79,12 @@ internal fun LazyListScope.providerHeadersEditor(
                 HorizontalDivider()
                 BasicComponent(
                     title = "添加请求头",
-                    titleColor = BasicComponentDefaults.titleColor(color = MiuixTheme.colorScheme.primary),
+                    titleColor = BasicComponentDefaults.titleColor(color = StaColors.accent),
                     startAction = {
                         Icon(
                             imageVector = Icons.Rounded.Add,
                             contentDescription = null,
-                            tint = MiuixTheme.colorScheme.primary,
+                            tint = StaColors.accent,
                         )
                     },
                     onClick = { onHeadersChange(headers + ProviderHeaderDraft()) },
@@ -143,7 +143,7 @@ private fun ProviderHeaderRow(
             Icon(
                 imageVector = Icons.Rounded.Delete,
                 contentDescription = context.getString(R.string.ui_delete_3755f5),
-                tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                tint = StaColors.textAction,
             )
         }
     }
