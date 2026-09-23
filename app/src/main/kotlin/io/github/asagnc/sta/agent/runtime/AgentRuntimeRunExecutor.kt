@@ -313,20 +313,20 @@ internal class AgentRuntimeRunExecutor(
                 memoryWritable = roleplayContext == null,
                 screenshotExcludedPackages = { emptySet() },
                 beforeToolExecution = { toolName ->
-                    val requiresAccessibility =
-                        AgentToolRequirements.requiresAccessibility(toolName)
-                    if (!requiresAccessibility) {
+                    // 只有需要无障碍的工具才做门禁。[AgentAccessibilityKeeper] 返回非空结果，
+                    // 是否可用看 available，不需要再判空（此处曾有 `!= null &&`，恒真）。
+                    if (!AgentToolRequirements.requiresAccessibility(toolName)) {
                         ToolExecutionDecision.Allow
                     } else {
                         val accessibility =
                             AgentAccessibilityKeeper.ensureEnabledForGuiOperation(appContext)
-                        when {
-                            accessibility != null && !accessibility.available ->
-                                ToolExecutionDecision.Reject(
-                                    code = accessibility.code,
-                                    message = accessibility.message,
-                                )
-                            else -> ToolExecutionDecision.Allow
+                        if (accessibility.available) {
+                            ToolExecutionDecision.Allow
+                        } else {
+                            ToolExecutionDecision.Reject(
+                                code = accessibility.code,
+                                message = accessibility.message,
+                            )
                         }
                     }
                 },
@@ -455,7 +455,7 @@ internal class AgentRuntimeRunExecutor(
             cancelled = runController.isCancelled || throwable is AgentRunCancelledException
             val modelFailure = throwable as? AgentModelExecutionException
             val message = if (cancelled) {
-                "已停止"
+                AgentRuntimeWire.STOPPED_ERROR_MESSAGE
             } else {
                 throwable.message ?: throwable.javaClass.simpleName
             }

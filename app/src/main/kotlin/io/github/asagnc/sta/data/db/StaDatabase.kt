@@ -5,7 +5,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
 
 @Database(
     entities = [
@@ -28,7 +27,7 @@ import androidx.room.migration.Migration
         SubAgentRunEntity::class,
         SubAgentMailboxEntity::class,
     ],
-    version = StaMigrations.CURRENT_VERSION,
+    version = StaSchema.CURRENT_VERSION,
     exportSchema = false,
 )
 internal abstract class StaDatabase : RoomDatabase() {
@@ -52,10 +51,9 @@ internal abstract class StaDatabase : RoomDatabase() {
                     StaDatabase::class.java,
                     "sta.db",
                 )
-                    .addMigrations(*StaMigrations.ALL.toTypedArray())
                     .addCallback(object : Callback() {
-                        override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) { StaMigrations.createTextChunkCleanup(db) }
-                        override fun onOpen(db: androidx.sqlite.db.SupportSQLiteDatabase) { StaMigrations.createTextChunkCleanup(db) }
+                        override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) { StaSchema.createTextChunkCleanup(db) }
+                        override fun onOpen(db: androidx.sqlite.db.SupportSQLiteDatabase) { StaSchema.createTextChunkCleanup(db) }
                     })
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()

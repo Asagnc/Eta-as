@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -15,7 +16,7 @@ class AgentRuntimeSessionTest {
     fun compactionDoesNotAcceptPendingTaskInstructions() {
         val session = AgentRuntimeSession("compact", operation = AgentRuntimeWire.OP_COMPACT)
         assertFalse(session.steer("继续执行设备操作"))
-        assertEquals(null, session.steer("继续执行设备操作") { error("不应登记补充事件") })
+        assertNull(session.steer("继续执行设备操作") { error("不应登记补充事件") })
         assertFalse(session.controller.hasPendingSteering)
     }
 

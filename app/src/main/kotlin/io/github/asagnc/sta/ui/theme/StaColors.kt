@@ -12,7 +12,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
  *   调色板时，「成功」可能变成紫色或灰色，语义就丢了。
  * - **派生色**（其余全部）：从主题取，跟随动态取色／调色板／深色模式。
  *
- * 为什么要有这一层：业务代码里 369 处直接写 `MiuixTheme.colorScheme.xxx`，而 Miuix 的
+ * 为什么要有这一层：业务代码原先大量直接写 `MiuixTheme.colorScheme.xxx`，而 Miuix 的
  * 字段名是它的实现细节。最典型的两个——
  *
  * - `onSurfaceVariantSummary`（次要文字：说明、时间戳）
@@ -46,10 +46,10 @@ object StaColors {
     /** 主文字。 */
     val textPrimary: Color @Composable get() = MiuixTheme.colorScheme.onSurface
 
-    /** 次要文字（说明、时间戳、状态描述）。用 100 处的角色。 */
+    /** 次要文字（说明、时间戳、状态描述）。 */
     val textSecondary: Color @Composable get() = MiuixTheme.colorScheme.onSurfaceVariantSummary
 
-    /** 操作文字（可点的次级动作）。用 29 处的角色。 */
+    /** 操作文字（可点的次级动作）。 */
     val textAction: Color @Composable get() = MiuixTheme.colorScheme.onSurfaceVariantActions
 
     /** 禁用态文字。 */
@@ -57,6 +57,9 @@ object StaColors {
 
     /** 页面底色。 */
     val background: Color @Composable get() = MiuixTheme.colorScheme.background
+
+    /** 页面底色上的文字，与 [background] 配对。 */
+    val onBackground: Color @Composable get() = MiuixTheme.colorScheme.onBackground
 
     /** 卡片／面板底色。 */
     val surface: Color @Composable get() = MiuixTheme.colorScheme.surface
@@ -76,9 +79,18 @@ object StaColors {
     /** 强调色，用于运行中状态与主操作。 */
     val accent: Color @Composable get() = MiuixTheme.colorScheme.primary
 
+    /** 强调色上的文字，与 [accent] 配对。 */
+    val onAccent: Color @Composable get() = MiuixTheme.colorScheme.onPrimary
+
     /** 强调色容器。 */
     val accentContainer: Color @Composable get() = MiuixTheme.colorScheme.primaryContainer
 
+    /** 强调容器上的文字，与 [accentContainer] 配对。 */
+    val onAccentContainer: Color @Composable get() = MiuixTheme.colorScheme.onPrimaryContainer
+
     /** 中性强调容器，用于次级选中态。 */
     val neutralContainer: Color @Composable get() = MiuixTheme.colorScheme.secondaryContainer
+
+    /** 中性容器上的文字，与 [neutralContainer] 配对。 */
+    val onNeutralContainer: Color @Composable get() = MiuixTheme.colorScheme.onSecondaryContainer
 }

@@ -1426,7 +1426,16 @@ internal class AgentAppState(
             }
             if (withContext(Dispatchers.Main) { runId in stopRequestedRunIds }) {
                 withContext(Dispatchers.Main) {
-                    applyRunResult(runId, AgentRuntimeWire.RunResult(runId, false, "", "已停止", operation = operation))
+                    applyRunResult(
+                        runId,
+                        AgentRuntimeWire.RunResult(
+                            runId = runId,
+                            ok = false,
+                            content = "",
+                            error = AgentRuntimeWire.STOPPED_ERROR_MESSAGE,
+                            operation = operation,
+                        ),
+                    )
                 }
                 return@launch
             }
@@ -2374,7 +2383,7 @@ internal class AgentAppState(
                 fallbackContent = result.content,
             )
             result.ok -> replaceLatestAssistantWithNotice(runId, SystemNoticeCode.EmptyResult)
-            result.error == LEGACY_STOPPED_ERROR || result.error == SYNTHETIC_STATUS_STOPPED ->
+            result.error == AgentRuntimeWire.STOPPED_ERROR_MESSAGE ->
                 replaceLatestAssistantWithNotice(runId, SystemNoticeCode.Stopped)
             else -> replaceLatestAssistantWithNotice(
                 runId,
@@ -2769,8 +2778,6 @@ internal class AgentAppState(
     private companion object {
         const val MAX_TITLE_CHARS = 24
         const val MAX_PREVIEW_CHARS = 48
-        const val LEGACY_STOPPED_ERROR = "已停止"
-        const val SYNTHETIC_STATUS_STOPPED = "eta_status:stopped"
         // 数据状态以较粗粒度发布，文字显现由独立的帧时钟连续推进。
         // 这与 Kimi 将流式数据和视觉动画分层的做法一致。
         const val STREAM_UI_UPDATE_INTERVAL_MS = 80L

@@ -465,7 +465,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                     enterFinalState(
                         AgentOverlayState(
                             phase = AgentOverlayPhase.FAILED,
-                            status = if (result.error == "已停止") {
+                            status = if (result.error == AgentRuntimeWire.STOPPED_ERROR_MESSAGE) {
                                 AgentOverlayStatus.Stopped
                             } else {
                                 AgentOverlayStatus.RunFailed
@@ -688,7 +688,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                     runId = runId,
                     ok = false,
                     content = "",
-                    error = "已停止",
+                    error = AgentRuntimeWire.STOPPED_ERROR_MESSAGE,
                 ),
             )
             return

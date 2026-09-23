@@ -533,7 +533,7 @@ internal class AgentLocalTools(
     private fun worldRecall(args: JSONObject): String {
         val query = args.optString("query").trim()
         if (query.isBlank()) {
-            return errorResult("INVALID_ARGUMENT", "query 不能为空：请给出要检索的关键词。").toString()
+            return errorResult("INVALID_ARGUMENT", "query 不能为空：请给出要检索的关键词。")
         }
         val limit = args.optInt("limit", WorldKnowledgeStore.DEFAULT_SEARCH_LIMIT)
             .coerceIn(1, MAX_WORLD_RECALL_LIMIT)

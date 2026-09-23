@@ -35,6 +35,19 @@ internal object AgentRuntimeWire {
     const val OP_REWRITE_REPLY = "rewrite_reply"
     const val AGENT_UI_HANDOFF_SOURCE = "agent_ui"
 
+    /**
+     * 用户主动取消运行时的 [RunResult.error] 哨兵值。
+     *
+     * 放在 wire 层而不是 UI 层，是因为**写入方在 runtime 进程、读取方在入口进程**，
+     * 两侧必须指向同一个常量。此前 runtime 侧写的是裸字面量、UI 侧另有一份
+     * `LEGACY_STOPPED_ERROR`（名字叫 legacy，实际是活代码），改文案就会静默
+     * 破坏「已停止」判定——这正是收敛到单一常量的原因。
+     *
+     * 它同时充当展示文案：非停止路径会把 `error` 作为失败详情展示；
+     * 停止路径不展示它，只把它当判定依据。
+     */
+    const val STOPPED_ERROR_MESSAGE = "已停止"
+
     internal class PayloadTooLargeException(sizeBytes: Int) : IllegalArgumentException(
         "Agent Runtime 请求元数据过大（$sizeBytes bytes）；请缩短输入或会话历史后重试"
     )
