@@ -5,6 +5,11 @@ on:
     branches:
       - sta
   workflow_dispatch:
+    inputs:
+      build_number:
+        description: "发版构建号（versionName 里 sta-asN 的 N）。留空则用 GitHub run number —— 日常验证构建走这条。"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -115,9 +120,9 @@ jobs:
           ETA_RELEASE_KEY_PASSWORD: ${{ secrets.ETA_RELEASE_KEY_PASSWORD }}
         run: |
           if [[ "${{ steps.signing.outputs.available }}" == "true" ]]; then
-            ./gradlew --no-daemon --build-cache -PetaBuildNumber="${{ github.run_number }}" :app:assembleRelease
+            ./gradlew --no-daemon --build-cache -PetaBuildNumber="${{ github.event.inputs.build_number || github.run_number }}" :app:assembleRelease
           else
-            ./gradlew --no-daemon --build-cache -PetaBuildNumber="${{ github.run_number }}" :app:assembleDebug
+            ./gradlew --no-daemon --build-cache -PetaBuildNumber="${{ github.event.inputs.build_number || github.run_number }}" :app:assembleDebug
           fi
 
       - name: 验证并整理 APK
