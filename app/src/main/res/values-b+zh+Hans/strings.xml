@@ -293,7 +293,6 @@
   <string name="ui_linux_tool_environment_314d22">Linux 工具环境</string>
   <string name="ui_the_entire_contents_of_memory_md_will_be_deleted_and_83a8ac">MEMORY.md 的全部内容将被删除，记忆开关保持当前状态。</string>
   <string name="ui_provider_does_not_exist_83cee6">Provider 不存在</string>
-  <string name="ui_search_in_one_turn_179584">一圈即搜</string>
   <string name="ui_contextual_usage_d12810">上下文用量</string>
   <string name="ui_context_length_tokens_227860">上下文窗口（tokens）</string>
   <string name="ui_only_take_over_with_agent_prefix_d17556">仅以 /agent 前缀接管</string>
@@ -313,7 +312,6 @@
   <string name="ui_delete_model_cf24da">删除模型</string>
   <string name="ui_delete_user_skills_f319a9">删除 Skill</string>
   <string name="ui_delete_this_conversation_3f351b">删除这轮对话</string>
-  <string name="ui_long_press_with_two_fingers_to_trigger_a_circle_sear_ab597a">双指长按触发一圈即搜</string>
   <string name="ui_cancel_edit_c698df">取消编辑</string>
   <string name="ui_available_capacity_743337">可用能力</string>
   <string name="ui_optional_tools_3097d6">可选工具</string>
@@ -342,7 +340,6 @@
   <string name="ui_restore_automatic_8d4e1e">恢复自动</string>
   <string name="ui_floating_window_permissions_076b77">悬浮窗权限</string>
   <string name="ui_manually_fill_in_the_display_name_and_model_id_077a7b">手动填写展示名称与 Model ID</string>
-  <string name="ui_long_press_on_the_gesture_bar_triggers_a_circle_to_s_b80117">手势条长按触发一圈即搜</string>
   <string name="ui_open_current_browser_58358e">打开当前浏览器</string>
   <string name="ui_open_wechat_6b2c28">打开微信</string>
   <string name="ui_search_provider_74e049">搜索提供商</string>
@@ -1168,21 +1165,6 @@
   <string name="data_backup_imported">已导入 %1$d 个对话和 %2$d 个模型提供商</string>
   <string name="data_backup_failed">备份操作失败</string>
   <string name="data_backup_file_open_failed">无法打开所选文件</string>
-  <string name="ui_balance_section_title">余额查询</string>
-  <string name="ui_balance_info_title">显示账户余额</string>
-  <string name="ui_balance_info_summary">在供应商页进入或手动刷新时查询，不做后台定时轮询</string>
-  <string name="ui_balance_preset">查询方式</string>
-  <string name="ui_balance_preset_custom">自定义</string>
-  <string name="ui_balance_preset_new_api">New API</string>
-  <string name="ui_balance_preset_custom_summary">自行填写查询路径与结果取值表达式</string>
-  <string name="ui_balance_preset_new_api_summary">按 New API 中转站接口自动查询，只需填访问令牌</string>
-  <string name="ui_balance_access_token">访问令牌 (Access Token)</string>
-  <string name="ui_balance_access_token_summary">New API 用户令牌，留空则使用该供应商的 API Key</string>
-  <string name="ui_balance_api_path">余额接口路径</string>
-  <string name="ui_balance_result_path">结果取值路径</string>
-  <string name="ui_balance_result_path_summary">从返回 JSON 取值的路径，支持四则运算，如 data.quota / 500000 或 total - used</string>
-  <string name="ui_balance_test_missing_fields">请先填写余额接口路径和结果取值路径</string>
-  <string name="ui_test_balance">测试余额查询</string>
   <string name="stats_page_title">用量统计</string>
   <string name="stats_page_heatmap_title">对话热力图</string>
   <string name="stats_page_heatmap_less">少</string>
