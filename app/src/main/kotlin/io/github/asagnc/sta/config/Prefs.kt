@@ -27,9 +27,6 @@ internal object Prefs {
     /** 所有功能开关 key。默认值按功能风险独立定义。 */
     object Keys {
         const val POWER_KEY_ASSISTANT_TARGET = "power_key_assistant_target"
-        const val ASSISTANT_AUTO_CONFIG = "assistant_auto_config"
-        const val AGENT_CUSTOM_MODEL = "agent_custom_model"
-        const val AGENT_REQUIRE_PREFIX = "agent_require_prefix"
         const val AGENT_TERMINAL_TOOLS = "agent_terminal_tools"
         const val AGENT_BROWSER_TOOLS = "agent_browser_tools"
         const val AGENT_DEVICE_DIRECT_TOOLS = "agent_device_direct_tools"
@@ -48,9 +45,6 @@ internal object Prefs {
 
         /** 全部布尔开关及其默认值。 */
         val BOOLEAN_DEFAULTS: Map<String, Boolean> = mapOf(
-            ASSISTANT_AUTO_CONFIG to false,
-            AGENT_CUSTOM_MODEL to true,
-            AGENT_REQUIRE_PREFIX to false,
             AGENT_TERMINAL_TOOLS to true,
             AGENT_BROWSER_TOOLS to true,
             AGENT_DEVICE_DIRECT_TOOLS to true,
@@ -124,15 +118,6 @@ internal object Prefs {
 
     fun getString(key: String): String {
         return remote?.getString(key, "") ?: ""
-    }
-
-    fun powerAssistantTarget(): PowerAssistantTarget = powerAssistantTarget(remote)
-
-    fun powerAssistantTarget(preferences: SharedPreferences?): PowerAssistantTarget {
-        val persistedValue = runCatching {
-            preferences?.getString(Keys.POWER_KEY_ASSISTANT_TARGET, null)
-        }.getOrNull()
-        return PowerAssistantTarget.resolve(persistedValue)
     }
 
     /**

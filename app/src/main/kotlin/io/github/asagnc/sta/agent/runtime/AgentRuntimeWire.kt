@@ -34,7 +34,6 @@ internal object AgentRuntimeWire {
     const val OP_COMPACT = "compact"
     const val OP_REWRITE_REPLY = "rewrite_reply"
     const val AGENT_UI_HANDOFF_SOURCE = "agent_ui"
-    const val ETA_VOICE_HANDOFF_SOURCE = "eta_voice"
 
     internal class PayloadTooLargeException(sizeBytes: Int) : IllegalArgumentException(
         "Agent Runtime 请求元数据过大（$sizeBytes bytes）；请缩短输入或会话历史后重试"
@@ -137,9 +136,6 @@ internal object AgentRuntimeWire {
     private const val KEY_HANDOFF_ID = "handoff_id"
     private const val KEY_HANDOFF_SOURCE = "handoff_source"
     private const val KEY_HANDOFF_PAYLOAD = "handoff_payload"
-    private const val KEY_HANDOFF_DISMISS_ENTRY_SURFACE_ON_FOREGROUND_OPERATION =
-        "handoff_dismiss_entry_surface_on_foreground_operation"
-    private const val LEGACY_BREENO_HANDOFF_SOURCE = "breeno"
     private const val KEY_CREATED_AT = "created_at"
     private const val KEY_RESULTS = "results"
     private const val MAX_RESULT_CONTENT_CHARS = 64_000
@@ -224,7 +220,6 @@ internal object AgentRuntimeWire {
         val id: String,
         val source: String,
         val payload: String,
-        val dismissEntrySurfaceOnForegroundOperation: Boolean = false
     )
 
     data class CompletedRun(
@@ -479,10 +474,6 @@ internal object AgentRuntimeWire {
         putString(KEY_HANDOFF_ID, handoff.id)
         putString(KEY_HANDOFF_SOURCE, handoff.source)
         putString(KEY_HANDOFF_PAYLOAD, handoff.payload)
-        putBoolean(
-            KEY_HANDOFF_DISMISS_ENTRY_SURFACE_ON_FOREGROUND_OPERATION,
-            handoff.dismissEntrySurfaceOnForegroundOperation
-        )
     }
 
     fun entryHandoffFromBundle(bundle: Bundle): EntryHandoff {
@@ -491,13 +482,6 @@ internal object AgentRuntimeWire {
             id = bundle.getString(KEY_HANDOFF_ID).orEmpty(),
             source = source,
             payload = bundle.getString(KEY_HANDOFF_PAYLOAD).orEmpty(),
-            dismissEntrySurfaceOnForegroundOperation = if (
-                bundle.containsKey(KEY_HANDOFF_DISMISS_ENTRY_SURFACE_ON_FOREGROUND_OPERATION)
-            ) {
-                bundle.getBoolean(KEY_HANDOFF_DISMISS_ENTRY_SURFACE_ON_FOREGROUND_OPERATION)
-            } else {
-                source == LEGACY_BREENO_HANDOFF_SOURCE
-            }
         )
     }
 

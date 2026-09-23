@@ -34,7 +34,6 @@ import io.github.asagnc.sta.agent.tool.AgentToolRequirements
 import io.github.asagnc.sta.agent.tool.AgentToolCapabilities
 import io.github.asagnc.sta.agent.tool.PendingSkillConflictCapabilityParser
 import io.github.asagnc.sta.agent.tool.ToolExecutionDecision
-import io.github.asagnc.sta.agent.voice.StaAssistantOverlayService
 import io.github.asagnc.sta.core.AndroidAgentLogger
 import io.github.asagnc.sta.core.safeLogType
 import io.github.asagnc.sta.data.repository.AgentMemoryRepository
@@ -54,7 +53,7 @@ internal class AgentRuntimeRunExecutor(
     context: Context,
     private val currentPermissions: () -> AgentRuntimePolicy.Permissions,
     private val snapshotRequest: (AgentRuntimeWire.RunRequest) -> AgentRuntimeWire.RunRequest,
-    private val onAcceptedEvent: (AgentEvent, EntrySurfaceGuard?) -> Unit,
+    private val onAcceptedEvent: (AgentEvent) -> Unit,
     private val persistArtifacts: (
         AgentRuntimeWire.RunRequest,
         AgentRuntimeWire.RunResult,
@@ -63,7 +62,6 @@ internal class AgentRuntimeRunExecutor(
 ) {
     data class Outcome(
         val result: AgentRuntimeWire.RunResult,
-        val entrySurfaceGuard: EntrySurfaceGuard?,
         val completedRequest: AgentRuntimeWire.RunRequest? = null,
         val response: AgentModelClient.ModelResponse.Text? = null,
         val shouldUpdateHost: Boolean,
@@ -89,7 +87,6 @@ internal class AgentRuntimeRunExecutor(
         // run 启动点已经保证了 appContext 可用，且观测库本来就在这条路径上被使用。
         WorldGraphStore.backfillScope(appContext, WORKSPACE_ROOT)
         val archivedEvents = mutableListOf<AgentEvent>()
-        var entrySurfaceGuard: EntrySurfaceGuard? = null
         var toolExecutor: AutoCloseable? = null
         var localTools: AgentLocalTools? = null
         val mailbox = SubAgentMailbox(StaDatabase.get(appContext))
@@ -101,13 +98,6 @@ internal class AgentRuntimeRunExecutor(
 
         val result = try {
             checkpointRecorder = AgentRunCheckpointRecorder.create(appContext, request)
-            entrySurfaceGuard = EntrySurfaceGuard.from(
-                handoff = request.handoff,
-                logger = AndroidAgentLogger,
-                etaVoiceSurfaceDismissal = {
-                    StaAssistantOverlayService.dismissForForegroundOperation(appContext)
-                },
-            )
             val skillIndexService = SkillRuntime.createIndexService(appContext)
             val skillLoader = SkillRuntime.createLoader(appContext)
             val skillResourceReader = SkillRuntime.createResourceReader(appContext)
@@ -188,7 +178,6 @@ internal class AgentRuntimeRunExecutor(
                         session,
                         event,
                         archivedEvents,
-                        entrySurfaceGuard,
                         checkpointRecorder,
                     )
                 },
@@ -322,33 +311,20 @@ internal class AgentRuntimeRunExecutor(
                     runBlocking { AgentMemoryRepository.isEnabled() }
                 },
                 memoryWritable = roleplayContext == null,
-                screenshotExcludedPackages = {
-                    entrySurfaceGuard?.consumeScreenshotExcludedPackages().orEmpty()
-                },
+                screenshotExcludedPackages = { emptySet() },
                 beforeToolExecution = { toolName ->
                     val requiresAccessibility =
                         AgentToolRequirements.requiresAccessibility(toolName)
-                    if (
-                        !requiresAccessibility &&
-                        !AgentOverlayVisibilityPolicy.requiresEntrySurfaceDismissal(toolName)
-                    ) {
+                    if (!requiresAccessibility) {
                         ToolExecutionDecision.Allow
                     } else {
-                        val accessibility = if (requiresAccessibility) {
+                        val accessibility =
                             AgentAccessibilityKeeper.ensureEnabledForGuiOperation(appContext)
-                        } else {
-                            null
-                        }
                         when {
                             accessibility != null && !accessibility.available ->
                                 ToolExecutionDecision.Reject(
                                     code = accessibility.code,
                                     message = accessibility.message,
-                                )
-                            entrySurfaceGuard?.dismissOnce() == false ->
-                                ToolExecutionDecision.Reject(
-                                    code = "ENTRY_SURFACE_NOT_READY",
-                                    message = "入口窗口关闭未完成；本次工具未执行，请勿在当前任务中重复调用",
                                 )
                             else -> ToolExecutionDecision.Allow
                         }
@@ -371,7 +347,6 @@ internal class AgentRuntimeRunExecutor(
                         session,
                         AgentEvent.TaskPlanUpdated(planJson),
                         archivedEvents,
-                        entrySurfaceGuard,
                         checkpointRecorder,
                     )
                 },
@@ -382,7 +357,6 @@ internal class AgentRuntimeRunExecutor(
                         session,
                         AgentEvent.PlanUpdated(planJson),
                         archivedEvents,
-                        entrySurfaceGuard,
                         checkpointRecorder,
                     )
                 },
@@ -462,7 +436,6 @@ internal class AgentRuntimeRunExecutor(
                         session,
                         event,
                         archivedEvents,
-                        entrySurfaceGuard,
                         checkpointRecorder,
                     )
                 },
@@ -501,7 +474,6 @@ internal class AgentRuntimeRunExecutor(
                         session,
                         event,
                         archivedEvents,
-                        entrySurfaceGuard,
                         checkpointRecorder,
                     )
                 }.onFailure { checkpointFailure ->
@@ -544,7 +516,6 @@ internal class AgentRuntimeRunExecutor(
             }
             return Outcome(
                 result = result,
-                entrySurfaceGuard = entrySurfaceGuard,
                 shouldUpdateHost = true,
             )
         }
@@ -572,7 +543,6 @@ internal class AgentRuntimeRunExecutor(
         }
         return Outcome(
             result = result,
-            entrySurfaceGuard = entrySurfaceGuard,
             completedRequest = completedRequest.takeIf { committed },
             response = response.takeIf { committed },
             shouldUpdateHost = committed,
@@ -583,7 +553,6 @@ internal class AgentRuntimeRunExecutor(
         session: AgentRuntimeSession,
         event: AgentEvent,
         archivedEvents: MutableList<AgentEvent>,
-        entrySurfaceGuard: EntrySurfaceGuard?,
         checkpointRecorder: AgentRunCheckpointRecorder?,
     ) {
         checkpointRecorder?.accept(event)
@@ -594,7 +563,7 @@ internal class AgentRuntimeRunExecutor(
         } else if (event !is AgentEvent.AssistantBlockDelta) {
             AndroidAgentLogger.debug { "Agent runtime event: ${event.toLogLine()}" }
         }
-        runCatching { onAcceptedEvent(event, entrySurfaceGuard) }
+        runCatching { onAcceptedEvent(event) }
             .onFailure { throwable ->
                 AndroidAgentLogger.warnThrottled("runtime_event_projection_failed") {
                     "Agent runtime event projection failed: type=${throwable.safeLogType()}"

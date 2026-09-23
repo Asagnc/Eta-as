@@ -66,58 +66,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".agent.voice.StaVoiceAssistActivity"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:noHistory="true"
-            android:process=":voice"
-            android:showWhenLocked="true"
-            android:theme="@style/Theme.StaVoiceAssistBridge">
-            <intent-filter>
-                <action android:name="android.intent.action.ASSIST" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-
-        <service
-            android:name=".agent.voice.StaVoiceInteractionService"
-            android:exported="true"
-            android:label="@string/voice_interaction_service_label"
-            android:permission="android.permission.BIND_VOICE_INTERACTION"
-            android:process=":voice">
-            <intent-filter>
-                <action android:name="android.service.voice.VoiceInteractionService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.voice_interaction"
-                android:resource="@xml/voice_interaction_service" />
-        </service>
-
-        <service
-            android:name=".agent.voice.StaVoiceInteractionSessionService"
-            android:exported="true"
-            android:permission="android.permission.BIND_VOICE_INTERACTION"
-            android:process=":voice_session" />
-
-        <service
-            android:name=".agent.voice.StaRecognitionService"
-            android:exported="true"
-            android:label="@string/recognition_service_label"
-            android:permission="android.permission.BIND_SPEECH_RECOGNITION_SERVICE"
-            android:process=":recognition">
-            <intent-filter>
-                <action android:name="android.speech.RecognitionService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.speech"
-                android:resource="@xml/recognition_service" />
-        </service>
-
-        <service
-            android:name=".agent.voice.StaAssistantOverlayService"
-            android:exported="false" />
-
         <service
             android:name=".agent.runtime.AgentRuntimeService"
             android:exported="true"

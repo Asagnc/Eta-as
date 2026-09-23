@@ -84,7 +84,6 @@ internal object AgentRunArchiveStore {
             handoffId = handoff.id,
             handoffSource = handoff.source,
             handoffPayload = handoff.payload,
-            dismissEntrySurface = handoff.dismissEntrySurfaceOnForegroundOperation,
             ok = result.ok,
             content = result.content,
             error = result.error,
@@ -113,7 +112,6 @@ internal object AgentRunArchiveStore {
                     id = run.handoffId,
                     source = run.handoffSource,
                     payload = run.handoffPayload,
-                    dismissEntrySurfaceOnForegroundOperation = run.dismissEntrySurface,
                 ),
                 result = AgentRuntimeWire.RunResult(
                     runId = run.runId.ifBlank { run.archiveRunId },

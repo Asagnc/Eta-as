@@ -266,15 +266,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         pendingStartRequest = pending
         thread(name = "agent-runtime-image-ingest") {
             val prepared = runCatching {
-                val request = AgentRuntimeImageTransfer.materialize(incoming)
-                if (!AgentRuntimeRequestConfigResolver.requiresRuntimeConfig(request)) {
-                    request
-                } else {
-                    val runtimeConfig = runBlocking {
-                        RuntimeConfigRepository.currentRuntimeConfig()
-                    } ?: throw RuntimeConfigUnavailableException()
-                    AgentRuntimeRequestConfigResolver.applyRuntimeConfig(request, runtimeConfig)
-                }
+                AgentRuntimeImageTransfer.materialize(incoming)
             }
             mainHandler.post {
                 if (generation != startRequestGeneration || pendingStartRequest !== pending) return@post
@@ -377,8 +369,8 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
             context = this,
             currentPermissions = ::currentRuntimePermissions,
             snapshotRequest = { it.withActiveSupplements() },
-            onAcceptedEvent = { event, entrySurfaceGuard ->
-                handleAcceptedRunEvent(session, event, entrySurfaceGuard)
+            onAcceptedEvent = { event ->
+                handleAcceptedRunEvent(session, event)
             },
             persistArtifacts = ::persistRunArtifacts,
         ).execute(session, request)
@@ -386,7 +378,6 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         postTerminalOverlay(
             session = session,
             result = outcome.result,
-            entrySurfaceGuard = outcome.entrySurfaceGuard,
             completedContext = outcome.response?.let { completedResponse ->
                 outcome.completedRequest?.let { completedRequest ->
                     CompletedRunContext(
@@ -402,17 +393,10 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     private fun handleAcceptedRunEvent(
         session: AgentRuntimeSession,
         event: AgentEvent,
-        entrySurfaceGuard: EntrySurfaceGuard?,
     ) {
         if (activeSession !== session) return
         val revealsForegroundOperation = AgentOverlayVisibilityPolicy.shouldRevealFor(event)
-        val requiresEntrySurfaceDismissal =
-            AgentOverlayVisibilityPolicy.shouldDismissEntrySurfaceFor(event)
-        val entrySurfaceReady = if (requiresEntrySurfaceDismissal && entrySurfaceGuard != null) {
-            runCatching { entrySurfaceGuard.dismissOnce() }.getOrDefault(false)
-        } else {
-            true
-        }
+        val entrySurfaceReady = true
         mainHandler.post {
             if (activeSession !== session) return@post
             if (
@@ -461,7 +445,6 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     private fun postTerminalOverlay(
         session: AgentRuntimeSession,
         result: AgentRuntimeWire.RunResult,
-        entrySurfaceGuard: EntrySurfaceGuard?,
         completedContext: CompletedRunContext? = null,
     ) {
         mainHandler.post {
@@ -476,7 +459,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                             status = AgentOverlayStatus.ResultReady,
                             detailText = result.content.trim().ifBlank { state.value.detailText },
                         ),
-                        keepVisible = entrySurfaceGuard?.wasTriggered == true,
+                        keepVisible = false,
                     )
                 } else {
                     enterFinalState(
@@ -489,7 +472,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                             },
                             detailText = result.error.orEmpty(),
                         ),
-                        keepVisible = entrySurfaceGuard?.wasTriggered == true,
+                        keepVisible = false,
                     )
                 }
             }.onFailure { throwable ->
@@ -653,19 +636,6 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
     ) {
         val handoff = request.handoff ?: return
         AgentExternalArchivePayload.from(handoff.payload) ?: return
-        val userImagePreviews = if (
-            handoff.source == AgentRuntimeWire.ETA_VOICE_HANDOFF_SOURCE
-        ) {
-            request.images
-                .asSequence()
-                .take(MAX_ARCHIVED_USER_IMAGE_PREVIEWS)
-                .mapNotNull { image ->
-                    AgentImageCodec.previewFromReference(this, image)?.reference
-                }
-                .toList()
-        } else {
-            emptyList()
-        }
         AgentRunArchiveStore.add(
             this,
             AgentRunArchiveStore.ArchivedRun(
@@ -673,7 +643,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
                 events = events,
                 result = result,
                 createdAt = System.currentTimeMillis(),
-                userImagePreviews = userImagePreviews,
+                userImagePreviews = emptyList(),
             )
         )
     }
@@ -1090,14 +1060,8 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
         stopSelf()
     }
 
-    private fun isMessageSenderAllowed(msg: Message): Boolean {
-        val uid = msg.sendingUid
-        if (uid == Process.myUid()) return true
-        val packages = runCatching {
-            packageManager.getPackagesForUid(uid)
-        }.getOrNull().orEmpty()
-        return packages.any { it in ModuleConfig.AGENT_RUNTIME_ENTRY_PACKAGES }
-    }
+    private fun isMessageSenderAllowed(msg: Message): Boolean =
+        msg.sendingUid == Process.myUid()
 
     private fun isNightMode(): Boolean {
         val mode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK

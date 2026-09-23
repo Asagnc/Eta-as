@@ -10,11 +10,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import io.github.asagnc.sta.agent.voice.StaAssistantOverlayService
 import io.github.asagnc.sta.data.model.AppearanceThemeMode
 import io.github.asagnc.sta.data.repository.AppearanceSettingsRepository
 import io.github.asagnc.sta.ui.app.AgentAppRoot
@@ -24,7 +21,6 @@ import io.github.asagnc.sta.ui.app.installStartupSplash
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-    private var assistantConversationKey by mutableStateOf<String?>(null)
     private var appliedPredictiveBackEnabled = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,7 +28,6 @@ class MainActivity : ComponentActivity() {
         var contentReady = false
         installStartupSplash { contentReady }
         enableEdgeToEdge()
-        updateAssistantHandoff(intent)
         lifecycleScope.launch {
             val initialAppearance = AppearanceSettingsRepository.settings()
             appliedPredictiveBackEnabled = initialAppearance.predictiveBackEnabled
@@ -59,15 +54,7 @@ class MainActivity : ComponentActivity() {
                     applyInterfaceScale = true,
                     onResolvedDarkModeChange = ::updateSystemBars,
                 ) {
-                    AgentAppRoot(
-                        assistantConversationKey = assistantConversationKey,
-                        onAssistantConversationOpened = { opened ->
-                            assistantConversationKey = null
-                            if (opened) {
-                                StaAssistantOverlayService.notifyHandoffReady(this@MainActivity)
-                            }
-                        },
-                    )
+                    AgentAppRoot()
                 }
             }
             contentReady = true
@@ -77,14 +64,6 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        updateAssistantHandoff(intent)
-    }
-
-    private fun updateAssistantHandoff(intent: Intent?) {
-        if (intent?.action != StaAssistantOverlayService.ACTION_OPEN_CONVERSATION) return
-        assistantConversationKey = intent.getStringExtra(
-            StaAssistantOverlayService.EXTRA_CONVERSATION_KEY,
-        )?.takeIf(String::isNotBlank)
     }
 
     private fun updateApplicationNightMode(themeMode: AppearanceThemeMode) {

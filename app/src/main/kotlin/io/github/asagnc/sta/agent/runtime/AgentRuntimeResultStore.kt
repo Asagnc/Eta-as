@@ -47,7 +47,7 @@ internal object AgentRuntimeResultStore {
     fun pendingPage(context: Context): List<AgentRuntimeWire.CompletedRun> = runBlocking(Dispatchers.IO) {
         StaDatabase.get(context.applicationContext).runtimeRunDao().pendingResultHeaders(8).map { header ->
             AgentRuntimeWire.CompletedRun(
-                AgentRuntimeWire.EntryHandoff(header.handoffId, header.handoffSource, header.handoffPayload, header.dismissEntrySurface),
+                AgentRuntimeWire.EntryHandoff(header.handoffId, header.handoffSource, header.handoffPayload),
                 AgentRuntimeWire.RunResult(header.runId, header.ok, "", contextSnapshotRef = header.runId,
                     operation = header.operation, rewriteTargetMessageId = header.rewriteTargetMessageId),
                 header.createdAt,
@@ -95,7 +95,6 @@ internal object AgentRuntimeResultStore {
             handoffId = handoff.id,
             handoffSource = handoff.source,
             handoffPayload = handoff.payload,
-            dismissEntrySurface = handoff.dismissEntrySurfaceOnForegroundOperation,
             ok = result.ok,
             content = result.content,
             error = result.error,
@@ -114,7 +113,6 @@ internal object AgentRuntimeResultStore {
                 id = handoffId,
                 source = handoffSource,
                 payload = handoffPayload,
-                dismissEntrySurfaceOnForegroundOperation = dismissEntrySurface,
             ),
             result = AgentRuntimeWire.RunResult(
                 runId = runId,

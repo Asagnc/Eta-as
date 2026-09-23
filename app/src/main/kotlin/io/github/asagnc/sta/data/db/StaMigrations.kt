@@ -22,7 +22,7 @@ internal object StaMigrations {
      * `@Database(version = ...)` 取这里，所以"改版本号"与"改迁移链"不可能分头进行：
      * 只要 [ALL] 没跟着接到新版本，`StaMigrationsChainTest` 就会失败。
      */
-    const val CURRENT_VERSION = 29
+    const val CURRENT_VERSION = 30
 
     /** 子智能体的消耗样本：用于按历史分位数评估后续委派的 token 预算。 */
     internal val MIGRATION_24_25 = Migration(24, 25) { database ->
@@ -85,6 +85,13 @@ internal object StaMigrations {
         database.execSQL(
             "ALTER TABLE `conversations` ADD COLUMN `plan_json` TEXT NOT NULL DEFAULT ''",
         )
+    }
+
+    /** 移除外部入口（数字助理）的「前台操作前收起入口浮窗」标记。该机制随助理子系统一起删除。 */
+    internal val MIGRATION_29_30 = Migration(29, 30) { database ->
+        database.execSQL("ALTER TABLE runtime_results DROP COLUMN dismiss_entry_surface")
+        database.execSQL("ALTER TABLE runtime_archive_runs DROP COLUMN dismiss_entry_surface")
+        database.execSQL("ALTER TABLE runtime_inflight_runs DROP COLUMN dismiss_entry_surface")
     }
 
     internal val MIGRATION_19_20 = Migration(19, 20) { database ->
@@ -326,6 +333,7 @@ internal object StaMigrations {
         MIGRATION_26_27,
         MIGRATION_27_28,
         MIGRATION_28_29,
+        MIGRATION_29_30,
         MIGRATION_19_20,
         MIGRATION_20_21,
         MIGRATION_23_24,

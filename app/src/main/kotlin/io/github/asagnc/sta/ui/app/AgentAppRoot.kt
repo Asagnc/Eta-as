@@ -95,10 +95,7 @@ import top.yukonga.miuix.kmp.window.WindowDialog
  * Agent App 根组件：持有本地导航栈，并把 Screen actions 交给 [AgentAppState]。
  */
 @Composable
-fun AgentAppRoot(
-    assistantConversationKey: String? = null,
-    onAssistantConversationOpened: (Boolean) -> Unit = {},
-) {
+fun AgentAppRoot() {
     val context = LocalContext.current
     val uiScope = rememberCoroutineScope()
     val backStack = rememberNavBackStack<AppRoute>(AppRoute.Home)
@@ -167,15 +164,6 @@ fun AgentAppRoot(
 
     LaunchedEffect(Unit) {
         RuntimeConfigRepository.ensureDefaults(StaApp.serviceInstance)
-    }
-
-    LaunchedEffect(assistantConversationKey) {
-        val conversationKey = assistantConversationKey ?: return@LaunchedEffect
-        val opened = agentState.openAssistantConversation(conversationKey)
-        if (opened) {
-            navigator.replace(AppRoute.Chat)
-        }
-        onAssistantConversationOpened(opened)
     }
 
     fun pushRoute(

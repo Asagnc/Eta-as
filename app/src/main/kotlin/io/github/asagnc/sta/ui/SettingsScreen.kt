@@ -55,7 +55,6 @@ import io.github.asagnc.sta.StaApp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.agent.accessibility.AccessibilityProtectionClient
 import io.github.asagnc.sta.agent.accessibility.AgentAccessibilityService
-import io.github.asagnc.sta.config.PowerAssistantTarget
 import io.github.asagnc.sta.config.Prefs
 import io.github.asagnc.sta.data.repository.ProviderRepository
 import io.github.asagnc.sta.data.repository.RuntimeConfigRepository
@@ -122,14 +121,6 @@ private fun SettingsPageContent(
         mutableStateOf(AccessibilityProtectionClient.isEnabled(context))
     }
     var accessibilityProtectionPending by remember { mutableStateOf(false) }
-    val openAssistantSettings: () -> Unit = {
-        val failed = runCatching {
-            context.startActivity(Intent(Settings.ACTION_VOICE_INPUT_SETTINGS))
-        }.isFailure
-        if (failed) {
-            Toast.makeText(context, context.getString(R.string.settings_open_assistant_failed), Toast.LENGTH_SHORT).show()
-        }
-    }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -164,19 +155,6 @@ private fun SettingsPageContent(
     // LSPosed 数据库）；未就绪时保持 null，UI 禁止修改。
     var prefs by remember { mutableStateOf(Prefs.remotePreferencesForUi(StaApp.serviceInstance)) }
     val agentPrefs = remember { Prefs.localAgentPreferences() }
-    var powerAssistantTarget by remember(prefs) {
-        mutableStateOf(prefs?.let(Prefs::powerAssistantTarget) ?: enhancementHistory.powerTarget())
-    }
-    DisposableEffect(prefs) {
-        val targetPrefs = prefs ?: return@DisposableEffect onDispose {}
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { changedPrefs, key ->
-            if (key == Prefs.Keys.POWER_KEY_ASSISTANT_TARGET) {
-                powerAssistantTarget = Prefs.powerAssistantTarget(changedPrefs)
-            }
-        }
-        targetPrefs.registerOnSharedPreferenceChangeListener(listener)
-        onDispose { targetPrefs.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
     DisposableEffect(Unit) {
         val listener = object : StaApp.ServiceStateListener {
             override fun onServiceStateChanged(service: io.github.libxposed.service.XposedService?) {
@@ -193,10 +171,6 @@ private fun SettingsPageContent(
         }
         StaApp.addServiceStateListener(listener, notifyImmediately = true)
         onDispose { StaApp.removeServiceStateListener(listener) }
-    }
-    val powerAssistantTargets = PowerAssistantTarget.entries
-    val powerAssistantItems = powerAssistantTargets.map { target ->
-        DropdownItem(text = target.displayName(context))
     }
 
     MiuixScaffoldPage(
@@ -365,96 +339,6 @@ private fun SettingsPageContent(
                         startAction = { SettingsPreferenceIcon(Icons.Rounded.Security, tint = SettingsIconColors.Blue) },
                         onClick = { onNavigate(AppRoute.SystemEnhance) },
                     )
-                }
-            }
-
-            // ── 系统助手接管 ──────────────────────────────────────────────
-            item(key = "section_assistant_takeover") {
-                SettingsGroupTitle(stringResource(R.string.ui_system_assistant_takes_over_f46043))
-                SettingsGroup {
-                    SettingsArrowPreference(
-                        title = stringResource(R.string.ui_eta_system_assistant_003e9b),
-                        startAction = {
-                            SettingsPreferenceIcon(
-                                icon = Icons.Rounded.SupportAgent,
-                                tint = SettingsIconColors.Green,
-                            )
-                        },
-                        onClick = openAssistantSettings,
-                    )
-                    if (prefs != null || hasConnectedFramework) {
-                        SettingsItemDivider()
-                        SettingsDropdownPreference(
-                            title = stringResource(R.string.ui_long_press_the_power_button_1958d0),
-                            items = powerAssistantItems,
-                            selectedIndex = powerAssistantTargets.indexOf(powerAssistantTarget),
-                            onSelectedIndexChange = { index ->
-                                val target = powerAssistantTargets.getOrNull(index)
-                                    ?: return@SettingsDropdownPreference
-                                val targetPrefs = prefs ?: return@SettingsDropdownPreference
-                                if (putStringSync(
-                                        prefs = targetPrefs,
-                                        key = Prefs.Keys.POWER_KEY_ASSISTANT_TARGET,
-                                        value = target.persistedValue,
-                                    )
-                                ) {
-                                    powerAssistantTarget = target
-                                    enhancementHistory.recordCommittedTarget(target)
-                                } else {
-                                    Toast.makeText(
-                                        context.applicationContext,
-                                        context.getString(R.string.settings_write_failed),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                                }
-                            },
-                            startAction = {
-                                SettingsPreferenceIcon(
-                                    icon = Icons.Rounded.PowerSettingsNew,
-                                    tint = SettingsIconColors.Yellow,
-                                    enabled = prefs != null,
-                                )
-                            },
-                            enabled = prefs != null,
-                        )
-
-                        SettingsItemDivider()
-                        SwitchPref(
-                            context = context,
-                            prefs = prefs,
-                            title = stringResource(R.string.ui_automatically_set_default_assistant_f86963),
-                            key = Prefs.Keys.ASSISTANT_AUTO_CONFIG,
-                            icon = Icons.Rounded.Settings,
-                            iconTint = SettingsIconColors.Green,
-                        )
-                    }
-                }
-            }
-
-            if (prefs != null || hasConnectedFramework) {
-                // ── 厂商助手兼容入口 ──────────────────────────────────────────
-                item(key = "section_oem_assistant_compatibility") {
-                    SettingsGroupTitle(stringResource(R.string.ui_xiaobu_xiaoai_compatible_entrance_ae918a))
-                    SettingsGroup {
-                        SwitchPref(
-                            context = context,
-                            prefs = prefs,
-                            title = stringResource(R.string.ui_enable_vendor_assistant_custom_models_c8e465),
-                            key = Prefs.Keys.AGENT_CUSTOM_MODEL,
-                            icon = Icons.Rounded.Memory,
-                            iconTint = SettingsIconColors.Blue,
-                        )
-
-                        SettingsItemDivider()
-                        SwitchPref(
-                            context = context,
-                            prefs = prefs,
-                            title = stringResource(R.string.ui_only_take_over_with_agent_prefix_d17556),
-                            key = Prefs.Keys.AGENT_REQUIRE_PREFIX,
-                            icon = Icons.Rounded.Code,
-                            iconTint = SettingsIconColors.Blue,
-                        )
-                    }
                 }
             }
 
@@ -720,12 +604,6 @@ private fun putStringSync(
     value: String
 ): Boolean =
     runCatching { prefs.edit().putString(key, value).commit() }.getOrDefault(false)
-
-private fun PowerAssistantTarget.displayName(context: Context): String =
-    when (this) {
-        PowerAssistantTarget.OEM -> context.getString(R.string.power_assistant_system_default)
-        PowerAssistantTarget.ETA -> "Sta"
-    }
 
 private fun isAgentAccessibilityEnabled(context: Context): Boolean {
     val expected = ComponentName(

@@ -48,7 +48,6 @@ internal object AgentRunCheckpointStore {
                     handoffId = handoff.id,
                     handoffSource = handoff.source,
                     handoffPayload = handoff.payload,
-                    dismissEntrySurface = handoff.dismissEntrySurfaceOnForegroundOperation,
                     createdAt = now,
                     updatedAt = now,
                 )
@@ -95,8 +94,6 @@ internal object AgentRunCheckpointStore {
                             id = stored.run.handoffId,
                             source = stored.run.handoffSource,
                             payload = stored.run.handoffPayload,
-                            dismissEntrySurfaceOnForegroundOperation =
-                                stored.run.dismissEntrySurface,
                         ),
                         events = stored.events
                             .sortedBy { it.sortIndex }

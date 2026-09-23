@@ -574,65 +574,15 @@ class AgentRuntimeWireTest {
     }
 
     @Test
-    fun entryHandoffBundleRoundTripPreservesEntrySurfacePolicy() {
+    fun entryHandoffBundleRoundTripPreservesFields() {
         val handoff = AgentRuntimeWire.EntryHandoff(
             id = "handoff-1",
-            source = "breeno",
+            source = "app",
             payload = """{"userText":"打开微信"}""",
-            dismissEntrySurfaceOnForegroundOperation = true,
         )
 
         val roundTripped = AgentRuntimeWire.entryHandoffFromBundle(AgentRuntimeWire.toBundle(handoff))
 
         assertEquals(handoff, roundTripped)
-    }
-
-    @Test
-    fun entryHandoffDefaultsToKeepingEntrySurfaceVisible() {
-        val handoff = AgentRuntimeWire.entryHandoffFromBundle(
-            AgentRuntimeWire.toBundle(
-                AgentRuntimeWire.EntryHandoff(
-                    id = "handoff-1",
-                    source = "app",
-                    payload = "{}",
-                )
-            )
-        )
-
-        assertEquals(false, handoff.dismissEntrySurfaceOnForegroundOperation)
-    }
-
-    @Test
-    fun legacyBreenoHandoffDefaultsToDismissingEntrySurface() {
-        val bundle = AgentRuntimeWire.toBundle(
-            AgentRuntimeWire.EntryHandoff(
-                id = "handoff-1",
-                source = "breeno",
-                payload = "{}",
-            )
-        ).apply {
-            remove("handoff_dismiss_entry_surface_on_foreground_operation")
-        }
-
-        val handoff = AgentRuntimeWire.entryHandoffFromBundle(bundle)
-
-        assertEquals(true, handoff.dismissEntrySurfaceOnForegroundOperation)
-    }
-
-    @Test
-    fun legacyNonBreenoHandoffDefaultsToKeepingEntrySurfaceVisible() {
-        val bundle = AgentRuntimeWire.toBundle(
-            AgentRuntimeWire.EntryHandoff(
-                id = "handoff-1",
-                source = "app",
-                payload = "{}",
-            )
-        ).apply {
-            remove("handoff_dismiss_entry_surface_on_foreground_operation")
-        }
-
-        val handoff = AgentRuntimeWire.entryHandoffFromBundle(bundle)
-
-        assertEquals(false, handoff.dismissEntrySurfaceOnForegroundOperation)
     }
 }

@@ -9,9 +9,6 @@ class PrefsDefaultsTest {
     fun defaultsMatchRecommendedInitialSettings() {
         assertEquals(
             mapOf(
-                Prefs.Keys.ASSISTANT_AUTO_CONFIG to false,
-                Prefs.Keys.AGENT_CUSTOM_MODEL to true,
-                Prefs.Keys.AGENT_REQUIRE_PREFIX to false,
                 Prefs.Keys.AGENT_TERMINAL_TOOLS to true,
                 Prefs.Keys.AGENT_BROWSER_TOOLS to true,
                 Prefs.Keys.AGENT_DEVICE_DIRECT_TOOLS to true,
@@ -21,9 +18,6 @@ class PrefsDefaultsTest {
                 Prefs.Keys.AGENT_SUBAGENTS_ENABLED to true,
             ),
             Prefs.Keys.BOOLEAN_DEFAULTS,
-        )
-        assertFalse(
-            Prefs.Keys.BOOLEAN_DEFAULTS.containsKey(Prefs.Keys.POWER_KEY_ASSISTANT_TARGET),
         )
     }
 
