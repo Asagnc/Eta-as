@@ -56,6 +56,7 @@ import io.github.asagnc.sta.ui.components.StatusSuccess
 import io.github.asagnc.sta.ui.layout.horizontalCutoutPadding
 import io.github.asagnc.sta.ui.navigation.NewProviderType
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -119,12 +120,12 @@ internal fun ModelProviderDetailScreen(
         ) {
             item(key = "missing_provider") {
                 Column(
-                    modifier = Modifier.fillParentMaxSize().padding(24.dp),
+                    modifier = Modifier.fillParentMaxSize().padding(StaSpacing.xxl),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(stringResource(R.string.ui_provider_does_not_exist_83cee6))
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(StaSpacing.md))
                     TextButton(text = stringResource(R.string.ui_return_11d024), onClick = onBack)
                 }
             }
@@ -156,8 +157,8 @@ internal fun ModelProviderDetailScreen(
                     selectedTabIndex = currentTab,
                     onTabSelected = { currentTab = it },
                     modifier = Modifier.padding(
-                        horizontal = sidePadding + 12.dp,
-                        vertical = 8.dp,
+                        horizontal = sidePadding + StaSpacing.md,
+                        vertical = StaSpacing.sm,
                     ),
                 )
             }
@@ -226,7 +227,7 @@ private fun ProviderConfigTab(
     ) {
         item(key = "connection") {
             ProviderSection(title = stringResource(R.string.ui_connection_configuration_7d057b)) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(StaSpacing.lg)) {
                     TextField(
                         value = draft.name,
                         onValueChange = { onDraftChange(draft.copy(name = it)) },
@@ -234,7 +235,7 @@ private fun ProviderConfigTab(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(StaSpacing.md))
                     TextField(
                         value = draft.baseUrl,
                         onValueChange = { onDraftChange(draft.copy(baseUrl = it)) },
@@ -242,7 +243,7 @@ private fun ProviderConfigTab(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(StaSpacing.md))
                     TextField(
                         value = draft.apiKey,
                         onValueChange = { onDraftChange(draft.copy(apiKey = it)) },
@@ -260,7 +261,7 @@ private fun ProviderConfigTab(
                         modifier = Modifier.fillMaxWidth()
                     )
                     if (provider is AnthropicProviderSetting) {
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(StaSpacing.md))
                         TextField(
                             value = draft.anthropicVersion,
                             onValueChange = { onDraftChange(draft.copy(anthropicVersion = it)) },
@@ -268,7 +269,7 @@ private fun ProviderConfigTab(
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+                        HorizontalDivider(modifier = Modifier.padding(start = StaSpacing.lg))
                         SwitchPreference(
                             title = stringResource(R.string.provider_prompt_cache_title),
                             summary = stringResource(R.string.provider_prompt_cache_summary),
@@ -284,7 +285,7 @@ private fun ProviderConfigTab(
                     }
                 }
                 if (provider !is AnthropicProviderSetting) {
-                    HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(start = StaSpacing.lg))
                     SwitchPreference(
                         title = stringResource(R.string.provider_prompt_cache_title),
                         summary = stringResource(R.string.provider_prompt_cache_summary),
@@ -317,7 +318,7 @@ private fun ProviderConfigTab(
                         },
                     )
                     if (draft.endpointMode == OpenAiEndpointMode.RESPONSES) {
-                        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+                        HorizontalDivider(modifier = Modifier.padding(start = StaSpacing.lg))
                         SwitchPreference(
                             title = stringResource(R.string.ui_server_side_web_search_ddb8e0),
                             summary = stringResource(R.string.ui_allows_the_model_to_call_web_searches_provided_by_th_2f752f),
@@ -383,8 +384,8 @@ private fun ProviderConfigTab(
                     checked = draft.isEnabled,
                     onCheckedChange = { onDraftChange(draft.copy(isEnabled = it)) }
                 )
-                HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
-                Column(modifier = Modifier.padding(16.dp)) {
+                HorizontalDivider(modifier = Modifier.padding(start = StaSpacing.lg))
+                Column(modifier = Modifier.padding(StaSpacing.lg)) {
                     TextField(
                         value = draft.systemPrompt,
                         onValueChange = { onDraftChange(draft.copy(systemPrompt = it)) },
@@ -398,7 +399,7 @@ private fun ProviderConfigTab(
                         text = stringResource(R.string.ui_leave_blank_to_use_the_default_mobile_agent_prompt_w_21e7c8),
                         style = MiuixTheme.textStyles.footnote2,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        modifier = Modifier.padding(top = 8.dp),
+                        modifier = Modifier.padding(top = StaSpacing.sm),
                     )
                 }
             }
@@ -409,8 +410,8 @@ private fun ProviderConfigTab(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
-                    .padding(top = 12.dp),
+                    .padding(horizontal = StaSpacing.md)
+                    .padding(top = StaSpacing.md),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 TextButton(
@@ -491,7 +492,7 @@ private fun ProviderConfigTab(
                         style = MiuixTheme.textStyles.footnote2,
                         color = if (message.startsWith(context.getString(R.string.page_fail_3e3c80))) StatusError else StatusSuccess,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 8.dp),
+                        modifier = Modifier.padding(top = StaSpacing.sm),
                     )
                 }
             }
@@ -502,8 +503,8 @@ private fun ProviderConfigTab(
                 StaCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp)
-                        .padding(top = 12.dp),
+                        .padding(horizontal = StaSpacing.md)
+                        .padding(top = StaSpacing.md),
                     showIndication = true,
                     onClick = if (isWorking) {
                         null

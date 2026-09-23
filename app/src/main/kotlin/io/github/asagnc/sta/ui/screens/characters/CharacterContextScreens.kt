@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.app.CharacterLibraryStore
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.TextButton
 
@@ -21,7 +21,7 @@ internal fun CharacterPersonaScreen(store: CharacterLibraryStore, onBack: () -> 
         item(key = "persona") { CharacterTextField("身份与关系", store.personaDraft.description, { store.updatePersona(description = it) }, !store.busy, minLines = 6) }
         item(key = "save") {
             TextButton("保存人设", onClick = { store.savePersona(onBack) }, enabled = !store.busy,
-                modifier = Modifier.fillMaxWidth().padding(16.dp), colors = ButtonDefaults.textButtonColorsPrimary())
+                modifier = Modifier.fillMaxWidth().padding(StaSpacing.lg), colors = ButtonDefaults.textButtonColorsPrimary())
         }
     }
 }
@@ -34,7 +34,7 @@ internal fun CharacterMemoryScreen(id: String, store: CharacterLibraryStore, onB
             CharacterTextField("剧情与关系", store.memoryDraft, store::updateMemory, !store.busy, minLines = 10)
         }
         item(key = "actions") {
-            Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().padding(StaSpacing.lg), horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm)) {
                 TextButton("重新载入", onClick = { store.loadMemory(id, force = true) }, enabled = !store.busy, modifier = Modifier.weight(1f))
                 TextButton("保存记忆", onClick = { store.saveMemory(id) }, enabled = !store.busy, modifier = Modifier.weight(1f), colors = ButtonDefaults.textButtonColorsPrimary())
             }

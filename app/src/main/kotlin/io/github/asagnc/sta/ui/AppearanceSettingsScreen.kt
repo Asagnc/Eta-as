@@ -20,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.data.model.AppearanceAccentColor
 import io.github.asagnc.sta.data.model.AppearancePaletteStyle
@@ -35,6 +34,7 @@ import io.github.asagnc.sta.ui.app.LocalAppearanceSettings
 import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Slider
@@ -120,7 +120,7 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
             SmallTitle(text = stringResource(R.string.appearance_group_color))
         }
         item(key = "appearance_color_card") {
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md).padding(bottom = StaSpacing.md)) {
                 OverlayDropdownPreference(
                     title = stringResource(R.string.appearance_theme_mode),
                     summary = themeModeLabels[appearance.themeMode.ordinal],
@@ -185,7 +185,7 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
             SmallTitle(text = stringResource(R.string.appearance_group_interface))
         }
         item(key = "appearance_interface_card") {
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md).padding(bottom = StaSpacing.md)) {
                 SwitchPreference(
                     title = stringResource(R.string.appearance_blur),
                     summary = stringResource(R.string.appearance_blur_summary),
@@ -288,7 +288,7 @@ internal fun AppearanceSettingsScreen(onBack: () -> Unit) {
                     parsedScale?.let { commitScale(it.toFloat()) }
                     showScaleDialog = false
                 },
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier.padding(top = StaSpacing.lg),
             )
         }
     }

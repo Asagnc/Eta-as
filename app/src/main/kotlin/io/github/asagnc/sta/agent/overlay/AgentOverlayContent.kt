@@ -83,6 +83,8 @@ import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownTypography
 import com.mikepenz.markdown.model.rememberMarkdownState
 import io.github.asagnc.sta.R
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -354,8 +356,8 @@ internal fun AgentOverlayBubble(
         Card(
             modifier = Modifier
                 .widthIn(max = 136.dp),
-            cornerRadius = 16.dp,
-            insideMargin = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+            cornerRadius = StaRadius.xl,
+            insideMargin = PaddingValues(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
             colors = CardDefaults.defaultColors(
                 color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.8f)
             ),
@@ -381,7 +383,7 @@ internal fun AgentOverlayBubble(
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(StaSpacing.compact))
 
             AnimatedVisibility(
                 visible = supplementMode,
@@ -424,7 +426,7 @@ internal fun AgentOverlayBubble(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm, Alignment.CenterHorizontally),
                 ) {
                     OverlayControlButton(
                         onClick = ::enterSupplementMode,
@@ -485,7 +487,7 @@ private fun OverlayControlButton(
         backgroundColor = MiuixTheme.colorScheme.surfaceContainerHigh,
         minWidth = 32.dp,
         minHeight = 32.dp,
-        cornerRadius = 16.dp,
+        cornerRadius = StaRadius.xl,
     ) {
         Icon(
             imageVector = icon,
@@ -516,7 +518,7 @@ private fun SupplementInput(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(StaSpacing.compact),
     ) {
         Box(
             modifier = Modifier
@@ -524,7 +526,7 @@ private fun SupplementInput(
                 .heightIn(min = 44.dp, max = 112.dp)
                 .clip(RoundedCornerShape(14.dp))
                 .background(fieldBg)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
             contentAlignment = Alignment.TopStart,
         ) {
             if (value.isBlank()) {
@@ -562,16 +564,16 @@ private fun SupplementInput(
                 onClick = onCancel,
                 minWidth = 44.dp,
                 minHeight = 32.dp,
-                insideMargin = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                insideMargin = PaddingValues(horizontal = StaSpacing.compact, vertical = StaSpacing.xxs),
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(StaSpacing.sm))
             TextButton(
                 text = stringResource(R.string.overlay_send),
                 onClick = onSend,
                 enabled = value.isNotBlank(),
                 minWidth = 44.dp,
                 minHeight = 32.dp,
-                insideMargin = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                insideMargin = PaddingValues(horizontal = StaSpacing.compact, vertical = StaSpacing.xxs),
                 colors = ButtonDefaults.textButtonColorsPrimary(),
             )
         }
@@ -606,7 +608,7 @@ internal fun AgentResultCard(
         modifier = Modifier
             .fillMaxSize()
             .navigationBarsPadding()
-            .padding(start = 12.dp, end = 12.dp, bottom = 20.dp),
+            .padding(start = StaSpacing.md, end = StaRadius.lg, bottom = StaRadius.xxl),
     ) {
         AnimatedVisibility(
             visible = visible,
@@ -628,7 +630,7 @@ internal fun AgentResultCard(
                     .fillMaxWidth()
                     .heightIn(max = 360.dp)
                     .shadow(8.dp, RoundedCornerShape(CardDefaults.CornerRadius)),
-                insideMargin = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+                insideMargin = PaddingValues(horizontal = StaSpacing.lg, vertical = 14.dp),
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -644,7 +646,7 @@ internal fun AgentResultCard(
                                 .clip(CircleShape)
                                 .background(dotColor),
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(StaSpacing.sm))
                         Text(
                             text = statusLabel,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
@@ -657,7 +659,7 @@ internal fun AgentResultCard(
                             backgroundColor = Color.Transparent,
                             minWidth = 32.dp,
                             minHeight = 32.dp,
-                            cornerRadius = 16.dp,
+                            cornerRadius = StaRadius.xl,
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
@@ -668,7 +670,7 @@ internal fun AgentResultCard(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(StaSpacing.sm))
 
                     // Markdown 结果，可滚动
                     val markdownState = rememberMarkdownState(content = content, retainState = true)

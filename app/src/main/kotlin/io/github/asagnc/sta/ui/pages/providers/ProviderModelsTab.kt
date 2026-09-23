@@ -73,6 +73,8 @@ import io.github.asagnc.sta.ui.components.StatusSuccess
 import io.github.asagnc.sta.ui.model.formatCompactTokenCount
 import io.github.asagnc.sta.ui.components.StaCard
 import io.github.asagnc.sta.ui.components.StaCardDefaults
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -305,12 +307,12 @@ internal fun ProviderModelsTab(
                         },
                     )
                     message?.let {
-                        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+                        HorizontalDivider(modifier = Modifier.padding(start = StaSpacing.lg))
                         Text(
                             text = it,
                             style = MiuixTheme.textStyles.footnote2,
                             color = if (it.startsWith(context.getString(R.string.page_fail_3e3c80))) StatusError else StatusSuccess,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            modifier = Modifier.padding(horizontal = StaSpacing.lg, vertical = StaSpacing.compact),
                         )
                     }
                 }
@@ -326,8 +328,8 @@ internal fun ProviderModelsTab(
                     label = stringResource(R.string.ui_search_model_df5586),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp)
-                        .padding(top = 12.dp, bottom = 8.dp),
+                        .padding(horizontal = StaSpacing.md)
+                        .padding(top = StaSpacing.md, bottom = StaRadius.sm),
                 )
             }
 
@@ -344,10 +346,10 @@ internal fun ProviderModelsTab(
                 item(key = "models_empty", contentType = "empty") {
                     ProviderSection(
                         title = modelListTitle,
-                        modifier = Modifier.padding(bottom = 24.dp),
+                        modifier = Modifier.padding(bottom = StaSpacing.xxl),
                     ) {
                         Box(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = StaSpacing.xxl),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
@@ -407,7 +409,7 @@ internal fun ProviderModelsTab(
                     }
                 }
                 item(key = "models_section_gap", contentType = "spacer") {
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(StaSpacing.xxl))
                 }
             }
 
@@ -597,7 +599,7 @@ private fun ModelListGroupItem(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp)
+                .padding(horizontal = StaSpacing.md)
                 .then(surfaceModifier),
         ) {
             content()
@@ -620,15 +622,15 @@ private fun ModelSelectionBar(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 12.dp)
-            .padding(bottom = 12.dp),
+            .padding(horizontal = StaSpacing.md)
+            .padding(bottom = StaSpacing.md),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 4.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                .padding(start = StaSpacing.xxs, end = StaRadius.sm, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
         ) {
             IconButton(onClick = onExit, enabled = enabled) {
                 Icon(
@@ -689,7 +691,7 @@ private fun ModelListItem(
                     if (selectionMode) onToggleChecked() else onEnterSelection()
                 },
             )
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = StaSpacing.lg, vertical = StaSpacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -705,11 +707,11 @@ private fun ModelListItem(
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp),
+                modifier = Modifier.padding(top = StaSpacing.hair),
             )
             Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.padding(top = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(StaSpacing.xs),
+                modifier = Modifier.padding(top = StaSpacing.xs),
             ) {
                 capabilityTags(model).forEach { tag ->
                     TagChip(text = tag)
@@ -845,7 +847,7 @@ private fun ModelEditDialog(
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(StaSpacing.md))
                 TextField(
                     value = modelId,
                     onValueChange = { modelId = it },
@@ -857,7 +859,7 @@ private fun ModelEditDialog(
                     ),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(StaSpacing.md))
                 TextField(
                     value = contextWindowOverrideText,
                     onValueChange = { contextWindowOverrideText = it },
@@ -906,7 +908,7 @@ private fun ModelEditDialog(
                     text = stringResource(R.string.ui_this_value_is_used_for_session_clipping_and_context__c3f9e7),
                     style = MiuixTheme.textStyles.footnote2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+                    modifier = Modifier.padding(top = StaSpacing.xxs, bottom = StaRadius.lg),
                 )
                 StaCard(modifier = Modifier.fillMaxWidth()) {
                     SwitchPreference(
@@ -930,7 +932,7 @@ private fun ModelEditDialog(
                         enabled = !isSaving,
                     )
                     if (reasoningEnabled) {
-                        HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+                        HorizontalDivider(modifier = Modifier.padding(start = StaSpacing.lg))
                         CheckboxPreference(
                             title = ReasoningEffort.DEFAULT.displayName,
                             summary = stringResource(R.string.ui_determined_by_model_or_provider_06c326),
@@ -940,7 +942,7 @@ private fun ModelEditDialog(
                             enabled = false,
                         )
                         editableReasoningEfforts.forEach { effort ->
-                            HorizontalDivider(modifier = Modifier.padding(start = 16.dp))
+                            HorizontalDivider(modifier = Modifier.padding(start = StaSpacing.lg))
                             CheckboxPreference(
                                 title = effort.displayName,
                                 summary = if (effort == ReasoningEffort.OFF) {
@@ -967,20 +969,20 @@ private fun ModelEditDialog(
                     text = stringResource(R.string.ui_only_check_the_ranges_actually_supported_by_the_mode_2c343d),
                     style = MiuixTheme.textStyles.footnote2,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = StaSpacing.sm),
                 )
                 error?.let { message ->
                     Text(
                         text = message,
                         style = MiuixTheme.textStyles.footnote2,
                         color = StatusError,
-                        modifier = Modifier.padding(top = 8.dp),
+                        modifier = Modifier.padding(top = StaSpacing.sm),
                     )
                 }
                 if (reasoningOverrideActive || onDelete != null) {
                     Row(
-                        modifier = Modifier.padding(top = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(24.dp),
+                        modifier = Modifier.padding(top = StaSpacing.md),
+                        horizontalArrangement = Arrangement.spacedBy(StaSpacing.xxl),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         if (reasoningOverrideActive) {
@@ -993,7 +995,7 @@ private fun ModelEditDialog(
                                         enabled = !isSaving,
                                         onClick = ::resetAutomaticReasoning,
                                     )
-                                    .padding(vertical = 4.dp),
+                                    .padding(vertical = StaSpacing.xxs),
                             )
                         }
                         onDelete?.let { delete ->
@@ -1003,7 +1005,7 @@ private fun ModelEditDialog(
                                 color = MiuixTheme.colorScheme.error,
                                 modifier = Modifier
                                     .clickable(enabled = !isSaving, onClick = delete)
-                                    .padding(vertical = 4.dp),
+                                    .padding(vertical = StaSpacing.xxs),
                             )
                         }
                     }
@@ -1019,7 +1021,7 @@ private fun ModelEditDialog(
             cancelEnabled = !isSaving,
             onCancel = onDismiss,
             onConfirm = { onSubmit(updated()) },
-            modifier = Modifier.padding(top = 16.dp),
+            modifier = Modifier.padding(top = StaSpacing.lg),
         )
     }
 }

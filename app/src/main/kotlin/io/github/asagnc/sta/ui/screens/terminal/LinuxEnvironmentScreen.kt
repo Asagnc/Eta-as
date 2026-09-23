@@ -17,7 +17,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.agent.terminal.ApkAnalysisInstallProgress
 import io.github.asagnc.sta.agent.terminal.ApkAnalysisInstallResult
@@ -44,6 +43,7 @@ import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.PreferenceIcon
 import io.github.asagnc.sta.ui.navigation.AppRoute
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -330,7 +330,7 @@ internal fun LinuxEnvironmentScreen(
         }
         if (selectedBaseReady) {
             item(key = "uninstall-card") {
-                Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+                Card(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs)) {
                     BasicComponent(
                         title = stringResource(R.string.linux_environment_uninstall),
                         summary = stringResource(R.string.linux_environment_uninstall_summary),
@@ -372,7 +372,7 @@ internal fun LinuxEnvironmentScreen(
         }
         item(key = "files-title") { SmallTitle(stringResource(R.string.linux_environment_files)) }
         item(key = "files-card") {
-            Card(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            Card(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs)) {
                 ArrowPreference(
                     title = stringResource(R.string.capability_workspace),
                     summary = stringResource(R.string.capability_workspace_summary),
@@ -401,8 +401,8 @@ internal fun LinuxEnvironmentScreen(
             item(key = "optional-tools-card") {
                 Card(
                     modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp),
+                        .padding(horizontal = StaSpacing.md)
+                        .padding(bottom = StaSpacing.md),
                 ) {
                     packageProfileUis.forEachIndexed { index, profileUi ->
                         val ready = profileReady[profileUi.target] == true

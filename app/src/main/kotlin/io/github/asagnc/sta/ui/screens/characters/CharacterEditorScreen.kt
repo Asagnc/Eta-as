@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.app.CharacterLibraryStore
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -64,7 +65,7 @@ internal fun CharacterEditorScreen(
         item(key = "greeting") { CharacterTextField("默认开场白", card.firstMessage, { value -> store.updateDraft { it.withEdits(firstMessage = value) } }, !store.busy) }
         itemsIndexed(card.alternateGreetings, key = { index, _ -> "alternate-$index" }) { index, value ->
             Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = StaSpacing.lg, end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextField(
@@ -76,7 +77,7 @@ internal fun CharacterEditorScreen(
                     enabled = !store.busy,
                     minLines = 2,
                     maxLines = 14,
-                    modifier = Modifier.weight(1f).padding(vertical = 4.dp),
+                    modifier = Modifier.weight(1f).padding(vertical = StaSpacing.xxs),
                 )
                 IconButton(
                     onClick = {
@@ -99,11 +100,11 @@ internal fun CharacterEditorScreen(
                 "添加备用开场白",
                 onClick = { store.updateDraft { it.withEdits(alternateGreetings = it.alternateGreetings + "") } },
                 enabled = !store.busy,
-                modifier = Modifier.padding(start = 16.dp, top = 2.dp),
+                modifier = Modifier.padding(start = StaSpacing.lg, top = 2.dp),
             )
         }
         item(key = "advanced") {
-            StaCard(modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = 8.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = StaSpacing.sm)) {
                 ArrowPreference(
                     title = "高级设置",
                     summary = "性格、背景、示例对话、提示词、作者信息与世界书",
@@ -137,7 +138,7 @@ internal fun CharacterEditorScreen(
                 enabled = !store.busy && store.draftName.isNotBlank(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = CharacterCardPadding, vertical = 12.dp),
+                    .padding(horizontal = CharacterCardPadding, vertical = StaSpacing.md),
                 colors = ButtonDefaults.textButtonColorsPrimary(),
             )
         }
@@ -157,7 +158,7 @@ internal fun CharacterTextField(
         value = value, onValueChange = onChange, label = label, enabled = enabled,
         singleLine = singleLine, minLines = if (singleLine) 1 else minLines,
         maxLines = if (singleLine) 1 else 14,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = StaSpacing.lg, vertical = StaSpacing.xs),
     )
 }
 
@@ -167,6 +168,6 @@ internal fun CharacterFieldGroupLabel(text: String) {
         text = text,
         style = MiuixTheme.textStyles.footnote1,
         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+        modifier = Modifier.padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xs),
     )
 }

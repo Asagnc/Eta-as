@@ -23,13 +23,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffold
 import io.github.asagnc.sta.ui.layout.horizontalCutoutPadding
 import io.github.asagnc.sta.ui.model.AgentMemoryAction
 import io.github.asagnc.sta.ui.model.AgentMemoryUiState
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import java.text.NumberFormat
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -78,8 +78,8 @@ internal fun AgentMemoryScreen(
                 item(key = "status-card") {
                     StaCard(
                         modifier = Modifier
-                            .padding(horizontal = 12.dp)
-                            .padding(bottom = 12.dp),
+                            .padding(horizontal = StaSpacing.md)
+                            .padding(bottom = StaSpacing.md),
                     ) {
                         SwitchPreference(
                             title = stringResource(R.string.ui_enable_memory_4b69b7),
@@ -105,10 +105,10 @@ internal fun AgentMemoryScreen(
                 SmallTitle("MEMORY.md")
                 StaCard(
                     modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .padding(bottom = 12.dp),
+                        .padding(horizontal = StaSpacing.md)
+                        .padding(bottom = StaSpacing.md),
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(StaSpacing.lg)) {
                         TextField(
                             value = state.draft,
                             onValueChange = { onAction(AgentMemoryAction.DraftChanged(it)) },
@@ -120,7 +120,7 @@ internal fun AgentMemoryScreen(
                             textStyle = MiuixTheme.textStyles.body2.copy(fontFamily = FontFamily.Monospace),
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(StaSpacing.sm))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -150,10 +150,10 @@ internal fun AgentMemoryScreen(
                                 style = MiuixTheme.textStyles.footnote1,
                             )
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(StaSpacing.md))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
                         ) {
                             TextButton(
                                 text = stringResource(R.string.ui_clear_84fcd7),

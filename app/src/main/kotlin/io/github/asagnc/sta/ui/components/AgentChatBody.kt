@@ -92,6 +92,8 @@ import io.github.asagnc.sta.ui.model.ToolActivityMessageUi
 import io.github.asagnc.sta.ui.model.ToolSummaryMessageUi
 import io.github.asagnc.sta.ui.model.UserMessageUi
 import io.github.asagnc.sta.ui.model.latestContextUsage
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlin.math.exp
 import kotlin.math.min
 import kotlinx.coroutines.CancellationException
@@ -732,7 +734,7 @@ internal fun AgentConversationMessages(
             visible = !keepBottomAnchored && !isAtBottom,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = bottomInset + 12.dp),
+                .padding(bottom = bottomInset + StaSpacing.md),
             enter = fadeIn(tween(160)) + scaleIn(tween(180), initialScale = 0.82f),
             exit = fadeOut(tween(100)) + scaleOut(tween(120), targetScale = 0.86f),
         ) {
@@ -957,7 +959,7 @@ private fun AgentChatBottomBar(
                 .fillMaxWidth()
                 .background(MiuixTheme.colorScheme.surface)
                 .navigationBarsPadding()
-                .padding(start = 14.dp, end = 14.dp, bottom = 12.dp),
+                .padding(start = 14.dp, end = 14.dp, bottom = StaRadius.lg),
         ) {
             AgentChatInputBar(
                 input = input,
@@ -1068,7 +1070,7 @@ private fun EmptyChatState(
                     style = MiuixTheme.textStyles.title2,
                     color = MiuixTheme.colorScheme.onSurface,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(StaSpacing.sm))
                 Text(
                     text = "故事从这里开始",
                     style = MiuixTheme.textStyles.body2,
@@ -1103,11 +1105,11 @@ private fun EmptyChatState(
                 ),
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(horizontal = StaSpacing.xxl),
+                    verticalArrangement = Arrangement.spacedBy(StaSpacing.compact),
                 ) {
                     suggestions.chunked(2).forEach { rowItems ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(StaSpacing.compact)) {
                             rowItems.forEach { item ->
                                 SuggestionCard(
                                     item = item,
@@ -1131,15 +1133,15 @@ private fun SuggestionCard(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(StaRadius.lg))
             .background(MiuixTheme.colorScheme.surface)
             .border(
                 width = 0.5.dp,
                 color = MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(StaRadius.lg),
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 13.dp, vertical = 12.dp),
+            .padding(horizontal = 13.dp, vertical = StaSpacing.md),
     ) {
         Icon(
             imageVector = item.icon,

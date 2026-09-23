@@ -27,6 +27,7 @@ import io.github.asagnc.sta.data.repository.StaBackupSummary
 import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import java.io.InputStream
 import java.io.OutputStream
 import java.text.SimpleDateFormat
@@ -104,7 +105,7 @@ internal fun DataBackupScreen(
         onBack = onBack,
     ) {
         item(key = "warning") {
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs)) {
                 BasicComponent(
                     title = stringResource(R.string.data_backup_warning_title),
                     summary = stringResource(R.string.data_backup_warning_summary),
@@ -115,7 +116,7 @@ internal fun DataBackupScreen(
             SmallTitle(stringResource(R.string.data_backup_actions))
         }
         item(key = "actions-card") {
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp).padding(bottom = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md).padding(bottom = StaSpacing.md)) {
                 ArrowPreference(
                     title = stringResource(R.string.data_backup_export),
                     summary = if (busy) {
@@ -212,7 +213,7 @@ internal fun DataBackupScreen(
 private fun BackupIcon(icon: ImageVector, loading: Boolean) {
     Box(
         modifier = Modifier
-            .padding(end = 6.dp)
+            .padding(end = StaSpacing.xs)
             .size(24.dp),
         contentAlignment = Alignment.Center,
     ) {

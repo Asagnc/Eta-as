@@ -43,6 +43,7 @@ import io.github.asagnc.sta.agent.terminal.runOneShotShell
 import io.github.asagnc.sta.agent.terminal.shellQuote
 import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -106,8 +107,8 @@ internal fun SharedFoldersScreen(
         item(key = "mounts-card") {
             Card(
                 modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .padding(bottom = 12.dp),
+                    .padding(horizontal = StaSpacing.md)
+                    .padding(bottom = StaSpacing.md),
             ) {
                 if (mounts.isEmpty()) {
                     BasicComponent(
@@ -165,15 +166,15 @@ internal fun SharedFoldersScreen(
                 text = stringResource(R.string.shared_folders_footer),
                 style = MiuixTheme.textStyles.footnote1,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                modifier = Modifier.padding(horizontal = 24.dp),
+                modifier = Modifier.padding(horizontal = StaSpacing.xxl),
             )
         }
         notice?.let { message ->
             item(key = "notice-card") {
                 Card(
                     modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .padding(top = 12.dp),
+                        .padding(horizontal = StaSpacing.md)
+                        .padding(top = StaSpacing.md),
                 ) {
                     BasicComponent(title = message)
                 }
@@ -333,14 +334,14 @@ private fun SharedFolderPickerDialog(
                     text = browseError.orEmpty(),
                     style = MiuixTheme.textStyles.footnote1,
                     color = MiuixTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier.padding(top = StaSpacing.xxs),
                 )
             }
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 240.dp)
-                    .padding(top = 8.dp),
+                    .padding(top = StaSpacing.sm),
             ) {
                 if (path != "/") {
                     item(key = "..") {
@@ -363,7 +364,7 @@ private fun SharedFolderPickerDialog(
                 text = stringResource(R.string.shared_folders_selected_source, path),
                 style = MiuixTheme.textStyles.footnote1.copy(fontFamily = FontFamily.Monospace),
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = StaSpacing.sm),
             )
             TextField(
                 value = nameInput,
@@ -375,14 +376,14 @@ private fun SharedFolderPickerDialog(
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
+                    .padding(top = StaSpacing.sm),
             )
             formError?.let { error ->
                 Text(
                     text = error,
                     style = MiuixTheme.textStyles.footnote1,
                     color = MiuixTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier.padding(top = StaSpacing.xxs),
                 )
             }
             MiuixDialogActions(
@@ -418,7 +419,7 @@ private fun SharedFolderPickerDialog(
                         onConfirm(path, nameInput.trim())
                     }
                 },
-                modifier = Modifier.padding(top = 12.dp),
+                modifier = Modifier.padding(top = StaSpacing.md),
             )
         }
     }
@@ -431,7 +432,7 @@ private fun PickerRow(label: String, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp, horizontal = 4.dp),
+            .padding(vertical = StaSpacing.compact, horizontal = StaSpacing.xxs),
     ) {
         Text(
             text = label,

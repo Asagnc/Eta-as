@@ -14,7 +14,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.DropdownArrowEndAction
 import top.yukonga.miuix.kmp.basic.DropdownDefaults
 import top.yukonga.miuix.kmp.basic.DropdownEntry
@@ -61,7 +61,7 @@ internal fun SettingsDropdownPreference(
         items.getOrNull(selectedIndex)?.text?.let { value ->
             Text(
                 text = value,
-                modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp),
+                modifier = Modifier.weight(1f, fill = false).padding(end = StaSpacing.sm),
                 style = MiuixTheme.textStyles.body2,
                 color = color,
                 textAlign = TextAlign.End,

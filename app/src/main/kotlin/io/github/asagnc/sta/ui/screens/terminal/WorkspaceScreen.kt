@@ -26,7 +26,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.ui.app.WorkspaceEntry
 import io.github.asagnc.sta.ui.app.WorkspaceFileStore
@@ -34,6 +33,7 @@ import io.github.asagnc.sta.ui.components.ListEmptyState
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.PreferenceIcon
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -106,11 +106,11 @@ internal fun WorkspaceScreen(onBack: () -> Unit) {
             BasicComponent(
                 title = stringResource(R.string.capability_workspace_private),
                 summary = stringResource(R.string.capability_workspace_private_summary),
-                modifier = Modifier.padding(horizontal = 12.dp),
+                modifier = Modifier.padding(horizontal = StaSpacing.md),
             )
         }
         item(key = "actions") {
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs)) {
                 ArrowPreference(
                     title = stringResource(R.string.capability_workspace_import),
                     enabled = !busy,
@@ -139,7 +139,7 @@ internal fun WorkspaceScreen(onBack: () -> Unit) {
         }
         if (path.isNotBlank()) {
             item(key = "parent") {
-                StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+                StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xxs)) {
                     ArrowPreference(
                         title = stringResource(R.string.capability_workspace_parent),
                         startAction = { PreferenceIcon(Icons.Rounded.FolderOpen) },
@@ -157,7 +157,7 @@ internal fun WorkspaceScreen(onBack: () -> Unit) {
             }
         }
         items(entries, key = { it.path }) { entry ->
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xxs)) {
                 ArrowPreference(
                     title = entry.name,
                     summary = if (entry.directory) stringResource(R.string.capability_workspace_directory)

@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
@@ -52,7 +53,7 @@ internal fun SettingsArrowPreference(
         interaction = Modifier.clickable(enabled = enabled, onClick = onClick),
     ) {
         Row(modifier = Modifier.weight(1f, fill = false), content = endActions)
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(StaSpacing.sm))
         val direction = LocalLayoutDirection.current
         Icon(
             imageVector = MiuixIcons.Basic.ArrowRight,
@@ -128,7 +129,7 @@ internal fun SettingsPreferenceRow(
         Row(
             modifier = Modifier.fillMaxWidth()
                 .heightIn(min = SettingsItemLayout.RowMinHeight)
-                .padding(horizontal = SettingsItemLayout.SidePadding, vertical = 12.dp),
+                .padding(horizontal = SettingsItemLayout.SidePadding, vertical = StaSpacing.md),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             startAction()
@@ -148,7 +149,7 @@ internal fun SettingsPreferenceRow(
                     )
                 }
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(StaSpacing.md))
             Row(
                 modifier = Modifier.widthIn(max = actionMaxWidth.coerceAtLeast(44.dp)),
                 verticalAlignment = Alignment.CenterVertically,

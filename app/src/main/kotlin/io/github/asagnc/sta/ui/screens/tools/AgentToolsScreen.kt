@@ -29,6 +29,7 @@ import io.github.asagnc.sta.ui.model.AgentToolsAction
 import io.github.asagnc.sta.ui.model.AgentToolsUiState
 import io.github.asagnc.sta.ui.model.ToolItemUi
 import io.github.asagnc.sta.ui.model.projectToolGroups
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Card
 import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -62,11 +63,11 @@ fun AgentToolsScreen(
                 tabs = listOf(stringResource(R.string.capability_current_device), stringResource(R.string.capability_all)),
                 selectedTabIndex = if (showAll) 1 else 0,
                 onTabSelected = { showAll = it == 1 },
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = StaSpacing.xl, vertical = StaSpacing.sm),
             )
         }
         item(key = "capability-discovery") {
-            StaCard(modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.xl).padding(bottom = StaSpacing.sm)) {
                 ArrowPreference(
                     title = stringResource(R.string.capability_enhancements),
                     summary = stringResource(R.string.capability_enhancements_summary),

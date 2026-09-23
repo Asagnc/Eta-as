@@ -31,6 +31,7 @@ import io.github.asagnc.sta.ui.model.ToolItemUi
 import io.github.asagnc.sta.ui.model.actualToolName
 import io.github.asagnc.sta.ui.model.toolCardAction
 import io.github.asagnc.sta.ui.model.toolCardRequirement
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Card
 import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.CardDefaults
@@ -64,7 +65,7 @@ internal fun ToolCard(
     }
     StaCard(
         modifier = modifier.heightIn(min = 136.dp),
-        insideMargin = PaddingValues(16.dp),
+        insideMargin = PaddingValues(StaSpacing.lg),
         colors = CardDefaults.defaultColors(
             color = MiuixTheme.colorScheme.surfaceContainer,
             contentColor = MiuixTheme.colorScheme.onSurfaceContainer,
@@ -97,7 +98,7 @@ internal fun ToolCard(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(StaSpacing.sm))
         Text(
             text = tool.title,
             style = MiuixTheme.textStyles.body2,
@@ -106,7 +107,7 @@ internal fun ToolCard(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
-        Spacer(modifier = Modifier.height(2.dp))
+        Spacer(modifier = Modifier.height(StaSpacing.hair))
         Text(
             text = description,
             style = MiuixTheme.textStyles.footnote1,
@@ -115,14 +116,14 @@ internal fun ToolCard(
             overflow = TextOverflow.Ellipsis,
         )
         requirementText?.let {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(StaSpacing.sm))
             Text(
                 text = it,
                 style = MiuixTheme.textStyles.footnote1,
                 color = MiuixTheme.colorScheme.onSurfaceVariantActions,
             )
         }
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(StaSpacing.md))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = actionText,

@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.ui.model.ConversationPaneUiState
 import io.github.asagnc.sta.ui.model.ConversationSummaryUi
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.DropdownDefaults
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.DropdownItem
@@ -151,7 +152,7 @@ internal fun ConversationPanePanel(
                     .padding(horizontal = ConversationPanelMetrics.PaneHorizontalPadding)
                     .scrollEndHaptic()
                     .overScrollVertical(),
-                contentPadding = PaddingValues(vertical = 4.dp),
+                contentPadding = PaddingValues(vertical = StaSpacing.xxs),
                 verticalArrangement = Arrangement.spacedBy(ConversationPanelMetrics.RowGap),
                 overscrollEffect = null,
             ) {

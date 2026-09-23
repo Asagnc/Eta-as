@@ -18,9 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import io.github.asagnc.sta.R
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import java.time.LocalDate
 import java.time.Month
 import java.time.YearMonth
@@ -64,8 +64,8 @@ internal fun UsageDateTimePickerDialog(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .padding(top = StaSpacing.md),
+                horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
             ) {
                 TextButton(
                     text = stringResource(R.string.ui_clear_84fcd7),

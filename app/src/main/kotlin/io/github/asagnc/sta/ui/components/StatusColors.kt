@@ -6,14 +6,14 @@ import androidx.compose.ui.res.stringResource
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.ui.model.PermissionStatusUi
 import io.github.asagnc.sta.ui.model.RunStatusUi
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaColors
 
-// 语义状态色
-val StatusSuccess = Color(0xFF00BD13)
-val StatusWarning = Color(0xFFFFB200)
-val StatusError: Color @Composable get() = MiuixTheme.colorScheme.error
-val StatusRunning: Color @Composable get() = MiuixTheme.colorScheme.primary
-val StatusIdle: Color @Composable get() = MiuixTheme.colorScheme.onSurfaceVariantSummary
+// 语义状态色统一以 StaColors 为准，不再在这里重复定义取值。
+val StatusSuccess: Color = StaColors.success
+val StatusWarning: Color = StaColors.warning
+val StatusError: Color @Composable get() = StaColors.danger
+val StatusRunning: Color @Composable get() = StaColors.accent
+val StatusIdle: Color @Composable get() = StaColors.textSecondary
 
 // ── RunStatusUi 映射 ──────────────────────────────────────────────────
 

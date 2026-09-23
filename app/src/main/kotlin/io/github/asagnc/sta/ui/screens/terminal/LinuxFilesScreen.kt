@@ -29,6 +29,7 @@ import io.github.asagnc.sta.agent.terminal.LinuxEnvironmentPaths
 import io.github.asagnc.sta.agent.terminal.LinuxFileExplorer
 import io.github.asagnc.sta.agent.terminal.ShellProcessSupervisor
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -139,7 +140,7 @@ internal fun LinuxFilesScreen(
                                     text = result.content,
                                     style = MiuixTheme.textStyles.footnote1
                                         .copy(fontFamily = FontFamily.Monospace),
-                                    modifier = Modifier.padding(horizontal = 24.dp),
+                                    modifier = Modifier.padding(horizontal = StaSpacing.xxl),
                                 )
                             }
                         }
@@ -228,8 +229,8 @@ private fun PathBar(path: String) {
         style = MiuixTheme.textStyles.body2.copy(fontFamily = FontFamily.Monospace),
         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         modifier = Modifier
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 8.dp),
+            .padding(horizontal = StaSpacing.xxl)
+            .padding(bottom = StaSpacing.sm),
     )
 }
 
@@ -239,7 +240,7 @@ private fun StateMessage(message: String) {
         text = message,
         style = MiuixTheme.textStyles.body2,
         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-        modifier = Modifier.padding(horizontal = 24.dp),
+        modifier = Modifier.padding(horizontal = StaSpacing.xxl),
     )
 }
 
@@ -250,8 +251,8 @@ private fun HintText(message: String) {
         style = MiuixTheme.textStyles.footnote1,
         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         modifier = Modifier
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 8.dp),
+            .padding(horizontal = StaSpacing.xxl)
+            .padding(bottom = StaSpacing.sm),
     )
 }
 
@@ -270,7 +271,7 @@ private fun FileRow(
                 imageVector = if (isDir) Icons.Rounded.Folder else Icons.AutoMirrored.Rounded.InsertDriveFile,
                 contentDescription = null,
                 modifier = Modifier
-                    .padding(end = 12.dp)
+                    .padding(end = StaSpacing.md)
                     .size(20.dp),
                 tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
             )

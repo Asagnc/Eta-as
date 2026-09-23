@@ -41,6 +41,7 @@ import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.navigation.AppRoute
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -87,7 +88,7 @@ internal fun McpServersScreen(
     ) {
         item(key = "servers") {
             SmallTitle(stringResource(R.string.mcp_configured_servers, servers.size))
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md)) {
                 if (servers.isEmpty()) {
                     ListEmptyState(
                         title = stringResource(R.string.mcp_empty_title),
@@ -128,7 +129,7 @@ internal fun McpServersScreen(
         onDismissRequest = { if (!working) showAdd = false },
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(StaSpacing.md),
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 520.dp)
@@ -302,7 +303,7 @@ internal fun McpServerDetailScreen(
         }
         item(key = "server") {
             SmallTitle(stringResource(R.string.mcp_server_settings))
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md)) {
                 SwitchPreference(
                     title = stringResource(R.string.mcp_enable_server),
                     summary = server.url,
@@ -329,7 +330,7 @@ internal fun McpServerDetailScreen(
         }
         item(key = "tools") {
             SmallTitle(stringResource(R.string.mcp_tools_count, server.tools.size))
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md)) {
                 if (server.tools.isEmpty()) {
                     ListEmptyState(
                         title = stringResource(R.string.mcp_no_tools),
@@ -357,7 +358,7 @@ internal fun McpServerDetailScreen(
             }
         }
         item(key = "delete") {
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.md)) {
                 BasicComponent(
                     title = stringResource(R.string.mcp_delete_server),
                     summary = stringResource(R.string.mcp_delete_server_summary),
@@ -394,7 +395,7 @@ internal fun McpServerDetailScreen(
         summary = stringResource(R.string.mcp_update_token_summary),
         onDismissRequest = { showToken = false },
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(StaSpacing.md)) {
             TextField(
                 value = token,
                 onValueChange = { token = it },

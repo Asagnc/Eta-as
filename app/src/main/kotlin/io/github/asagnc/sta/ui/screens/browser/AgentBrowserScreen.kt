@@ -82,6 +82,8 @@ import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.StatusError
 import io.github.asagnc.sta.ui.components.StaCard
 import io.github.asagnc.sta.ui.components.StaCardDefaults
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -164,8 +166,8 @@ internal fun AgentBrowserScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MiuixTheme.colorScheme.surface)
-            .padding(horizontal = 12.dp)
-            .padding(bottom = 12.dp)
+            .padding(horizontal = StaSpacing.md)
+            .padding(bottom = StaSpacing.md)
             .imePadding()
             .navigationBarsPadding(),
     ) {
@@ -193,7 +195,7 @@ internal fun AgentBrowserScreen(
                         Icons.Rounded.Language
                     },
                     contentDescription = null,
-                    modifier = Modifier.padding(start = 12.dp).size(18.dp),
+                    modifier = Modifier.padding(start = StaSpacing.md).size(18.dp),
                     tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             },
@@ -202,7 +204,7 @@ internal fun AgentBrowserScreen(
                     onClick = ::navigate,
                     enabled = address.isNotBlank() && !actionPending,
                     modifier = Modifier
-                        .padding(end = 6.dp)
+                        .padding(end = StaSpacing.xs)
                         .alpha(if (address.isNotBlank() && !actionPending) 1f else 0.34f),
                 ) {
                     Icon(
@@ -215,7 +217,7 @@ internal fun AgentBrowserScreen(
             },
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(StaSpacing.compact))
         BrowserStatusBanner(snapshot)
 
         BrowserWindow(
@@ -293,7 +295,7 @@ internal fun AgentBrowserScreen(
                 useLabelAsPlaceholder = true,
                 singleLine = true,
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(StaSpacing.md))
             MiuixDialogActions(
                 confirmText = stringResource(R.string.action_confirm),
                 confirmEnabled = proxyDraft.isNotBlank(),
@@ -328,7 +330,7 @@ private fun BrowserWindow(
 ) {
     StaCard(
         modifier = modifier,
-        insideMargin = PaddingValues(0.dp),
+        insideMargin = PaddingValues(StaSpacing.none),
         colors = CardDefaults.defaultColors(
             color = MiuixTheme.colorScheme.surfaceContainer,
             contentColor = MiuixTheme.colorScheme.onSurface,
@@ -389,7 +391,7 @@ private fun BrowserToolbar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 6.dp, vertical = 4.dp),
+            .padding(horizontal = StaSpacing.xs, vertical = StaSpacing.xxs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BrowserControlButton(
@@ -418,7 +420,7 @@ private fun BrowserToolbar(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = StaSpacing.sm),
         ) {
             Text(
                 text = snapshot.title.ifBlank { stringResource(R.string.browser_title) },
@@ -585,8 +587,8 @@ private fun ColumnScope.BrowserStatusBanner(snapshot: BrowserSessionSnapshot) {
         StaCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 10.dp),
-            insideMargin = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                .padding(bottom = StaSpacing.compact),
+            insideMargin = PaddingValues(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
             colors = CardDefaults.defaultColors(
                 color = color.copy(alpha = 0.10f),
                 contentColor = MiuixTheme.colorScheme.onSurface,
@@ -599,7 +601,7 @@ private fun ColumnScope.BrowserStatusBanner(snapshot: BrowserSessionSnapshot) {
                     modifier = Modifier.size(17.dp),
                     tint = color,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(StaSpacing.sm))
                 Text(
                     text = message.orEmpty(),
                     modifier = Modifier.weight(1f),
@@ -622,7 +624,7 @@ private fun BrowserOverlayIcon(
             .size(64.dp)
             .squircleSurface(
                 color = tint.copy(alpha = 0.10f),
-                cornerRadius = 20.dp,
+                cornerRadius = StaRadius.xxl,
             ),
         contentAlignment = Alignment.Center,
     ) {
@@ -662,14 +664,14 @@ private fun BrowserEmptyState(modifier: Modifier = Modifier) {
             icon = Icons.Rounded.Language,
             tint = MiuixTheme.colorScheme.primary,
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(StaSpacing.lg))
         Text(
             text = stringResource(R.string.ui_the_browser_has_not_opened_the_web_page_yet_31e095),
             style = MiuixTheme.textStyles.body1,
             fontWeight = FontWeight.Medium,
             color = MiuixTheme.colorScheme.onSurface,
         )
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(StaSpacing.xs))
         Text(
             text = stringResource(R.string.ui_enter_the_url_in_the_address_bar_or_let_the_agent_br_e2ae90),
             style = MiuixTheme.textStyles.body2,
@@ -696,7 +698,7 @@ private fun BrowserLoadingState(
             color = MiuixTheme.colorScheme.primary,
             size = 34.dp,
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(StaSpacing.lg))
         Text(
             text = if (host.isBlank()) stringResource(R.string.browser_opening) else stringResource(R.string.browser_opening_host, host),
             style = MiuixTheme.textStyles.body2,
@@ -724,7 +726,7 @@ private fun BrowserFailedState(
             icon = Icons.Rounded.GppMaybe,
             tint = StatusError,
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(StaSpacing.lg))
         Text(
             text = stringResource(R.string.ui_the_webpage_cannot_be_opened_3db06d),
             style = MiuixTheme.textStyles.body1,
@@ -732,7 +734,7 @@ private fun BrowserFailedState(
             color = MiuixTheme.colorScheme.onSurface,
         )
         if (!error.isNullOrBlank()) {
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(StaSpacing.xs))
             Text(
                 text = error,
                 style = MiuixTheme.textStyles.body2,

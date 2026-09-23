@@ -27,6 +27,7 @@ import io.github.asagnc.sta.ui.model.AgentSkillsUiState
 import io.github.asagnc.sta.ui.model.SkillItemUi
 import io.github.asagnc.sta.ui.model.canDeleteUserSkill
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
@@ -88,7 +89,7 @@ fun AgentSkillsScreen(
                         if (state.isImporting) {
                             Box(
                                 modifier = Modifier
-                                    .padding(end = 6.dp)
+                                    .padding(end = StaSpacing.xs)
                                     .size(24.dp),
                                 contentAlignment = Alignment.Center,
                             ) {

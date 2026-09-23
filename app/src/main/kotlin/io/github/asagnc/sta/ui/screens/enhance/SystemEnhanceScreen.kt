@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.ui.app.description
 import io.github.asagnc.sta.ui.app.rememberDeviceCapabilities
@@ -23,6 +22,7 @@ import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.PreferenceIcon
 import io.github.asagnc.sta.ui.model.AgentSystemEnhanceAction
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -41,7 +41,7 @@ fun SystemEnhanceScreen(
         modifier = modifier,
     ) {
         item(key = "access") {
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs)) {
                 BasicComponent(
                     title = "Root",
                     summary = capabilities.root.description(context),
@@ -73,7 +73,7 @@ fun SystemEnhanceScreen(
             }
         }
         item(key = "framework-help") {
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs)) {
                 BasicComponent(
                     title = stringResource(R.string.capability_xposed_help),
                     summary = stringResource(R.string.capability_xposed_help_summary),
@@ -83,7 +83,7 @@ fun SystemEnhanceScreen(
         }
         item(key = "root-title") { SmallTitle(stringResource(R.string.capability_root_features)) }
         item(key = "root-features") {
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs)) {
                 BasicComponent(
                     title = stringResource(R.string.capability_root_device),
                     summary = stringResource(R.string.capability_root_device_summary),
@@ -103,7 +103,7 @@ fun SystemEnhanceScreen(
         }
         item(key = "hook-title") { SmallTitle(stringResource(R.string.capability_system_features)) }
         item(key = "hook-features") {
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs)) {
                 BasicComponent(
                     title = stringResource(R.string.capability_hook_assistants),
                     summary = stringResource(R.string.capability_hook_assistants_summary),

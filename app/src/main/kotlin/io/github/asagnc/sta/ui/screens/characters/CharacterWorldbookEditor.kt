@@ -6,10 +6,10 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.agent.roleplay.CharacterBookEntryDraft
 import io.github.asagnc.sta.agent.roleplay.CharacterWorldbook
 import io.github.asagnc.sta.ui.app.CharacterLibraryStore
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Card
 import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -55,7 +55,7 @@ internal fun LazyListScope.characterWorldbookEditor(
         }, enabled, singleLine = true)
     }
     item(key = "worldbook-recursive") {
-        StaCard(modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = 6.dp)) {
+        StaCard(modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = StaSpacing.xs)) {
             SwitchPreference(
                 title = "递归匹配",
                 summary = "使用已匹配条目的内容继续寻找相关条目",
@@ -70,7 +70,7 @@ internal fun LazyListScope.characterWorldbookEditor(
     itemsIndexed(book.entries, key = { index, _ -> "worldbook-entry-$index" }) { index, entry ->
         StaCard(
             modifier = Modifier
-                .padding(horizontal = CharacterCardPadding, vertical = 6.dp),
+                .padding(horizontal = CharacterCardPadding, vertical = StaSpacing.xs),
         ) {
             ArrowPreference(
                 title = entry.name.take(120).ifBlank { "条目 ${index + 1}" },
@@ -115,7 +115,7 @@ internal fun LazyListScope.characterWorldbookEditor(
             enabled = enabled,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = CharacterCardPadding, vertical = 8.dp),
+                .padding(horizontal = CharacterCardPadding, vertical = StaSpacing.sm),
             onClick = {
                 onExpandEntry(book.entries.size)
                 store.updateWorldbook { it.copy(entries = it.entries + CharacterBookEntryDraft(insertionOrder = it.entries.size)) }
@@ -136,7 +136,7 @@ private fun CharacterWorldbookEntryEditor(
         Text(
             "此条目暂不参与匹配：${unsupported.joinToString("；")}",
             style = MiuixTheme.textStyles.body2,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = StaSpacing.lg, vertical = StaSpacing.sm),
             color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
         )
     }
@@ -175,7 +175,7 @@ private fun CharacterWorldbookEntryEditor(
         onClick = onDelete,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = StaSpacing.lg, vertical = StaSpacing.compact),
     )
 }
 

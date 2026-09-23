@@ -75,6 +75,8 @@ import io.github.asagnc.sta.ui.model.AgentContextUsageUi
 import io.github.asagnc.sta.ui.model.AgentModelPickerUiState
 import io.github.asagnc.sta.ui.model.PendingFileReferenceUi
 import io.github.asagnc.sta.ui.model.PendingImageUi
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlin.math.roundToInt
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
@@ -93,7 +95,7 @@ private val SendButtonVisualSize = ChatInputActionIconSize
 private val SendIconSize = 16.dp
 private val StopIconSize = 10.dp
 private val ThinkingIconSize = 21.dp
-private val InputContainerShape = RoundedCornerShape(20.dp)
+private val InputContainerShape = RoundedCornerShape(StaRadius.xxl)
 
 /**
  * Agent 输入器始终保持同一空间结构，聚焦、输入和执行过程只改变状态，不搬动操作入口。
@@ -175,7 +177,7 @@ internal fun AgentChatInputBar(
             PendingFileReferenceStrip(
                 references = pendingFileReferences,
                 onRemoveReference = onRemoveFileReference,
-                modifier = Modifier.padding(bottom = 8.dp),
+                modifier = Modifier.padding(bottom = StaSpacing.sm),
             )
         }
 
@@ -187,7 +189,7 @@ internal fun AgentChatInputBar(
             PendingImageStrip(
                 images = pendingImages,
                 onRemoveImage = onRemoveImage,
-                modifier = Modifier.padding(bottom = 8.dp),
+                modifier = Modifier.padding(bottom = StaSpacing.sm),
             )
         }
 
@@ -206,7 +208,7 @@ internal fun AgentChatInputBar(
                 },
                 style = MiuixTheme.textStyles.body2,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                modifier = Modifier.padding(start = 8.dp, bottom = 6.dp),
+                modifier = Modifier.padding(start = StaSpacing.sm, bottom = StaRadius.xs),
             )
         }
 
@@ -223,27 +225,27 @@ internal fun AgentChatInputBar(
                     .dropShadow(
                         shape = InputContainerShape,
                         shadow = Shadow(
-                            radius = 8.dp,
+                            radius = StaRadius.sm,
                             color = Color.Black,
                             alpha = 0.08f,
                         ),
                     )
                     .squircleSurface(
                         color = MiuixTheme.colorScheme.surfaceContainer,
-                        cornerRadius = 20.dp,
+                        cornerRadius = StaRadius.xxl,
                     )
                     .squircleBorder(
                         width = 0.5.dp,
                         color = MiuixTheme.colorScheme.outline.copy(alpha = 0.55f),
-                        cornerRadius = 20.dp,
+                        cornerRadius = StaRadius.xxl,
                     )
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                    .padding(horizontal = StaSpacing.compact, vertical = StaSpacing.sm),
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .defaultMinSize(minHeight = 40.dp)
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
+                        .padding(horizontal = StaSpacing.sm, vertical = 5.dp),
                     contentAlignment = Alignment.TopStart,
                 ) {
                     if (textFieldState.text.isBlank()) {
@@ -299,7 +301,7 @@ internal fun AgentChatInputBar(
                                 onAttachFilePath = onAttachFilePath,
                             )
 
-                            Spacer(modifier = Modifier.width(2.dp))
+                            Spacer(modifier = Modifier.width(StaSpacing.hair))
 
                             if (availableReasoningEfforts.isNotEmpty()) {
                                 ThinkingEffortChip(
@@ -318,7 +320,7 @@ internal fun AgentChatInputBar(
                         if (showContextUsage) {
                             AgentContextUsageButton(usage = contextUsage, onCompact = onCompactContext, canCompact = canCompactContext && !isStreaming)
 
-                            Spacer(modifier = Modifier.width(2.dp))
+                            Spacer(modifier = Modifier.width(StaSpacing.hair))
                         }
 
                         AgentModelPickerButton(
@@ -485,14 +487,14 @@ private fun PendingImageStrip(
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         images.forEach { image ->
             Box(
                 modifier = Modifier
                     .size(60.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(StaRadius.md))
                     .background(MiuixTheme.colorScheme.surfaceContainer),
             ) {
                 rememberDataUrlBitmap(image.dataUrl)?.let { bitmap ->

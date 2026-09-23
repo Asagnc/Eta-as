@@ -32,7 +32,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -79,6 +78,7 @@ import io.github.asagnc.sta.ui.screens.terminal.LinuxFilesScreen
 import io.github.asagnc.sta.ui.screens.terminal.SharedFoldersScreen
 import io.github.asagnc.sta.ui.screens.terminal.WorkspaceScreen
 import io.github.asagnc.sta.ui.screens.tools.AgentToolsScreen
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -687,7 +687,7 @@ fun AgentAppRoot(
                         agentState.renameConversation(conversation.id, renameInput)
                         conversationRenameTarget = null
                     },
-                    modifier = Modifier.padding(top = 16.dp),
+                    modifier = Modifier.padding(top = StaSpacing.lg),
                 )
             }
         }

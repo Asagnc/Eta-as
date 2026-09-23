@@ -90,6 +90,9 @@ import io.github.asagnc.sta.ui.model.AgentMessageUi
 import io.github.asagnc.sta.ui.model.ThinkingMessageUi
 import io.github.asagnc.sta.ui.model.ToolActivityMessageUi
 import io.github.asagnc.sta.ui.model.UserMessageUi
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
+import io.github.asagnc.sta.ui.theme.StaStroke
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlinx.coroutines.delay
@@ -507,7 +510,7 @@ private fun BoxScope.AssistantPanel(
 
     val bottomInset = with(density) { bottomInsetPx.toDp() }
     val messageRevealOffsetPx = with(density) { 12.dp.toPx() }
-    val sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    val sheetShape = RoundedCornerShape(topStart = StaRadius.xxxl, topEnd = StaRadius.xxxl)
     Column(
         modifier = Modifier
             .align(Alignment.BottomCenter)
@@ -576,10 +579,10 @@ private fun BoxScope.AssistantPanel(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 8.dp,
-                    bottom = bottomInset + 10.dp,
+                    start = StaRadius.xl,
+                    end = StaRadius.xl,
+                    top = StaRadius.sm,
+                    bottom = bottomInset + StaRadius.md,
                 ),
         )
     }
@@ -667,13 +670,13 @@ private fun ScreenContextAttachment(
                             cornerRadius = 17.dp,
                         )
                         .clickable(enabled = available, onClick = onSelect)
-                        .padding(horizontal = 12.dp),
+                        .padding(horizontal = StaSpacing.md),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     when (screenContext.phase) {
                         StaScreenContextPhase.CAPTURING -> CircularProgressIndicator(
                             size = 15.dp,
-                            strokeWidth = 2.dp,
+                            strokeWidth = StaStroke.thick,
                         )
                         StaScreenContextPhase.AVAILABLE -> Icon(
                             imageVector = Icons.Rounded.DesktopWindows,
@@ -733,7 +736,7 @@ private fun SelectedScreenContext(
             )
         }
         Column(
-            modifier = Modifier.padding(start = 10.dp, end = 6.dp),
+            modifier = Modifier.padding(start = StaSpacing.compact, end = StaRadius.xs),
         ) {
             Text(
                 text = stringResource(R.string.voice_screen_title),
@@ -803,7 +806,7 @@ private fun AssistantInputBar(
                 indication = null,
                 onClick = {},
             )
-            .padding(start = 16.dp, end = 4.dp),
+            .padding(start = StaSpacing.lg, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicTextField(
@@ -811,7 +814,7 @@ private fun AssistantInputBar(
             onValueChange = onInputChange,
             modifier = Modifier
                 .weight(1f)
-                .padding(vertical = 6.dp)
+                .padding(vertical = StaSpacing.xs)
                 .focusRequester(focusRequester),
             enabled = state.phase != StaVoicePhase.PROCESSING,
             textStyle = TextStyle(

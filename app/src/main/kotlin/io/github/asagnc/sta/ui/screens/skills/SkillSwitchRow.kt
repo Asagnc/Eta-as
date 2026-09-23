@@ -25,6 +25,7 @@ import io.github.asagnc.sta.R
 import io.github.asagnc.sta.ui.components.ItemDescriptionDialog
 import io.github.asagnc.sta.ui.components.PreferenceIcon
 import io.github.asagnc.sta.ui.model.SkillItemUi
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.DropdownEntry
 import top.yukonga.miuix.kmp.basic.DropdownItem
@@ -71,7 +72,7 @@ internal fun SkillSwitchRow(
                     tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
                 )
             }
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(StaSpacing.xxs))
             Switch(
                 checked = skill.enabled,
                 onCheckedChange = onToggle,
@@ -92,7 +93,7 @@ internal fun SkillSwitchRow(
             color = if (enabled) MiuixTheme.colorScheme.onSurfaceVariantSummary else MiuixTheme.colorScheme.disabledOnSurface,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 2.dp),
+            modifier = Modifier.padding(top = StaSpacing.hair),
         )
     }
     if (showDescription) {

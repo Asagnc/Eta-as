@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.model.AgentPlanAlternativeUi
 import io.github.asagnc.sta.ui.model.AgentPlanStatus
 import io.github.asagnc.sta.ui.model.AgentPlanUi
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
@@ -56,8 +57,8 @@ internal fun AgentPlanPanel(
     // 尚未采纳的方案默认展开：用户还没看过。采纳之后默认收起，把屏幕让回对话。
     var expanded by rememberSaveable(plan.title, plan.status) { mutableStateOf(pending) }
     Card(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-        insideMargin = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+        modifier = modifier.fillMaxWidth().padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs),
+        insideMargin = PaddingValues(horizontal = 14.dp, vertical = StaSpacing.compact),
         colors = CardDefaults.defaultColors(
             color = MiuixTheme.colorScheme.surfaceContainer,
             contentColor = MiuixTheme.colorScheme.onSurfaceContainer,
@@ -83,7 +84,7 @@ internal fun AgentPlanPanel(
             )
         }
         if (expanded) {
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(StaSpacing.xs))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -92,14 +93,14 @@ internal fun AgentPlanPanel(
             ) {
                 StaticMarkdown(content = plan.content, modifier = Modifier.fillMaxWidth())
                 if (plan.alternatives.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(StaSpacing.sm))
                     Text(
                         text = "备选方案",
                         style = MiuixTheme.textStyles.footnote1,
                         fontWeight = FontWeight.Medium,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     )
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(StaSpacing.xs)) {
                         plan.alternatives.forEach { alternative ->
                             Column(
                                 modifier = Modifier
@@ -130,7 +131,7 @@ internal fun AgentPlanPanel(
                 }
             }
             if (pending && onApprove != null) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(StaSpacing.compact))
                 Text(
                     text = "按此执行",
                     style = MiuixTheme.textStyles.body2,
@@ -140,7 +141,7 @@ internal fun AgentPlanPanel(
                 )
             }
             if (onReplan != null) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(StaSpacing.sm))
                 Text(
                     text = "重新规划",
                     style = MiuixTheme.textStyles.footnote1,

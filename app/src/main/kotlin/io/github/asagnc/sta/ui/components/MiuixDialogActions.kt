@@ -6,11 +6,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import io.github.asagnc.sta.R
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import io.github.asagnc.sta.R
 
 /**
  * 弹窗底部按钮行：取消在左、确认在右，平分整行。
@@ -38,7 +38,7 @@ fun MiuixDialogActions(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
     ) {
         TextButton(
             text = cancelText ?: stringResource(R.string.action_cancel),
@@ -53,8 +53,8 @@ fun MiuixDialogActions(
             modifier = Modifier.weight(1f),
             colors = if (destructive) {
                 ButtonDefaults.textButtonColorsPrimary(
-                    color = MiuixTheme.colorScheme.error,
-                    textColor = MiuixTheme.colorScheme.onError,
+                    color = StaColors.danger,
+                    textColor = StaColors.onDanger,
                 )
             } else {
                 ButtonDefaults.textButtonColorsPrimary()

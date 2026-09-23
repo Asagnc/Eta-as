@@ -28,6 +28,8 @@ import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.navigation.AppRoute
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.BasicComponentColors
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -69,10 +71,10 @@ internal fun CharacterDetailScreen(
         }
         item(key = "profile") {
             StaCard(
-                modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = 6.dp),
-                insideMargin = PaddingValues(16.dp),
+                modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = StaSpacing.xs),
+                insideMargin = PaddingValues(StaSpacing.lg),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StaSpacing.xxs)) {
                     Text(profile.card.name, style = MiuixTheme.textStyles.title2)
                     if (profile.card.tags.isNotEmpty()) {
                         Text(
@@ -98,7 +100,7 @@ internal fun CharacterDetailScreen(
                             style = MiuixTheme.textStyles.footnote1,
                             color = MiuixTheme.colorScheme.primary,
                             modifier = Modifier
-                                .padding(top = 6.dp)
+                                .padding(top = StaSpacing.xs)
                                 .clickable {
                                     preview = CharacterTextPreview("角色设定", profile.card.description)
                                 },
@@ -114,13 +116,13 @@ internal fun CharacterDetailScreen(
                 onClick = { store.startConversation(id, onStart) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = CharacterCardPadding, vertical = 6.dp),
+                    .padding(horizontal = CharacterCardPadding, vertical = StaSpacing.xs),
                 colors = ButtonDefaults.textButtonColorsPrimary(),
             )
         }
         item(key = "persona") {
             StaCard(
-                modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = CharacterCardPadding, vertical = StaSpacing.xs),
             ) {
                 SwitchPreference(
                     title = "使用我的人设",
@@ -150,7 +152,7 @@ internal fun CharacterDetailScreen(
                                     style = MiuixTheme.textStyles.footnote1,
                                     color = MiuixTheme.colorScheme.primary,
                                     modifier = Modifier
-                                        .padding(start = 16.dp, bottom = 10.dp)
+                                        .padding(start = StaSpacing.lg, bottom = StaRadius.md)
                                         .clickable {
                                             preview = CharacterTextPreview(
                                                 if (index == 0) "默认开场白" else "开场白 ${index + 1}",
@@ -191,8 +193,8 @@ internal fun CharacterDetailScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        .padding(horizontal = StaSpacing.md, vertical = StaSpacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
                 ) {
                     TextButton(
                         text = "导出 PNG",
@@ -214,7 +216,7 @@ internal fun CharacterDetailScreen(
                 StaCard(
                     modifier = Modifier
                         .padding(horizontal = CharacterCardPadding)
-                        .padding(top = 12.dp),
+                        .padding(top = StaSpacing.md),
                 ) {
                     ArrowPreference(
                         title = "兼容说明",
@@ -225,7 +227,7 @@ internal fun CharacterDetailScreen(
                         store.compatibilityWarnings.forEach { warning ->
                             Text(
                                 text = warning,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(horizontal = StaSpacing.lg, vertical = StaSpacing.sm),
                                 style = MiuixTheme.textStyles.body2,
                                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                             )
@@ -274,7 +276,7 @@ internal fun CharacterDetailScreen(
                 onClick = { preview = null },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
+                    .padding(top = StaSpacing.md),
                 colors = ButtonDefaults.textButtonColorsPrimary(),
             )
         }

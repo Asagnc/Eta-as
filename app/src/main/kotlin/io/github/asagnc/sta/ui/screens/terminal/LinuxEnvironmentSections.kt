@@ -15,6 +15,7 @@ import io.github.asagnc.sta.R
 import io.github.asagnc.sta.agent.terminal.LinuxDistribution
 import io.github.asagnc.sta.agent.terminal.LinuxExecutionBackend
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.DropdownItem
@@ -36,11 +37,11 @@ internal fun LinuxEnvironmentStatusCard(
     onAction: () -> Unit,
 ) {
     StaCard(
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-        insideMargin = PaddingValues(16.dp),
+        modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs),
+        insideMargin = PaddingValues(StaSpacing.lg),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(StaSpacing.md)) {
+            Column(verticalArrangement = Arrangement.spacedBy(StaSpacing.xxs)) {
                 Text(text = title, style = MiuixTheme.textStyles.headline1)
                 Text(
                     text = mode,
@@ -49,7 +50,7 @@ internal fun LinuxEnvironmentStatusCard(
                 )
             }
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(StaSpacing.compact),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (busy) InfiniteProgressIndicator(size = 20.dp)
@@ -91,7 +92,7 @@ internal fun LinuxEnvironmentConfiguration(
 ) {
     val distributions = LinuxDistribution.entries
     val backends = listOf(LinuxExecutionBackend.PROOT, LinuxExecutionBackend.CHROOT)
-    StaCard(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)) {
+    StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs)) {
         WindowSpinnerPreference(
             title = stringResource(R.string.linux_distribution_title),
             items = distributions.map {

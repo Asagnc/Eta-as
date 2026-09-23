@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import io.github.asagnc.sta.data.model.AppearanceTopBarBlurStyle
 import io.github.asagnc.sta.ui.app.LocalBlurEnabled
 import io.github.asagnc.sta.ui.app.LocalTopBarBlurStyle
+import io.github.asagnc.sta.ui.theme.StaColors
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
 import top.yukonga.miuix.kmp.blur.BlurColors
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
@@ -23,7 +24,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun rememberTopBarBackdrop(): LayerBackdrop? {
     if (!LocalBlurEnabled.current || !isRuntimeShaderSupported()) return null
-    val surfaceColor = MiuixTheme.colorScheme.surface
+    val surfaceColor = StaColors.surface
     return rememberLayerBackdrop {
         drawRect(surfaceColor)
         drawContent()
@@ -35,7 +36,7 @@ internal fun TopBarBackdrop(
     backdrop: LayerBackdrop?,
     content: @Composable () -> Unit,
 ) {
-    val surfaceColor = MiuixTheme.colorScheme.surface
+    val surfaceColor = StaColors.surface
     val modifier = when {
         backdrop == null -> Modifier.background(surfaceColor)
         LocalTopBarBlurStyle.current == AppearanceTopBarBlurStyle.PROGRESSIVE -> {
@@ -72,7 +73,7 @@ internal fun Modifier.captureForTopBar(backdrop: LayerBackdrop?): Modifier =
 
 @Composable
 internal fun topBarContainerColor(backdrop: LayerBackdrop?): Color =
-    if (backdrop == null) MiuixTheme.colorScheme.surface else Color.Transparent
+    if (backdrop == null) StaColors.surface else Color.Transparent
 
 private const val TopBarBlurRadius = 25f
 private const val TopBarSurfaceAlpha = 0.8f

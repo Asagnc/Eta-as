@@ -24,8 +24,9 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.BasicComponentDefaults
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
@@ -103,12 +104,12 @@ private fun ProviderHeaderRow(
     val context = LocalContext.current
     var visible by remember(row.id) { mutableStateOf(false) }
     Row(
-        modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 6.dp),
+        modifier = Modifier.padding(start = StaSpacing.lg, top = StaRadius.lg, bottom = StaRadius.lg, end = StaRadius.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(StaSpacing.sm),
         ) {
             TextField(
                 value = row.header.name,

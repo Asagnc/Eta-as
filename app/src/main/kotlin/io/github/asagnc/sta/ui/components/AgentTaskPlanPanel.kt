@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.model.AgentTaskPlanItemUi
 import io.github.asagnc.sta.ui.model.AgentTaskPlanStatus
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
@@ -68,8 +69,8 @@ internal fun AgentTaskPlanPanel(
         expanded = false
     }
     Card(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
-        insideMargin = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+        modifier = modifier.fillMaxWidth().padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs),
+        insideMargin = PaddingValues(horizontal = 14.dp, vertical = StaSpacing.compact),
         colors = CardDefaults.defaultColors(
             color = MiuixTheme.colorScheme.surfaceContainer,
             contentColor = MiuixTheme.colorScheme.onSurfaceContainer,
@@ -97,20 +98,20 @@ internal fun AgentTaskPlanPanel(
             )
         }
         if (expanded) {
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(StaSpacing.xs))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = listMaxHeight)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(StaSpacing.xxs),
             ) {
                 items.forEach { item -> AgentTaskPlanRow(item) }
             }
             // 只有运行已经结束、且确实停在某一步时才给「继续」入口；跑的过程中点它没有意义。
             val resumeTarget = active?.takeIf { !runActive }
             if (onResume != null && resumeTarget != null) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(StaSpacing.sm))
                 Text(
                     text = "从「${resumeTarget.content}」继续",
                     style = MiuixTheme.textStyles.footnote1,
@@ -158,7 +159,7 @@ private fun AgentTaskPlanRow(item: AgentTaskPlanItemUi) {
             // 未开始的一项不配图标，留出同宽空位保持各行文字对齐。
             AgentTaskPlanStatus.PENDING -> Spacer(modifier = Modifier.size(14.dp))
         }
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(StaSpacing.sm))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = item.content,

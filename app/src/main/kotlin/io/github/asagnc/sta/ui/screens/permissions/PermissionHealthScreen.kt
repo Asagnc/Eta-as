@@ -19,7 +19,6 @@ import androidx.compose.material.icons.rounded.Terminal
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.components.PreferenceIcon
@@ -28,6 +27,7 @@ import io.github.asagnc.sta.ui.components.label
 import io.github.asagnc.sta.ui.model.PermissionHealthAction
 import io.github.asagnc.sta.ui.model.PermissionHealthItemUi
 import io.github.asagnc.sta.ui.model.PermissionHealthUiState
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Card
 import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -50,7 +50,7 @@ fun PermissionHealthScreen(
             SmallTitle(stringResource(R.string.ui_permissions_and_status_35f368))
         }
         item(key = "card") {
-            StaCard(modifier = Modifier.padding(horizontal = 12.dp)) {
+            StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md)) {
                 state.items.forEach { item ->
                     PermissionItemRow(
                         item = item,

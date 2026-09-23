@@ -24,6 +24,7 @@ import io.github.asagnc.sta.ui.components.ListEmptyState
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.navigation.AppRoute
 import io.github.asagnc.sta.ui.components.StaCard
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -71,7 +72,7 @@ internal fun CharacterLibraryScreen(
             SearchBar(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = CharacterCardPadding, vertical = 4.dp),
+                    .padding(horizontal = CharacterCardPadding, vertical = StaSpacing.xxs),
                 expanded = false,
                 onExpandedChange = {},
                 inputField = {
@@ -104,7 +105,7 @@ internal fun CharacterLibraryScreen(
                         title = "还没有角色",
                         summary = "创建一个角色，或导入 PNG、JSON 角色卡开始对话",
                         action = {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm)) {
                                 TextButton(
                                     text = "恢复默认角色",
                                     onClick = { store.restoreDefaultCharacter() },
@@ -133,8 +134,8 @@ internal fun CharacterLibraryScreen(
             StaCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = CharacterCardPadding, vertical = 6.dp),
-                insideMargin = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = CharacterCardPadding, vertical = StaSpacing.xs),
+                insideMargin = PaddingValues(horizontal = StaSpacing.lg, vertical = StaSpacing.md),
                 pressFeedbackType = PressFeedbackType.Sink,
                 onClick = { if (!store.busy) onNavigate(AppRoute.CharacterDetail(profile.id)) },
             ) {
@@ -163,7 +164,7 @@ internal fun CharacterLibraryScreen(
             StaCard(
                 modifier = Modifier
                     .padding(horizontal = CharacterCardPadding)
-                    .padding(bottom = 12.dp),
+                    .padding(bottom = StaSpacing.md),
             ) {
                 ArrowPreference(
                     title = "我的人设",
@@ -180,7 +181,7 @@ internal fun CharacterPageMessage(text: String) {
     Text(
         text = text,
         style = MiuixTheme.textStyles.body2,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = StaSpacing.xl, vertical = StaSpacing.md),
         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
     )
 }

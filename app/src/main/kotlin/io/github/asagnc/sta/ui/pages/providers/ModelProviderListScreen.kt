@@ -24,7 +24,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.StaApp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.data.model.ProviderSetting
@@ -36,6 +35,8 @@ import io.github.asagnc.sta.ui.components.MiuixDialogActions
 import io.github.asagnc.sta.ui.components.MiuixScaffoldPage
 import io.github.asagnc.sta.ui.navigation.AppRoute
 import io.github.asagnc.sta.ui.navigation.NewProviderType
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -85,8 +86,8 @@ internal fun ModelProviderListScreen(
                 label = stringResource(R.string.ui_search_provider_74e049),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
-                    .padding(top = 12.dp, bottom = 8.dp),
+                    .padding(horizontal = StaSpacing.md)
+                    .padding(top = StaSpacing.md, bottom = StaRadius.sm),
             )
         }
 
@@ -116,7 +117,7 @@ internal fun ModelProviderListScreen(
             ProviderSection(title = pluralStringResource(R.plurals.provider_configured_count, filteredProviders.size, filteredProviders.size)) {
                 if (filteredProviders.isEmpty()) {
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = StaSpacing.xxl),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -195,7 +196,7 @@ private fun ProviderListItem(
                 onClick = onOpen,
                 onLongClick = onDelete
             )
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = StaSpacing.lg, vertical = StaSpacing.md)
             .graphicsLayer { alpha = opacity },
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -214,7 +215,7 @@ private fun ProviderListItem(
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 2.dp),
+                modifier = Modifier.padding(top = StaSpacing.hair),
             )
             Text(
                 text = listOfNotNull(
@@ -224,14 +225,14 @@ private fun ProviderListItem(
                 ).joinToString(" · "),
                 style = MiuixTheme.textStyles.footnote1,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                modifier = Modifier.padding(top = 6.dp),
+                modifier = Modifier.padding(top = StaSpacing.xs),
             )
             if (!provider.isEnabled) {
                 Text(
                     text = stringResource(R.string.ui_disabled_0fe5a9),
                     style = MiuixTheme.textStyles.footnote1,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = Modifier.padding(top = StaSpacing.hair),
                 )
             }
         }

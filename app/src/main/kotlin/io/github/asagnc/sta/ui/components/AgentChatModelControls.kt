@@ -46,6 +46,8 @@ import io.github.asagnc.sta.ui.model.AgentModelOptionUi
 import io.github.asagnc.sta.ui.model.AgentModelPickerUiState
 import io.github.asagnc.sta.ui.model.defaultExpandedModelProviderIds
 import io.github.asagnc.sta.ui.model.formatContextUsage
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
@@ -149,7 +151,7 @@ private fun ModelPickerPopupContent(
     ListPopupColumn {
         state.providerGroups.forEachIndexed { groupIndex, group ->
             if (groupIndex > 0) {
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+                HorizontalDivider(modifier = Modifier.padding(horizontal = StaSpacing.md))
             }
             val expanded = group.providerId in expandedProviderIds
             ModelProviderGroupHeader(
@@ -187,7 +189,7 @@ private fun ModelProviderGroupHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(start = 16.dp, end = 14.dp, top = 11.dp, bottom = 9.dp),
+            .padding(start = StaSpacing.lg, end = 14.dp, top = 11.dp, bottom = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -198,7 +200,7 @@ private fun ModelProviderGroupHeader(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(StaSpacing.sm))
         Icon(
             imageVector = Icons.Rounded.ExpandMore,
             contentDescription = if (expanded) {
@@ -223,17 +225,17 @@ private fun ModelPickerRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .padding(horizontal = StaSpacing.sm, vertical = StaSpacing.hair)
             .squircleSurface(
                 color = if (selected) {
                     MiuixTheme.colorScheme.surfaceContainerHigh
                 } else {
                     Color.Transparent
                 },
-                cornerRadius = 12.dp,
+                cornerRadius = StaRadius.lg,
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 9.dp),
+            .padding(horizontal = StaSpacing.compact, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -245,7 +247,7 @@ private fun ModelPickerRow(
             modifier = Modifier.weight(1f),
         )
         if (selected) {
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(StaSpacing.sm))
             Icon(
                 imageVector = Icons.Rounded.Check,
                 contentDescription = stringResource(R.string.ui_current_model_a0af8f),
@@ -312,7 +314,7 @@ internal fun AgentContextUsageButton(
                             minHeight = 34.dp,
                             cornerRadius = 17.dp,
                             colors = ButtonDefaults.textButtonColorsPrimary(),
-                            insideMargin = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                            insideMargin = PaddingValues(horizontal = StaSpacing.lg, vertical = StaSpacing.xs),
                         )
                     }
                 } else {

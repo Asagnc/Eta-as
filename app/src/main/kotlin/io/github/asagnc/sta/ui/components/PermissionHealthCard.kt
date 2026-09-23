@@ -18,10 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.ui.model.PermissionHealthUiState
 import io.github.asagnc.sta.ui.model.PermissionStatusUi
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
@@ -37,16 +38,16 @@ fun PermissionHealthCard(
     StaCard(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = StaSpacing.lg, vertical = StaSpacing.xs),
         onClick = onOpenPermissions,
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(StaSpacing.xl)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = stringResource(R.string.ui_permission_health_3048bb),
                     modifier = Modifier.weight(1f),
                     style = MiuixTheme.textStyles.headline1,
-                    color = MiuixTheme.colorScheme.onSurfaceContainer,
+                    color = StaColors.onSurfaceRaised,
                 )
                 Text(
                     text = if (issueCount == 0) {
@@ -56,34 +57,34 @@ fun PermissionHealthCard(
                     },
                     style = MiuixTheme.textStyles.body2,
                     color = if (issueCount == 0) {
-                        MiuixTheme.colorScheme.onSurfaceVariantActions
+                        StaColors.textAction
                     } else {
-                        MiuixTheme.colorScheme.primary
+                        StaColors.accent
                     },
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(StaSpacing.lg))
             state.items.take(3).forEach { item ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
                 ) {
                     PermissionStatusIcon(item.status)
                     Text(
                         text = item.title,
                         modifier = Modifier.weight(1f),
                         style = MiuixTheme.textStyles.body2,
-                        color = MiuixTheme.colorScheme.onSurface,
+                        color = StaColors.textPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         text = statusLabel(item.status),
                         style = MiuixTheme.textStyles.footnote1,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                        color = StaColors.textAction,
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(StaSpacing.sm))
             }
         }
     }
@@ -92,29 +93,29 @@ fun PermissionHealthCard(
 @Composable
 private fun PermissionStatusIcon(status: PermissionStatusUi) {
     val tint = when (status) {
-        PermissionStatusUi.Available -> MiuixTheme.colorScheme.primary
-        PermissionStatusUi.Warning -> MiuixTheme.colorScheme.primary
+        PermissionStatusUi.Available -> StaColors.success
+        PermissionStatusUi.Warning -> StaColors.warning
         PermissionStatusUi.Missing,
-        PermissionStatusUi.Disabled -> MiuixTheme.colorScheme.onSurfaceVariantActions
+        PermissionStatusUi.Disabled -> StaColors.textAction
     }
     when (status) {
         PermissionStatusUi.Available -> Icon(
             imageVector = Icons.Rounded.Check,
             contentDescription = null,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(StaSpacing.xl),
             tint = tint,
         )
         PermissionStatusUi.Warning -> Icon(
             imageVector = Icons.Rounded.Warning,
             contentDescription = null,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(StaSpacing.xl),
             tint = tint,
         )
         PermissionStatusUi.Missing,
         PermissionStatusUi.Disabled -> Icon(
             imageVector = Icons.Rounded.Close,
             contentDescription = null,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(StaSpacing.xl),
             tint = tint,
         )
     }

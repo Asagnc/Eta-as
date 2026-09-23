@@ -48,6 +48,8 @@ import io.github.asagnc.sta.R
 import io.github.asagnc.sta.agent.model.AgentFileReference
 import io.github.asagnc.sta.agent.model.AgentFileReferenceKind
 import io.github.asagnc.sta.ui.model.PendingFileReferenceUi
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
@@ -185,7 +187,7 @@ internal fun AgentAttachmentPickerButton(
                     showPathDialog = false
                     onAttachFilePath(path)
                 },
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier.padding(top = StaSpacing.lg),
             )
         }
     }
@@ -201,7 +203,7 @@ internal fun PendingFileReferenceStrip(
         modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         references.forEach { pending ->
@@ -219,9 +221,9 @@ internal fun PendingFileReferenceStrip(
                         color = MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
                         cornerRadius = 14.dp,
                     )
-                    .padding(start = 12.dp, end = 6.dp),
+                    .padding(start = StaSpacing.md, end = StaRadius.xs),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
             ) {
                 Icon(
                     imageVector = if (reference.kind == AgentFileReferenceKind.Directory) {
@@ -269,8 +271,8 @@ internal fun SentFileReferenceFlow(
 ) {
     FlowRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(StaSpacing.xs),
+        verticalArrangement = Arrangement.spacedBy(StaSpacing.xs),
     ) {
         references.forEach { reference ->
             Row(
@@ -279,16 +281,16 @@ internal fun SentFileReferenceFlow(
                     .widthIn(max = 280.dp)
                     .squircleSurface(
                         color = MiuixTheme.colorScheme.surface,
-                        cornerRadius = 12.dp,
+                        cornerRadius = StaRadius.lg,
                     )
                     .squircleBorder(
                         width = 0.5.dp,
                         color = MiuixTheme.colorScheme.outline.copy(alpha = 0.45f),
-                        cornerRadius = 12.dp,
+                        cornerRadius = StaRadius.lg,
                     )
                     .padding(horizontal = 11.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
             ) {
                 Icon(
                     imageVector = if (reference.kind == AgentFileReferenceKind.Directory) {

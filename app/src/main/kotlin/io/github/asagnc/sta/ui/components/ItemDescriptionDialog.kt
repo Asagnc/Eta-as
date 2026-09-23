@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -25,7 +26,7 @@ internal fun ItemDescriptionDialog(
     WindowDialog(show = true, title = title, onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(StaSpacing.md),
         ) {
             Text(
                 text = description,

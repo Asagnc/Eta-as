@@ -16,6 +16,8 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.ui.app.LocalAppearanceSettings
+import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
@@ -30,9 +32,9 @@ internal object SettingsIconColors {
 }
 
 internal object SettingsItemLayout {
-    val SidePadding = 16.dp
-    val IconSize = 24.dp
-    val IconTextGap = 16.dp
+    val SidePadding = StaSpacing.lg
+    val IconSize = StaSpacing.xxl
+    val IconTextGap = StaSpacing.lg
     val ContentStart = SidePadding + IconSize + IconTextGap
     val RowMinHeight = 52.dp
 }
@@ -52,7 +54,9 @@ internal fun SettingsPageTheme(content: @Composable () -> Unit) {
 @Composable
 internal fun SettingsGroup(content: @Composable ColumnScope.() -> Unit) {
     StaCard(
-        modifier = Modifier.padding(horizontal = SettingsItemLayout.SidePadding).padding(bottom = 16.dp),
+        modifier = Modifier
+            .padding(horizontal = SettingsItemLayout.SidePadding)
+            .padding(bottom = StaSpacing.lg),
         content = content,
     )
 }
@@ -62,8 +66,13 @@ internal fun SettingsGroupTitle(text: String) {
     Text(
         text = text,
         style = MiuixTheme.textStyles.subtitle,
-        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-        modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 4.dp, bottom = 8.dp),
+        color = StaColors.textSecondary,
+        modifier = Modifier.padding(
+            start = StaSpacing.xxxl,
+            end = StaSpacing.xxxl,
+            top = StaSpacing.xxs,
+            bottom = StaSpacing.sm,
+        ),
     )
 }
 
@@ -83,7 +92,7 @@ internal fun SettingsPreferenceIcon(
             imageVector = icon,
             contentDescription = null,
             modifier = Modifier.size(glyphSize),
-            tint = if (enabled) tint else MiuixTheme.colorScheme.disabledOnSurface,
+            tint = if (enabled) tint else StaColors.textDisabled,
         )
     }
 }
@@ -93,6 +102,6 @@ internal fun SettingsItemDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(start = SettingsItemLayout.ContentStart, end = SettingsItemLayout.SidePadding),
         thickness = 0.33.dp,
-        color = MiuixTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+        color = StaColors.textPrimary.copy(alpha = 0.1f),
     )
 }

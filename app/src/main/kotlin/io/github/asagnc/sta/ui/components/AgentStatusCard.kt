@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import io.github.asagnc.sta.R
 import io.github.asagnc.sta.ui.model.ActiveRunSummaryUi
 import io.github.asagnc.sta.ui.model.RunStatusUi
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
@@ -38,13 +39,13 @@ fun AgentStatusCard(
     StaCard(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs),
         onClick = onOpenRun,
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(StaSpacing.lg)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StatusIndicator(status = activeRun.status)
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(StaSpacing.compact))
                 Text(
                     text = activeRun.title,
                     modifier = Modifier.weight(1f),
@@ -54,13 +55,13 @@ fun AgentStatusCard(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(StaSpacing.sm))
             Text(
                 text = activeRun.currentStep,
                 style = MiuixTheme.textStyles.body2,
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(StaSpacing.md))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = activeRun.elapsedLabel,

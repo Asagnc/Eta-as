@@ -109,6 +109,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -211,7 +213,7 @@ fun AITypingIndicator(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "dots")
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(StaSpacing.xxs),
         verticalAlignment = Alignment.CenterVertically
     ) {
         repeat(3) { index ->
@@ -270,7 +272,7 @@ private fun MessageTimestamp(timestamp: Long) {
         text = text,
         style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
         color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 2.dp),
+        modifier = Modifier.padding(start = StaSpacing.md, end = StaRadius.lg, top = 2.dp),
     )
 }
 
@@ -444,7 +446,7 @@ internal fun AgentWorkProcess(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 4.dp)
+            .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xxs)
             .squircleSurface(
                 color = MiuixTheme.colorScheme.surface,
                 cornerRadius = 14.dp,
@@ -462,7 +464,7 @@ internal fun AgentWorkProcess(
                     manuallyExpanded = true
                     expanded = !expanded
                 }
-                .padding(horizontal = 13.dp, vertical = 10.dp),
+                .padding(horizontal = 13.dp, vertical = StaSpacing.compact),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -481,7 +483,7 @@ internal fun AgentWorkProcess(
                     MiuixTheme.colorScheme.onSurfaceVariantSummary
                 },
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(StaSpacing.sm))
             Text(
                 text = when {
                     running && toolCount > 0 -> pluralStringResource(
@@ -541,7 +543,7 @@ internal fun AgentWorkProcess(
                         .height(0.5.dp)
                         .background(MiuixTheme.colorScheme.outline.copy(alpha = 0.45f)),
                 )
-                Column(modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)) {
+                Column(modifier = Modifier.padding(top = StaSpacing.hair, bottom = StaRadius.sm)) {
                     messages.forEach { message ->
                         ChatMessageItem(
                             message = message,
@@ -586,7 +588,7 @@ private fun UserMessageBubble(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 7.dp),
+            .padding(horizontal = StaSpacing.xl, vertical = 7.dp),
         horizontalArrangement = Arrangement.End,
     ) {
         TooltipBox(
@@ -594,8 +596,8 @@ private fun UserMessageBubble(
                 positioning = TooltipAnchorPosition.Below,
             ),
             tooltip = {
-                RichTooltip(insideMargin = PaddingValues(horizontal = 8.dp, vertical = 6.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                RichTooltip(insideMargin = PaddingValues(horizontal = StaSpacing.sm, vertical = StaSpacing.xs)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(StaSpacing.hair)) {
                         MessageTooltipAction(
                             icon = Icons.Rounded.ContentCopy,
                             label = stringResource(R.string.ui_copy_4edd1d),
@@ -643,28 +645,28 @@ private fun UserMessageBubble(
                     .widthIn(max = 320.dp)
                     .squircleSurface(
                         color = MiuixTheme.colorScheme.surfaceContainerHigh,
-                        topStart = 20.dp,
-                        topEnd = 20.dp,
-                        bottomEnd = 6.dp,
-                        bottomStart = 20.dp,
+                        topStart = StaRadius.xxl,
+                        topEnd = StaRadius.xxl,
+                        bottomEnd = StaRadius.xs,
+                        bottomStart = StaRadius.xxl,
                     )
                     .then(
                         if (isEditing) {
                             Modifier.squircleBorder(
                                 width = 1.dp,
                                 color = MiuixTheme.colorScheme.primary,
-                                cornerRadius = 20.dp,
+                                cornerRadius = StaRadius.xxl,
                             )
                         } else {
                             Modifier
                         }
                     )
-                    .padding(horizontal = 16.dp, vertical = 11.dp),
+                    .padding(horizontal = StaSpacing.lg, vertical = 11.dp),
             ) {
                 if (message.images.isNotEmpty()) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(StaSpacing.xs),
+                        modifier = Modifier.padding(bottom = StaSpacing.sm)
                     ) {
                         message.images.forEach { dataUrl ->
                             val bitmap = rememberDataUrlBitmap(dataUrl)
@@ -674,7 +676,7 @@ private fun UserMessageBubble(
                                     contentDescription = null,
                                     modifier = Modifier
                                         .size(100.dp)
-                                        .clip(RoundedCornerShape(12.dp)),
+                                        .clip(RoundedCornerShape(StaRadius.lg)),
                                     contentScale = ContentScale.Crop,
                                 )
                             }
@@ -703,7 +705,7 @@ private fun UserMessageBubble(
                         text = stringResource(R.string.ui_edited_c36776),
                         style = MiuixTheme.textStyles.body2,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        modifier = Modifier.padding(top = 4.dp),
+                        modifier = Modifier.padding(top = StaSpacing.xxs),
                     )
                 }
             }
@@ -720,7 +722,7 @@ private fun MessageTooltipAction(
     Column(
         modifier = Modifier
             .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .padding(horizontal = StaSpacing.compact, vertical = StaSpacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
@@ -753,7 +755,7 @@ private fun ContextCompactionMarker(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp),
+            .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xs),
         contentAlignment = Alignment.Center,
     ) {
         Row(
@@ -765,7 +767,7 @@ private fun ContextCompactionMarker(
                     MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
                     RoundedCornerShape(percent = 50),
                 )
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+                .padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -780,7 +782,7 @@ private fun ContextCompactionMarker(
                     MiuixTheme.colorScheme.onSurfaceVariantSummary
                 },
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(StaSpacing.xs))
             Text(
                 text = message.detail?.takeIf(String::isNotBlank)
                     ?: stringResource(R.string.context_compaction),
@@ -841,12 +843,12 @@ private fun AgentMessageBlock(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 7.dp),
+            .padding(horizontal = StaSpacing.xl, vertical = 7.dp),
     ) {
         when {
             message.content.isBlank() && message.isStreaming -> {
                 AITypingIndicator(
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = StaSpacing.xxs)
                 )
             }
             streamingState != null && !revealComplete -> {
@@ -887,7 +889,7 @@ private fun AgentMessageBlock(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 2.dp),
+                    .padding(top = StaSpacing.hair),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (message.timestamp > 0) {
@@ -895,7 +897,7 @@ private fun AgentMessageBlock(
                         text = formatMessageTimestamp(message.timestamp),
                         style = MiuixTheme.textStyles.footnote1,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(start = 4.dp, end = 2.dp),
+                        modifier = Modifier.padding(start = StaSpacing.xxs, end = 2.dp),
                     )
                 }
                 IconButton(
@@ -986,7 +988,7 @@ private fun AgentMessageBlock(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(percent = 50))
                                 .background(MiuixTheme.colorScheme.surfaceContainerHigh)
-                                .padding(horizontal = 3.dp, vertical = 2.dp),
+                                .padding(horizontal = 3.dp, vertical = StaSpacing.hair),
                         ) {
                             IconButton(
                                 onClick = { onSelectCandidate(message.selectedCandidate - 1) },
@@ -1447,7 +1449,7 @@ private fun chatMarkdownPadding() = markdownPadding(
     listItemBottom = 3.dp,
     listIndent = 14.dp,
     codeBlock = PaddingValues(horizontal = 13.dp, vertical = 11.dp),
-    blockQuote = PaddingValues(horizontal = 12.dp),
+    blockQuote = PaddingValues(horizontal = StaSpacing.md),
     blockQuoteText = PaddingValues(vertical = 3.dp),
     blockQuoteBar = PaddingValues.Absolute(left = 2.dp, top = 3.dp, right = 0.dp, bottom = 3.dp),
 )
@@ -1668,7 +1670,7 @@ private fun ChatMarkdownList(
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(StaSpacing.xs))
 
                     Column {
                         item.children.forEach { child ->
@@ -1866,18 +1868,18 @@ private fun ChatCodeBlock(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(StaRadius.md))
             .background(MiuixTheme.colorScheme.surface)
             .border(
                 0.5.dp,
                 MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
-                RoundedCornerShape(10.dp),
+                RoundedCornerShape(StaRadius.md),
             ),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 13.dp, end = 6.dp, top = 3.dp, bottom = 3.dp),
+                .padding(start = 13.dp, end = StaRadius.xs, top = 3.dp, bottom = 3.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -1977,8 +1979,8 @@ private fun ChatMarkdownTable(
             } else {
                 Modifier.fillMaxWidth()
             })
-                .clip(RoundedCornerShape(10.dp))
-                .border(0.5.dp, borderColor, RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(StaRadius.md))
+                .border(0.5.dp, borderColor, RoundedCornerShape(StaRadius.md))
                 .background(MiuixTheme.colorScheme.surface),
         ) {
             Row(
@@ -1991,7 +1993,7 @@ private fun ChatMarkdownTable(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(horizontal = 12.dp, vertical = 9.dp),
+                            .padding(horizontal = StaSpacing.md, vertical = 9.dp),
                     ) {
                         ChatMarkdownTableCell(
                             content = content,
@@ -2016,7 +2018,7 @@ private fun ChatMarkdownTable(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                                .padding(horizontal = StaSpacing.md, vertical = 9.dp),
                         ) {
                             ChatMarkdownTableCell(
                                 content = content,
@@ -2280,11 +2282,11 @@ private fun ThinkingRow(
     val containerModifier = if (compact) {
         modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 2.dp)
+            .padding(horizontal = StaSpacing.compact, vertical = StaSpacing.hair)
     } else {
         modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 4.dp)
+            .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xxs)
             .squircleSurface(
                 color = MiuixTheme.colorScheme.surface,
                 cornerRadius = 14.dp,
@@ -2300,14 +2302,14 @@ private fun ThinkingRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(StaRadius.md))
                 .clickable {
                     manuallyExpanded = true
                     expanded = !expanded
                     // 手动切换会改变列表高度，交由调用方暂停自动跟底，避免视口被拉回最新内容。
                     onThinkingToggle()
                 }
-                .padding(horizontal = if (compact) 4.dp else 13.dp, vertical = if (compact) 6.dp else 10.dp),
+                .padding(horizontal = if (compact) StaSpacing.xxs else 13.dp, vertical = if (compact) StaSpacing.xs else StaSpacing.compact),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -2322,7 +2324,7 @@ private fun ThinkingRow(
                     MiuixTheme.colorScheme.onSurfaceVariantSummary
                 },
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(StaSpacing.sm))
             Text(
                 text = if (message.isStreaming) {
                     stringResource(R.string.reasoning_in_progress)
@@ -2415,7 +2417,7 @@ private fun subAgentSubtitle(items: List<AgentSubAgentItemUi>): String? {
 private fun SubAgentProgressRow(agent: AgentSubAgentItemUi) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(StaSpacing.xs),
     ) {
         Box(
             modifier = Modifier
@@ -2497,15 +2499,15 @@ private fun ToolActivityInline(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(StaRadius.md))
             .clickable { isExpanded = !isExpanded }
-            .padding(horizontal = if (compact) 10.dp else 20.dp, vertical = 3.dp)
+            .padding(horizontal = if (compact) StaSpacing.compact else StaSpacing.xl, vertical = 3.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 5.dp),
+                .padding(horizontal = StaSpacing.xxs, vertical = 5.dp),
         ) {
             // 工具图标与思考行的灯泡共用同一前导槽位，保证卡片内左边缘对齐。
             Icon(
@@ -2521,7 +2523,7 @@ private fun ToolActivityInline(
                 }
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(StaSpacing.sm))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -2609,18 +2611,18 @@ private fun ToolActivityInline(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 27.dp, top = 2.dp, bottom = 6.dp)
+                    .padding(start = 27.dp, top = 2.dp, bottom = StaRadius.xs)
                     .squircleSurface(
                         color = MiuixTheme.colorScheme.surfaceContainer,
-                        cornerRadius = 10.dp,
+                        cornerRadius = StaRadius.md,
                     )
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
             ) {
                 if (message.subAgents.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(StaSpacing.xxs)) {
                         message.subAgents.forEach { agent -> SubAgentProgressRow(agent) }
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(StaSpacing.sm))
                 }
                 if (!message.command.isNullOrBlank()) {
                     ToolCommandBlock(
@@ -2636,7 +2638,7 @@ private fun ToolActivityInline(
                         text = stringResource(R.string.ui_result_0a2c91),
                         style = MiuixTheme.textStyles.footnote1,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                        modifier = Modifier.padding(bottom = 2.dp)
+                        modifier = Modifier.padding(bottom = StaSpacing.hair)
                     )
                     Text(
                         text = message.resultSummary,
@@ -2650,13 +2652,13 @@ private fun ToolActivityInline(
                     browserSnapshot?.takeIf { it.available }?.let { snapshot ->
                         BrowserPagePreview(
                             snapshot = snapshot,
-                            modifier = Modifier.padding(top = 4.dp),
+                            modifier = Modifier.padding(top = StaSpacing.xxs),
                         )
                     }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp),
+                            .padding(top = StaSpacing.sm),
                         horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(
@@ -2700,11 +2702,11 @@ private fun BrowserPagePreview(
             .fillMaxWidth()
             .squircleSurface(
                 color = MiuixTheme.colorScheme.surfaceContainer,
-                cornerRadius = 10.dp,
+                cornerRadius = StaRadius.md,
             ),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = StaSpacing.compact, vertical = StaSpacing.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -2713,7 +2715,7 @@ private fun BrowserPagePreview(
                     .clip(CircleShape)
                     .background(if (snapshot.isLoading) StatusRunning else StatusSuccess),
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(StaSpacing.xs))
             Text(
                 text = snapshot.host.ifBlank { snapshot.displayUrl },
                 style = MiuixTheme.textStyles.footnote2,
@@ -2745,7 +2747,7 @@ private fun BrowserPagePreview(
                 )
             }
         }
-        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+        Column(modifier = Modifier.padding(horizontal = StaSpacing.compact, vertical = StaSpacing.sm)) {
             if (snapshot.title.isNotBlank()) {
                 Text(
                     text = snapshot.title,
@@ -2789,18 +2791,18 @@ private fun ToolCommandBlock(
             .fillMaxWidth()
             .squircleSurface(
                 color = MiuixTheme.colorScheme.surface,
-                cornerRadius = 10.dp,
+                cornerRadius = StaRadius.md,
             )
             .squircleBorder(
                 width = 0.5.dp,
                 color = MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
-                cornerRadius = 10.dp,
+                cornerRadius = StaRadius.md,
             ),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 12.dp, end = 5.dp, top = 3.dp, bottom = 3.dp),
+                .padding(start = StaSpacing.md, end = 5.dp, top = 3.dp, bottom = 3.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -2838,7 +2840,7 @@ private fun ToolCommandBlock(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp)
+                .padding(horizontal = StaSpacing.md)
                 .height(0.5.dp)
                 .background(MiuixTheme.colorScheme.outline.copy(alpha = 0.45f)),
         )
@@ -2850,7 +2852,7 @@ private fun ToolCommandBlock(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
             )
         }
     }
@@ -2867,13 +2869,13 @@ private fun RunTraceRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xxs)
+            .clip(RoundedCornerShape(StaRadius.lg))
             .background(MiuixTheme.colorScheme.surface)
             .border(
                 0.5.dp,
                 MiuixTheme.colorScheme.outline.copy(alpha = 0.55f),
-                RoundedCornerShape(12.dp),
+                RoundedCornerShape(StaRadius.lg),
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 13.dp, vertical = 11.dp),
@@ -2885,7 +2887,7 @@ private fun RunTraceRow(
             modifier = Modifier.size(15.dp),
             tint = MiuixTheme.colorScheme.primary,
         )
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(StaSpacing.sm))
         Text(
             text = stringResource(R.string.ui_available_capacity_743337),
             style = MiuixTheme.textStyles.body2,
@@ -2913,19 +2915,19 @@ private fun ToolSummaryInline(
     FlowRow(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = if (compact) 10.dp else 20.dp, vertical = 3.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+            .padding(horizontal = if (compact) StaSpacing.compact else StaSpacing.xl, vertical = 3.dp),
+        horizontalArrangement = Arrangement.spacedBy(StaSpacing.xs),
+        verticalArrangement = Arrangement.spacedBy(StaSpacing.xs),
     ) {
         message.tools.forEach { tool ->
             Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(StaRadius.md))
                     .background(MiuixTheme.colorScheme.surface)
                     .border(
                         0.5.dp,
                         MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
-                        RoundedCornerShape(10.dp),
+                        RoundedCornerShape(StaRadius.md),
                     )
                     .padding(horizontal = 9.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -2959,22 +2961,22 @@ private fun SuggestionChipsRow(
     FlowRow(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
+        verticalArrangement = Arrangement.spacedBy(StaSpacing.sm),
     ) {
         message.prompts.forEach { prompt ->
             Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(StaRadius.md))
                     .background(MiuixTheme.colorScheme.surface)
                     .border(
                         0.5.dp,
                         MiuixTheme.colorScheme.outline.copy(alpha = 0.55f),
-                        RoundedCornerShape(10.dp),
+                        RoundedCornerShape(StaRadius.md),
                     )
                     .clickable { onSuggestionClick(prompt) }
-                    .padding(horizontal = 13.dp, vertical = 8.dp),
+                    .padding(horizontal = 13.dp, vertical = StaSpacing.sm),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
@@ -2983,7 +2985,7 @@ private fun SuggestionChipsRow(
                     modifier = Modifier.size(12.dp),
                     tint = MiuixTheme.colorScheme.primary
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(StaSpacing.xs))
                 Text(
                     text = prompt,
                     style = MiuixTheme.textStyles.footnote1,

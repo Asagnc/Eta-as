@@ -24,6 +24,8 @@ import io.github.asagnc.sta.data.model.CustomProviderSetting
 import io.github.asagnc.sta.data.model.ProviderSetting
 import io.github.asagnc.sta.ui.components.PreferenceIcon
 import io.github.asagnc.sta.ui.components.providerBrandLogoRes as sharedProviderBrandLogoRes
+import io.github.asagnc.sta.ui.theme.StaRadius
+import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Card
 import io.github.asagnc.sta.ui.components.StaCard
 import top.yukonga.miuix.kmp.basic.SmallTitle
@@ -41,7 +43,7 @@ internal fun ProviderSection(
         if (title != null) {
             SmallTitle(title)
         }
-        StaCard(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+        StaCard(modifier = Modifier.fillMaxWidth().padding(horizontal = StaSpacing.md)) {
             content()
         }
     }
@@ -67,7 +69,7 @@ private fun ProviderBrandImage(
         contentDescription = null,
         contentScale = ContentScale.Fit,
         modifier = modifier
-            .padding(end = 6.dp)
+            .padding(end = StaSpacing.xs)
             .size(24.dp)
             .clip(CircleShape),
     )
@@ -130,7 +132,7 @@ internal fun TagChip(
         style = MiuixTheme.textStyles.footnote2,
         color = foreground,
         modifier = Modifier
-            .background(background, RoundedCornerShape(6.dp))
-            .padding(horizontal = 6.dp, vertical = 2.dp),
+            .background(background, RoundedCornerShape(StaRadius.xs))
+            .padding(horizontal = StaSpacing.xs, vertical = StaSpacing.hair),
     )
 }
