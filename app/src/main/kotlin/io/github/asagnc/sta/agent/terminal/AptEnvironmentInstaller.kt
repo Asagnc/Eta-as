@@ -169,12 +169,12 @@ internal class AptEnvironmentInstaller(
         val command = """
             if [ "${'$'}(id -u)" != 0 ]; then exit $PREFLIGHT_ROOT_UNAVAILABLE; fi
             ${AndroidBusyBox.discoveryScript()}
-            if [ -z "${'$'}eta_busybox" ]; then exit $PREFLIGHT_BUSYBOX_UNAVAILABLE; fi
-            for eta_applet in $requiredApplets; do
-              "${'$'}eta_busybox" --list | "${'$'}eta_busybox" grep -qx "${'$'}eta_applet" || exit $PREFLIGHT_BUSYBOX_INCOMPLETE
+            if [ -z "${'$'}sta_busybox" ]; then exit $PREFLIGHT_BUSYBOX_UNAVAILABLE; fi
+            for sta_applet in $requiredApplets; do
+              "${'$'}sta_busybox" --list | "${'$'}sta_busybox" grep -qx "${'$'}sta_applet" || exit $PREFLIGHT_BUSYBOX_INCOMPLETE
             done
-            "${'$'}eta_busybox" unshare -m --propagation private \
-              "${'$'}eta_busybox" chroot / /system/bin/sh -c ':' || exit $PREFLIGHT_ENVIRONMENT_UNAVAILABLE
+            "${'$'}sta_busybox" unshare -m --propagation private \
+              "${'$'}sta_busybox" chroot / /system/bin/sh -c ':' || exit $PREFLIGHT_ENVIRONMENT_UNAVAILABLE
         """.trimIndent()
         return InstallerShellRunner.run(command, 15, TerminalEnvironment.ANDROID)
     }
@@ -190,65 +190,65 @@ internal class AptEnvironmentInstaller(
         val markerBody = "version=${artifact.version}\\ndistribution=${distribution.wireName}\\nsha256=${artifact.sha256}\\n"
         val command = """
             ${AndroidBusyBox.discoveryScript()}
-            [ -n "${'$'}eta_busybox" ] || exit 127
-            eta_archive=${shellQuote(archive.absolutePath)}
-            eta_parent=${shellQuote(parent.absolutePath)}
-            eta_rootfs=${shellQuote(rootfs.absolutePath)}
-            eta_temporary=${shellQuote(temporaryRootfs.absolutePath)}
-            eta_actual_sha=${'$'}("${'$'}eta_busybox" sha256sum "${'$'}eta_archive" | "${'$'}eta_busybox" awk '{print ${'$'}1}')
-            [ "${'$'}eta_actual_sha" = ${shellQuote(artifact.sha256)} ] || exit 65
-            "${'$'}eta_busybox" mkdir -p "${'$'}eta_parent" || exit 66
-            "${'$'}eta_busybox" rm -rf "${'$'}eta_temporary"
-            "${'$'}eta_busybox" mkdir -p "${'$'}eta_temporary" || exit 66
-            "${'$'}eta_busybox" tar -xJf "${'$'}eta_archive" -C "${'$'}eta_temporary" || exit 67
+            [ -n "${'$'}sta_busybox" ] || exit 127
+            sta_archive=${shellQuote(archive.absolutePath)}
+            sta_parent=${shellQuote(parent.absolutePath)}
+            sta_rootfs=${shellQuote(rootfs.absolutePath)}
+            sta_temporary=${shellQuote(temporaryRootfs.absolutePath)}
+            sta_actual_sha=${'$'}("${'$'}sta_busybox" sha256sum "${'$'}sta_archive" | "${'$'}sta_busybox" awk '{print ${'$'}1}')
+            [ "${'$'}sta_actual_sha" = ${shellQuote(artifact.sha256)} ] || exit 65
+            "${'$'}sta_busybox" mkdir -p "${'$'}sta_parent" || exit 66
+            "${'$'}sta_busybox" rm -rf "${'$'}sta_temporary"
+            "${'$'}sta_busybox" mkdir -p "${'$'}sta_temporary" || exit 66
+            "${'$'}sta_busybox" tar -xJf "${'$'}sta_archive" -C "${'$'}sta_temporary" || exit 67
             # 归档顶层形状不一致：proot-distro 的制品带 "./" 前缀，解包后直接落在根；Ubuntu 官方 cloud
             # 镜像的 root tar 没有顶层目录。这里统一成"根就是文件系统"：解包后确实只剩一个顶层目录时，
             # 才把它提上来。
-            eta_top_count=${'$'}("${'$'}eta_busybox" ls -A "${'$'}eta_temporary" | "${'$'}eta_busybox" wc -l)
-            eta_top_name=${'$'}("${'$'}eta_busybox" ls -A "${'$'}eta_temporary")
-            if [ "${'$'}eta_top_count" -eq 1 ] && [ -d "${'$'}eta_temporary/${'$'}eta_top_name" ]; then
-              for eta_child in "${'$'}eta_temporary/${'$'}eta_top_name"/* "${'$'}eta_temporary/${'$'}eta_top_name"/.[!.]* "${'$'}eta_temporary/${'$'}eta_top_name"/..?*; do
-                [ -e "${'$'}eta_child" ] || continue
-                "${'$'}eta_busybox" mv "${'$'}eta_child" "${'$'}eta_temporary/" || exit 67
+            sta_top_count=${'$'}("${'$'}sta_busybox" ls -A "${'$'}sta_temporary" | "${'$'}sta_busybox" wc -l)
+            sta_top_name=${'$'}("${'$'}sta_busybox" ls -A "${'$'}sta_temporary")
+            if [ "${'$'}sta_top_count" -eq 1 ] && [ -d "${'$'}sta_temporary/${'$'}sta_top_name" ]; then
+              for sta_child in "${'$'}sta_temporary/${'$'}sta_top_name"/* "${'$'}sta_temporary/${'$'}sta_top_name"/.[!.]* "${'$'}sta_temporary/${'$'}sta_top_name"/..?*; do
+                [ -e "${'$'}sta_child" ] || continue
+                "${'$'}sta_busybox" mv "${'$'}sta_child" "${'$'}sta_temporary/" || exit 67
               done
-              "${'$'}eta_busybox" rmdir "${'$'}eta_temporary/${'$'}eta_top_name" || exit 67
+              "${'$'}sta_busybox" rmdir "${'$'}sta_temporary/${'$'}sta_top_name" || exit 67
             fi
-            "${'$'}eta_busybox" mkdir -p \
-              "${'$'}eta_temporary/proc" \
-              "${'$'}eta_temporary/sys" \
-              "${'$'}eta_temporary/dev" \
-              "${'$'}eta_temporary/workspace" \
-              "${'$'}eta_temporary/storage/emulated/0" \
-              "${'$'}eta_temporary/data/local/tmp" \
-              "${'$'}eta_temporary/tmp"
-            "${'$'}eta_busybox" chmod 1777 "${'$'}eta_temporary/tmp"
-            "${'$'}eta_busybox" rm -f "${'$'}eta_temporary/sdcard"
-            "${'$'}eta_busybox" ln -s /storage/emulated/0 "${'$'}eta_temporary/sdcard"
+            "${'$'}sta_busybox" mkdir -p \
+              "${'$'}sta_temporary/proc" \
+              "${'$'}sta_temporary/sys" \
+              "${'$'}sta_temporary/dev" \
+              "${'$'}sta_temporary/workspace" \
+              "${'$'}sta_temporary/storage/emulated/0" \
+              "${'$'}sta_temporary/data/local/tmp" \
+              "${'$'}sta_temporary/tmp"
+            "${'$'}sta_busybox" chmod 1777 "${'$'}sta_temporary/tmp"
+            "${'$'}sta_busybox" rm -f "${'$'}sta_temporary/sdcard"
+            "${'$'}sta_busybox" ln -s /storage/emulated/0 "${'$'}sta_temporary/sdcard"
             # Ubuntu 云镜像把 /etc/resolv.conf 做成指向 /run/systemd/resolve/stub-resolv.conf 的符号链接，
             # 而 rootfs 里没有那个目录，直接写会跟着链接落到不存在的路径上，容器内 DNS 随之全废。
-            "${'$'}eta_busybox" rm -f "${'$'}eta_temporary/etc/resolv.conf"
-            cat > "${'$'}eta_temporary/etc/resolv.conf" <<'ETA_RESOLV_EOF'
+            "${'$'}sta_busybox" rm -f "${'$'}sta_temporary/etc/resolv.conf"
+            cat > "${'$'}sta_temporary/etc/resolv.conf" <<'STA_RESOLV_EOF'
             nameserver 223.5.5.5
             nameserver 119.29.29.29
             nameserver 1.1.1.1
-            ETA_RESOLV_EOF
+            STA_RESOLV_EOF
             # 官方 cloud 镜像自带 deb822 源文件，清掉以免与接下来写入的 sources.list 重复
-            "${'$'}eta_busybox" rm -rf "${'$'}eta_temporary/etc/apt/sources.list.d"
-            "${'$'}eta_busybox" mkdir -p "${'$'}eta_temporary/etc/apt/sources.list.d"
-            "${'$'}eta_busybox" mkdir -p "${'$'}eta_temporary/etc/apt/apt.conf.d" "${'$'}eta_temporary/usr/local/bin"
-            cat > "${'$'}eta_temporary/etc/apt/apt.conf.d/99eta-network" <<'ETA_APT_CONFIG_EOF'
+            "${'$'}sta_busybox" rm -rf "${'$'}sta_temporary/etc/apt/sources.list.d"
+            "${'$'}sta_busybox" mkdir -p "${'$'}sta_temporary/etc/apt/sources.list.d"
+            "${'$'}sta_busybox" mkdir -p "${'$'}sta_temporary/etc/apt/apt.conf.d" "${'$'}sta_temporary/usr/local/bin"
+            cat > "${'$'}sta_temporary/etc/apt/apt.conf.d/99eta-network" <<'STA_APT_CONFIG_EOF'
             Acquire::Retries "2";
             Acquire::http::Pipeline-Depth "0";
             Acquire::https::Pipeline-Depth "0";
-            ETA_APT_CONFIG_EOF
-            printf '%s\n' ${etaSources} > "${'$'}eta_temporary/etc/apt/sources.list"
-            printf '%s\n' '#!/bin/sh' > "${'$'}eta_temporary/usr/local/bin/eta-apt"
-            printf %s ${shellQuote(aptMirrorScriptBody(distribution))} >> "${'$'}eta_temporary/usr/local/bin/eta-apt"
-            "${'$'}eta_busybox" chmod 0755 "${'$'}eta_temporary/usr/local/bin/eta-apt"
-            printf ${shellQuote(markerBody)} > "${'$'}eta_temporary/${LinuxEnvironmentPaths.READY_MARKER}"
-            "${'$'}eta_busybox" chmod 0644 "${'$'}eta_temporary/${LinuxEnvironmentPaths.READY_MARKER}"
-            "${'$'}eta_busybox" rm -rf "${'$'}eta_rootfs"
-            "${'$'}eta_busybox" mv "${'$'}eta_temporary" "${'$'}eta_rootfs" || exit 69
+            STA_APT_CONFIG_EOF
+            printf '%s\n' ${etaSources} > "${'$'}sta_temporary/etc/apt/sources.list"
+            printf '%s\n' '#!/bin/sh' > "${'$'}sta_temporary/usr/local/bin/eta-apt"
+            printf %s ${shellQuote(aptMirrorScriptBody(distribution))} >> "${'$'}sta_temporary/usr/local/bin/eta-apt"
+            "${'$'}sta_busybox" chmod 0755 "${'$'}sta_temporary/usr/local/bin/eta-apt"
+            printf ${shellQuote(markerBody)} > "${'$'}sta_temporary/${LinuxEnvironmentPaths.READY_MARKER}"
+            "${'$'}sta_busybox" chmod 0644 "${'$'}sta_temporary/${LinuxEnvironmentPaths.READY_MARKER}"
+            "${'$'}sta_busybox" rm -rf "${'$'}sta_rootfs"
+            "${'$'}sta_busybox" mv "${'$'}sta_temporary" "${'$'}sta_rootfs" || exit 69
         """.trimIndent()
         val result = InstallerShellRunner.run(command, 180, TerminalEnvironment.ANDROID)
         AndroidAgentLogger.info(
@@ -268,11 +268,11 @@ internal class AptEnvironmentInstaller(
             chmod 0755 /usr/local/bin/eta-apt
             /usr/local/bin/eta-apt install $packages || exit 70
             if command -v fdfind >/dev/null 2>&1; then ln -sf /usr/bin/fdfind /usr/local/bin/fd; fi
-            cat > /${COMMON_TOOLS_MARKER} <<'ETA_TOOLSET_EOF'
+            cat > /${COMMON_TOOLS_MARKER} <<'STA_TOOLSET_EOF'
             ${distribution.wireName}=${AptDistributionSpecs.versionOf(distribution)}
             toolset=$TOOLSET_REVISION
             profiles=agent
-            ETA_TOOLSET_EOF
+            STA_TOOLSET_EOF
             chmod 0644 /${COMMON_TOOLS_MARKER}
         """.trimIndent()
         val result = InstallerShellRunner.run(
@@ -358,7 +358,7 @@ internal class AptEnvironmentInstaller(
             val mirrorIds = mirrors.joinToString(" ") { it.id }
             return buildString {
                 append("set -u; ")
-                append("eta_apt_write_sources() { ")
+                append("sta_apt_write_sources() { ")
                 append("case \"${'$'}1\" in ")
                 mirrors.forEach { mirror ->
                     append("${mirror.id}) ")
@@ -370,14 +370,14 @@ internal class AptEnvironmentInstaller(
                 append("}; ")
                 append("case \"${'$'}{1:-}\" in ")
                 append("install) shift; [ \"${'$'}#\" -gt 0 ] || exit 64; ")
-                append("for eta_apt_mirror in $mirrorIds; do ")
-                append("eta_apt_write_sources \"${'$'}eta_apt_mirror\" || exit 65; ")
+                append("for sta_apt_mirror in $mirrorIds; do ")
+                append("sta_apt_write_sources \"${'$'}sta_apt_mirror\" || exit 65; ")
                 append("if apt-get -o Acquire::Retries=2 -o Acquire::http::Pipeline-Depth=0 update && ")
                 append("apt-get -o Acquire::Retries=2 -o Acquire::http::Pipeline-Depth=0 install -y --no-install-recommends \"${'$'}@\"; ")
                 append("then exit 0; fi; ")
                 append("done; exit 1;; ")
-                append("update) for eta_apt_mirror in $mirrorIds; do ")
-                append("eta_apt_write_sources \"${'$'}eta_apt_mirror\" || exit 65; ")
+                append("update) for sta_apt_mirror in $mirrorIds; do ")
+                append("sta_apt_write_sources \"${'$'}sta_apt_mirror\" || exit 65; ")
                 append("apt-get -o Acquire::Retries=2 -o Acquire::http::Pipeline-Depth=0 update && exit 0; done; exit 1;; ")
                 append("*) echo \"usage: eta-apt install PACKAGE... | update\" >&2; exit 64;; esac")
             }

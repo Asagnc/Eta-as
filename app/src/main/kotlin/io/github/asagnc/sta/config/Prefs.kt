@@ -20,9 +20,9 @@ import io.github.libxposed.service.XposedService
 internal object Prefs {
 
     /** 远程配置组名，UI 写入与 Hook 读取必须一致。 */
-    const val GROUP = "eta_prefs"
+    const val GROUP = "sta_prefs"
 
-    private const val LOCAL_AGENT_GROUP = "eta_agent_preferences"
+    private const val LOCAL_AGENT_GROUP = "sta_agent_preferences"
 
     /** 所有功能开关 key。默认值按功能风险独立定义。 */
     object Keys {

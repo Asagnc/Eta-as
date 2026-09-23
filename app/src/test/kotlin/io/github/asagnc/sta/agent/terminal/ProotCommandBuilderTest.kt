@@ -46,6 +46,6 @@ class ProotCommandBuilderTest {
     @Test fun missingNativeComponentsFailBeforeGuestLaunch() {
         val process = ProcessBuilder("sh", "-c", ProotCommandBuilder.payload("/rootfs", "echo hello", nativeDirectory = null)).start()
         assertEquals(127, process.waitFor())
-        assertEquals("ETA_PROOT_UNAVAILABLE", process.errorStream.bufferedReader().readText().trim())
+        assertEquals("STA_PROOT_UNAVAILABLE", process.errorStream.bufferedReader().readText().trim())
     }
 }

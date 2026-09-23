@@ -15,7 +15,7 @@ class CredentialBoundaryTest {
         assertTrue(CredentialBoundary.denies(dataDir, "$dataDir/databases"))
         assertTrue(CredentialBoundary.denies(dataDir, "$dataDir/databases/"))
         assertTrue(CredentialBoundary.denies(dataDir, "$dataDir/shared_prefs/anything.xml"))
-        assertTrue(CredentialBoundary.denies(dataDir, "$dataDir/files/datastore/eta_settings.preferences_pb"))
+        assertTrue(CredentialBoundary.denies(dataDir, "$dataDir/files/datastore/sta_settings.preferences_pb"))
         assertTrue(CredentialBoundary.denies(dataDir, "file://$dataDir/databases/sta.db"))
     }
 

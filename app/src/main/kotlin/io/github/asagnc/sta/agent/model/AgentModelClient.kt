@@ -137,7 +137,7 @@ internal object AgentModelClient {
                     "<reply_to_rewrite>\n$prompt\n</reply_to_rewrite>",
             ))
         } else if (!compactOnly) {
-            messages.getJSONObject(messages.length() - 1).put("_eta_message_id", initialUserMessageId)
+            messages.getJSONObject(messages.length() - 1).put("_sta_message_id", initialUserMessageId)
         }
         if (compactOnly) messages.remove(messages.length() - 1)
         val transcript = JSONArray()

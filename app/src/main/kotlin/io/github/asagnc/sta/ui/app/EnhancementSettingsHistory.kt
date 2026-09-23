@@ -6,7 +6,7 @@ import io.github.asagnc.sta.config.Prefs
 
 /** 只用于断连后的界面展示；从不作为 Hook 配置来源，也不接收离线配置修改。 */
 internal class EnhancementSettingsHistory(context: Context) {
-    private val snapshot = context.applicationContext.getSharedPreferences("eta_enhancement_ui_history", Context.MODE_PRIVATE)
+    private val snapshot = context.applicationContext.getSharedPreferences("sta_enhancement_ui_history", Context.MODE_PRIVATE)
 
     val hasConnected: Boolean get() = snapshot.getBoolean("has_connected", false)
 

@@ -32,11 +32,11 @@ class UserTerminalControllerTest {
             assertTrue("$open", open is UserTerminalController.OpenResult.Ready)
             val sessionId = (open as UserTerminalController.OpenResult.Ready).sessionId
 
-            val export = controller.exec(sessionId, "export ETA_TEST_VALUE=streaming") { _, _ -> }
+            val export = controller.exec(sessionId, "export STA_TEST_VALUE=streaming") { _, _ -> }
             assertEquals(0, export.exitCode)
 
             val echoOutput = StringBuilder()
-            val echo = controller.exec(sessionId, "printf %s \"\$ETA_TEST_VALUE\"") { text, _ -> echoOutput.append(text) }
+            val echo = controller.exec(sessionId, "printf %s \"\$STA_TEST_VALUE\"") { text, _ -> echoOutput.append(text) }
             assertEquals(0, echo.exitCode)
             assertEquals("streaming", echoOutput.toString())
 
@@ -75,14 +75,14 @@ class UserTerminalControllerTest {
             assertTrue(controller.sessionAlive(secondId))
             assertEquals(2, controller.listSessions().size)
 
-            controller.exec(firstId, "export ETA_SESSION_MARK=one") { _, _ -> }
+            controller.exec(firstId, "export STA_SESSION_MARK=one") { _, _ -> }
             val firstOutput = StringBuilder()
-            controller.exec(firstId, "printf %s \"\$ETA_SESSION_MARK\"") { text, _ -> firstOutput.append(text) }
+            controller.exec(firstId, "printf %s \"\$STA_SESSION_MARK\"") { text, _ -> firstOutput.append(text) }
             assertEquals("one", firstOutput.toString())
 
             // 另一个会话看不到第一个会话的环境变量。
             val secondOutput = StringBuilder()
-            controller.exec(secondId, "printf %s \"\${ETA_SESSION_MARK:-empty}\"") { text, _ -> secondOutput.append(text) }
+            controller.exec(secondId, "printf %s \"\${STA_SESSION_MARK:-empty}\"") { text, _ -> secondOutput.append(text) }
             assertEquals("empty", secondOutput.toString())
         } finally {
             controller.close()
@@ -177,7 +177,7 @@ class UserTerminalControllerTest {
             val result = controller.exec(open.sessionId, "echo hello") { text, _ -> output.append(text) }
             assertEquals(0, result.exitCode)
             assertEquals("hello", output.toString().trim())
-            assertFalse(output.toString().contains("__ETA_STATUS_"))
+            assertFalse(output.toString().contains("__STA_STATUS_"))
         } finally {
             controller.close()
         }

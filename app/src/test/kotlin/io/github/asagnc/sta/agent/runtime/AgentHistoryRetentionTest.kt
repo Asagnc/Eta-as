@@ -147,8 +147,8 @@ class AgentHistoryRetentionTest {
         val file = File(context.cacheDir, "local-descriptor-fixture")
         file.writeText(text)
         try {
-            bundle.putParcelable("history_eta_text_fd", ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY))
-            bundle.putLong("history_eta_text_bytes", file.length())
+            bundle.putParcelable("history_sta_text_fd", ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY))
+            bundle.putLong("history_sta_text_bytes", file.length())
             AgentWireText.send(receiver, Message.obtain(null, 1).apply { data = bundle })
             shadowOf(Looper.getMainLooper()).idle()
             assertEquals(text, AgentWireText.read(checkNotNull(received), "history"))
@@ -158,8 +158,8 @@ class AgentHistoryRetentionTest {
     @Test fun incorrectDescriptorLengthIsRejectedAndClosed() {
         val bundle = Bundle()
         AgentWireText.put(bundle, "history", "abc".repeat(20_000), context.cacheDir)
-        bundle.putLong("history_eta_text_bytes", 1)
+        bundle.putLong("history_sta_text_bytes", 1)
         assertThrows(IllegalArgumentException::class.java) { AgentWireText.read(bundle, "history") }
-        assertFalse(bundle.containsKey("history_eta_text_fd"))
+        assertFalse(bundle.containsKey("history_sta_text_fd"))
     }
 }

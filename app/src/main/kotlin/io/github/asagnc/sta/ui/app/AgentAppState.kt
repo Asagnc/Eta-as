@@ -1789,7 +1789,7 @@ internal class AgentAppState(
                     } else {
                         newSkillNotice(
                             title = appContext.getString(R.string.state_unable_to_delete_skill_1583c9),
-                            message = appContext.getString(R.string.state_deletion_is_not_complete_eta_will_try_to_recover_whe_c4297e),
+                            message = appContext.getString(R.string.state_deletion_is_not_complete_sta_will_try_to_recover_whe_c4297e),
                             isError = true,
                         )
                     },

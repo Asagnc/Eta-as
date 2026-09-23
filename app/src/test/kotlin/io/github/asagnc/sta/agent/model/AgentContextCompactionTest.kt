@@ -134,7 +134,7 @@ class AgentContextCompactionTest {
         history().forEach { messages.put(AgentConversationCodec.toJsonObject(it)) }
         val pending = AgentConversationCodec.userMessage("瞬时观察", listOf(
             AgentModelClient.ModelImage("data:image/png;base64,PRIVATE_IMAGE", "image/png", 10),
-        )).put("_eta_observation", true)
+        )).put("_sta_observation", true)
         messages.put(pending)
         val compacted = AgentContextCompactor(config, provider { request, _ ->
             val text = request.messages.toString()

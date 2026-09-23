@@ -233,49 +233,49 @@ internal class LinuxApkAnalysisInstaller(
         val previous = File(profileRoot, "previous")
         val command = """
             ${AndroidBusyBox.discoveryScript()}
-            [ -n "${'$'}eta_busybox" ] || exit 127
-            "${'$'}eta_busybox" mkdir -p ${shellQuote(profileRoot.absolutePath)} || exit 70
-            "${'$'}eta_busybox" rm -rf ${shellQuote(installing.absolutePath)} ${shellQuote(previous.absolutePath)}
-            "${'$'}eta_busybox" mv ${shellQuote(staging.absolutePath)} ${shellQuote(installing.absolutePath)} || exit 71
-            "${'$'}eta_busybox" chmod 0755 \
+            [ -n "${'$'}sta_busybox" ] || exit 127
+            "${'$'}sta_busybox" mkdir -p ${shellQuote(profileRoot.absolutePath)} || exit 70
+            "${'$'}sta_busybox" rm -rf ${shellQuote(installing.absolutePath)} ${shellQuote(previous.absolutePath)}
+            "${'$'}sta_busybox" mv ${shellQuote(staging.absolutePath)} ${shellQuote(installing.absolutePath)} || exit 71
+            "${'$'}sta_busybox" chmod 0755 \
               ${shellQuote(File(installing, "jadx/bin/jadx").absolutePath)} \
               ${shellQuote(File(installing, "bin/java").absolutePath)} \
               ${shellQuote(File(installing, "bin/apktool").absolutePath)} \
               ${shellQuote(File(installing, "bin/smali").absolutePath)} \
               ${shellQuote(File(installing, "bin/baksmali").absolutePath)} || exit 72
-            eta_link_commands() {
-              "${'$'}eta_busybox" mkdir -p ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)} || return 1
-              for eta_command in java jadx apktool smali baksmali; do
-                "${'$'}eta_busybox" rm -f ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)}/"${'$'}eta_command"
+            sta_link_commands() {
+              "${'$'}sta_busybox" mkdir -p ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)} || return 1
+              for sta_command in java jadx apktool smali baksmali; do
+                "${'$'}sta_busybox" rm -f ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)}/"${'$'}sta_command"
               done
-              "${'$'}eta_busybox" ln -s ../../../opt/eta/apk-analysis/current/bin/java \
+              "${'$'}sta_busybox" ln -s ../../../opt/eta/apk-analysis/current/bin/java \
                 ${shellQuote(File(rootfs, "usr/local/bin/java").absolutePath)} || return 1
-              "${'$'}eta_busybox" ln -s ../../../opt/eta/apk-analysis/current/jadx/bin/jadx \
+              "${'$'}sta_busybox" ln -s ../../../opt/eta/apk-analysis/current/jadx/bin/jadx \
                 ${shellQuote(File(rootfs, "usr/local/bin/jadx").absolutePath)} || return 1
-              for eta_command in apktool smali baksmali; do
-                "${'$'}eta_busybox" ln -s ../../../opt/eta/apk-analysis/current/bin/"${'$'}eta_command" \
-                  ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)}/"${'$'}eta_command" || return 1
+              for sta_command in apktool smali baksmali; do
+                "${'$'}sta_busybox" ln -s ../../../opt/eta/apk-analysis/current/bin/"${'$'}sta_command" \
+                  ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)}/"${'$'}sta_command" || return 1
               done
             }
-            eta_restore_previous() {
-              "${'$'}eta_busybox" rm -rf ${shellQuote(current.absolutePath)}
+            sta_restore_previous() {
+              "${'$'}sta_busybox" rm -rf ${shellQuote(current.absolutePath)}
               if [ -d ${shellQuote(previous.absolutePath)} ]; then
-                "${'$'}eta_busybox" mv ${shellQuote(previous.absolutePath)} ${shellQuote(current.absolutePath)}
-                eta_link_commands || true
+                "${'$'}sta_busybox" mv ${shellQuote(previous.absolutePath)} ${shellQuote(current.absolutePath)}
+                sta_link_commands || true
               fi
             }
             if [ -d ${shellQuote(current.absolutePath)} ]; then
-              "${'$'}eta_busybox" mv ${shellQuote(current.absolutePath)} ${shellQuote(previous.absolutePath)} || exit 73
+              "${'$'}sta_busybox" mv ${shellQuote(current.absolutePath)} ${shellQuote(previous.absolutePath)} || exit 73
             fi
-            "${'$'}eta_busybox" mv ${shellQuote(installing.absolutePath)} ${shellQuote(current.absolutePath)} || {
-              eta_restore_previous
+            "${'$'}sta_busybox" mv ${shellQuote(installing.absolutePath)} ${shellQuote(current.absolutePath)} || {
+              sta_restore_previous
               exit 74
             }
-            eta_link_commands || {
-              eta_restore_previous
+            sta_link_commands || {
+              sta_restore_previous
               exit 76
             }
-            "${'$'}eta_busybox" rm -f ${shellQuote(File(rootfs, LinuxEnvironmentPaths.APK_ANALYSIS_MARKER).absolutePath)}
+            "${'$'}sta_busybox" rm -f ${shellQuote(File(rootfs, LinuxEnvironmentPaths.APK_ANALYSIS_MARKER).absolutePath)}
         """.trimIndent()
         val result = InstallerShellRunner.run(
             command = command,
@@ -297,12 +297,12 @@ internal class LinuxApkAnalysisInstaller(
             apktool --version >/dev/null 2>&1 || exit 83
             smali --version >/dev/null 2>&1 || exit 84
             baksmali --version >/dev/null 2>&1 || exit 85
-            cat > /${LinuxEnvironmentPaths.APK_ANALYSIS_MARKER} <<'ETA_APK_ANALYSIS_EOF'
+            cat > /${LinuxEnvironmentPaths.APK_ANALYSIS_MARKER} <<'STA_APK_ANALYSIS_EOF'
             profile=${LinuxEnvironmentPaths.APK_ANALYSIS_REVISION}
             jadx=$JADX_VERSION
             apktool=$APKTOOL_VERSION
             smali=$SMALI_VERSION
-            ETA_APK_ANALYSIS_EOF
+            STA_APK_ANALYSIS_EOF
             chmod 0644 /${LinuxEnvironmentPaths.APK_ANALYSIS_MARKER} || exit 86
         """.trimIndent()
         val result = InstallerShellRunner.run(
@@ -331,11 +331,11 @@ internal class LinuxApkAnalysisInstaller(
         }
         val command = """
             ${AndroidBusyBox.discoveryScript()}
-            [ -n "${'$'}eta_busybox" ] || exit 127
-            "${'$'}eta_busybox" rm -rf ${shellQuote(current.absolutePath)}
-            "${'$'}eta_busybox" rm -f ${shellQuote(File(rootfs, LinuxEnvironmentPaths.APK_ANALYSIS_MARKER).absolutePath)}
+            [ -n "${'$'}sta_busybox" ] || exit 127
+            "${'$'}sta_busybox" rm -rf ${shellQuote(current.absolutePath)}
+            "${'$'}sta_busybox" rm -f ${shellQuote(File(rootfs, LinuxEnvironmentPaths.APK_ANALYSIS_MARKER).absolutePath)}
             if [ -d ${shellQuote(previous.absolutePath)} ]; then
-              "${'$'}eta_busybox" mv ${shellQuote(previous.absolutePath)} ${shellQuote(current.absolutePath)}
+              "${'$'}sta_busybox" mv ${shellQuote(previous.absolutePath)} ${shellQuote(current.absolutePath)}
             fi
         """.trimIndent()
         InstallerShellRunner.run(command, 30, TerminalEnvironment.ANDROID)
@@ -350,8 +350,8 @@ internal class LinuxApkAnalysisInstaller(
         }
         val command = """
             ${AndroidBusyBox.discoveryScript()}
-            [ -n "${'$'}eta_busybox" ] || exit 127
-            "${'$'}eta_busybox" rm -rf ${shellQuote(previous.absolutePath)}
+            [ -n "${'$'}sta_busybox" ] || exit 127
+            "${'$'}sta_busybox" rm -rf ${shellQuote(previous.absolutePath)}
         """.trimIndent()
         InstallerShellRunner.run(command, 30, TerminalEnvironment.ANDROID)
     }

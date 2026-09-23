@@ -97,7 +97,7 @@ class AgentContextPrunerTest {
         val transient = JSONObject()
             .put("role", "user")
             .put("content", "观察图")
-            .put("_eta_observation", true)
+            .put("_sta_observation", true)
         val messages = JSONArray()
             .put(JSONObject().put("role", "system").put("content", "提示"))
             .put(transient)

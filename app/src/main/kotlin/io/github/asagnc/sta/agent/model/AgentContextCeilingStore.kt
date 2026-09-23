@@ -14,7 +14,7 @@ import android.content.SharedPreferences
  * 声明窗口被改动过时旧值作废——用户很可能正是去把窗口改小了，此时要以新声明为准。
  */
 internal object AgentContextCeilingStore {
-    private const val PREFS_NAME = "eta_context_ceiling"
+    private const val PREFS_NAME = "sta_context_ceiling"
     private var preferences: SharedPreferences? = null
 
     fun init(context: Context) {

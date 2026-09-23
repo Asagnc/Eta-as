@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.map
 import org.json.JSONObject
 
 internal object SettingsDataStore {
-    private const val STORE_NAME = "eta_settings"
+    private const val STORE_NAME = "sta_settings"
 
     private val SELECTED_PROVIDER_ID = stringPreferencesKey("selected_provider_id")
     private val SELECTED_MODEL_ID = stringPreferencesKey("selected_model_id")

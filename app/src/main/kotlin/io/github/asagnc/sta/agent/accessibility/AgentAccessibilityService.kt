@@ -2407,7 +2407,7 @@ class AgentAccessibilityService : AccessibilityService() {
     }
 
     companion object {
-        private const val CLIP_LABEL = "eta_agent"
+        private const val CLIP_LABEL = "sta_agent"
         private const val WINDOW_POLL_FALLBACK_MS = 80L
         private const val MAX_UI_TREE_DEPTH = 24
         private const val UI_TREE_VISIT_MULTIPLIER = 8

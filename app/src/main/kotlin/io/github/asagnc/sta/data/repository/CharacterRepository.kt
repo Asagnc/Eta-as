@@ -28,7 +28,7 @@ import java.util.UUID
 
 internal object CharacterRepository {
     const val MAX_FILE_BYTES = CharacterCardPng.MAX_FILE_BYTES
-    private const val SEED_PREFS = "eta_roleplay"
+    internal const val SEED_PREFS = "sta_roleplay"
     private const val KEY_DEFAULT_CHARACTER_SEEDED = "default_character_seeded"
     @Volatile private var context: Context? = null
 

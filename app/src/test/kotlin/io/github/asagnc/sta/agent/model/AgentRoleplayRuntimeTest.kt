@@ -19,7 +19,7 @@ class AgentRoleplayRuntimeTest {
             val users = (0 until request.messages.length()).map { request.messages.getJSONObject(it) }
                 .filter { it.optString("role") == "user" }
             assertEquals(listOf("user-next-supplement-7", "user-next-supplement-8"),
-                users.map { it.getString("_eta_message_id") })
+                users.map { it.getString("_sta_message_id") })
             reply("完成补充")
         }
         val result = AgentModelClient.complete(
@@ -168,7 +168,7 @@ class AgentRoleplayRuntimeTest {
             }""")
             val context = RoleplayRunContext("fixture", card, "用户", "")
             val source = JSONArray().put(context.personaMessage())
-                .put(AgentConversationCodec.userTextMessage("第一句").put("_eta_message_id", "first-id"))
+                .put(AgentConversationCodec.userTextMessage("第一句").put("_sta_message_id", "first-id"))
                 .put(JSONObject().put("role", "assistant").put("content", "第二句"))
             val projected = context.projectMessages(source)
             val chat = OpenAiRequestMessages.forChatCompletions(projected)
@@ -176,8 +176,8 @@ class AgentRoleplayRuntimeTest {
                 ResponsesRequestBuilder.build(config(), projected, JSONArray(), ProviderRequestPurpose.CHAT)
             assertTrue(chat.toString().contains("深度设定"))
             assertTrue(responses.toString().contains("深度设定"))
-            assertFalse(chat.toString().contains("_eta_message_id"))
-            assertFalse(responses.toString().contains("_eta_message_id"))
+            assertFalse(chat.toString().contains("_sta_message_id"))
+            assertFalse(responses.toString().contains("_sta_message_id"))
             if (depthRole != "system") {
                 val chatTexts = (0 until chat.length()).map { chat.getJSONObject(it).optString("content") }
                 assertTrue(chatTexts.indexOf("第一句") < chatTexts.indexOf("深度设定"))

@@ -42,7 +42,7 @@ internal object StaInjectedStrings {
 
     private fun createLocalizedContext(targetContext: Context, localeTags: String): Context {
         val etaContext = targetContext.createPackageContext(
-            ModuleConfig.ETA_PACKAGE,
+            ModuleConfig.STA_PACKAGE,
             Context.CONTEXT_IGNORE_SECURITY,
         )
         val configuration = Configuration(targetContext.resources.configuration).apply {

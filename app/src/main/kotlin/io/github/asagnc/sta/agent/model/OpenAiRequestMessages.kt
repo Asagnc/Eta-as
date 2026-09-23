@@ -6,7 +6,7 @@ import org.json.JSONObject
 /**
  * 将 Sta 会话消息投影为 OpenAI-compatible 请求所需的系统指令结构。
  *
- * 投影要丢掉 Sta 自己的内部字段（`_eta_*` 与 `provider_blocks`），所以每条消息都得是新对象；
+ * 投影要丢掉 Sta 自己的内部字段（`_sta_*` 与 `provider_blocks`），所以每条消息都得是新对象；
  * 但新对象用逐字段浅拷贝构造，不走 `JSONObject(message.toString())`——那是"为了复制而先序列化
  * 一遍再解析回来"，在每轮请求都跑、且消息数随对话增长的路径上，开销远大于逐字段复制。
  */
@@ -47,12 +47,12 @@ internal object OpenAiRequestMessages {
      */
     private val INTERNAL_KEYS = setOf(
         "provider_blocks",
-        "_eta_context_summary",
-        "_eta_compacted_users",
-        "_eta_summary_through_user",
-        "_eta_observation",
-        "_eta_message_id",
-        "_eta_character_profile",
+        "_sta_context_summary",
+        "_sta_compacted_users",
+        "_sta_summary_through_user",
+        "_sta_observation",
+        "_sta_message_id",
+        "_sta_character_profile",
     )
 
     fun responsesInstructions(source: JSONArray): String =

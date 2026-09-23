@@ -109,7 +109,7 @@ internal class DetachedTaskSupervisor(
         val wireLogFile = "$wireDir/$id.log"
         // 内层 sh 先落 pidfile 再 exec 目标命令，PID 在 exec 前后不变。
         val innerScript = "echo \$\$ > ${shellQuote(wirePidFile)}; " +
-            "export $ETA_PROCESS_OWNER_ENV=${shellQuote(token)}; " +
+            "export $STA_PROCESS_OWNER_ENV=${shellQuote(token)}; " +
             "exec sh -c ${shellQuote(command)} >> ${shellQuote(wireLogFile)} 2>&1"
         val launcherScript = buildString {
             appendLine("mkdir -p ${shellQuote(wireDir)} || exit 1")
@@ -172,7 +172,7 @@ internal class DetachedTaskSupervisor(
         tasks.groupBy { it.identity }.forEach { (identity, group) ->
             if (identity == "root" && !rootAvailable()) return@forEach
             val probeScript = aliveCheckFunction() + "\n" + group.joinToString("\n") { task ->
-                "if eta_alive ${task.pid} ${shellQuote(ownerProof(task))}; " +
+                "if sta_alive ${task.pid} ${shellQuote(ownerProof(task))}; " +
                     "then echo '${task.id} 1'; else echo '${task.id} 0'; fi"
             }
             val result = runOneShotShell(
@@ -247,15 +247,15 @@ internal class DetachedTaskSupervisor(
     private fun stopTaskProcess(task: DetachedTask): Boolean {
         val stopScript = buildString {
             appendLine(aliveCheckFunction())
-            appendLine("if eta_alive ${task.pid} ${shellQuote(ownerProof(task))}; then")
+            appendLine("if sta_alive ${task.pid} ${shellQuote(ownerProof(task))}; then")
             // setsid 路径下 pgid==pid，按组一次收整棵树；无 setsid 的退化环境只杀主进程。
             appendLine("  if [ -d /proc ]; then kill -TERM -${task.pid} 2>/dev/null; else kill -TERM ${task.pid} 2>/dev/null; fi")
             appendLine("  sleep 1")
-            appendLine("  if eta_alive ${task.pid} ${shellQuote(ownerProof(task))}; then")
+            appendLine("  if sta_alive ${task.pid} ${shellQuote(ownerProof(task))}; then")
             appendLine("    if [ -d /proc ]; then kill -9 -${task.pid} 2>/dev/null; else kill -9 ${task.pid} 2>/dev/null; fi")
             appendLine("  fi")
             appendLine("  sleep 0.1")
-            appendLine("  eta_alive ${task.pid} ${shellQuote(ownerProof(task))} && exit 81")
+            appendLine("  sta_alive ${task.pid} ${shellQuote(ownerProof(task))} && exit 81")
             appendLine("fi")
             append("rm -f ${shellQuote(hostDaemonPath(task, task.logPath))} ${shellQuote(hostDaemonPath(task, task.logPath.removeSuffix(".log") + ".pid"))}")
         }
@@ -270,14 +270,14 @@ internal class DetachedTaskSupervisor(
 
     /** 存活判定校验 ownership token：PID 被系统复用时不会把无关进程当作本任务。无 /proc 的环境退化为存在性探测。 */
     private fun aliveCheckFunction(): String =
-        "eta_alive() { " +
+        "sta_alive() { " +
             "if [ -d /proc ]; then " +
                 "[ -d /proc/\$1 ] && " +
                 "tr '\\000' '\\n' < /proc/\$1/environ 2>/dev/null | grep -Fqx \"\$2\"; " +
             "else kill -0 \"\$1\" 2>/dev/null; fi; " +
             "}"
 
-    private fun ownerProof(task: DetachedTask): String = "$ETA_PROCESS_OWNER_ENV=${task.token}"
+    private fun ownerProof(task: DetachedTask): String = "$STA_PROCESS_OWNER_ENV=${task.token}"
 
     /** 普通守护任务保留完整宿主壳和 tracer；guest 内不能再次脱离 PRoot 的生命周期。 */
     private fun startUserDaemon(id: String, token: String, command: String, cwd: String, environment: TerminalEnvironment): DaemonStartResult {
@@ -309,7 +309,7 @@ internal class DetachedTaskSupervisor(
             val launcher = "if command -v setsid >/dev/null 2>&1; then exec setsid -w sh -c ${shellQuote(script)}; else exec sh -c ${shellQuote(script)}; fi"
             val process = try {
                 ProcessBuilder("sh", "-c", launcher).apply {
-                    environment()[ETA_PROCESS_OWNER_ENV] = token
+                    environment()[STA_PROCESS_OWNER_ENV] = token
                     if (environment == TerminalEnvironment.ANDROID) environment()["HOME"] = workspace
                     redirectInput(File("/dev/null"))
                     redirectOutput(logFile)
@@ -365,7 +365,7 @@ internal class DetachedTaskSupervisor(
                 while (!stopped.get()) {
                     val result = runOneShotShell(
                         processSupervisor = oneShotSupervisor, identity = "user",
-                        command = aliveCheckFunction() + "\nif eta_alive ${task.pid} ${shellQuote(ownerProof(task))}; then echo alive; else echo exited; fi",
+                        command = aliveCheckFunction() + "\nif sta_alive ${task.pid} ${shellQuote(ownerProof(task))}; then echo alive; else echo exited; fi",
                         timeoutSeconds = 5,
                     )
                     if (result.exitCode == 0 && result.output.decodeToString().trim() == "exited") break

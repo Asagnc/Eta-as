@@ -2,6 +2,7 @@ package io.github.asagnc.sta.data.repository
 
 import io.github.asagnc.sta.agent.roleplay.CharacterCardCodec
 import io.github.asagnc.sta.agent.roleplay.UserPersona
+import io.github.asagnc.sta.data.db.ChunkedTextDao
 import io.github.asagnc.sta.data.db.ConversationEntity
 import io.github.asagnc.sta.data.db.StaDatabase
 import kotlinx.coroutines.runBlocking
@@ -24,7 +25,7 @@ class CharacterRepositoryTest {
     fun setUp() {
         StaDatabase.closeForTests()
         context.deleteDatabase("sta.db")
-        context.getSharedPreferences("eta_roleplay", 0).edit().clear().commit()
+        context.getSharedPreferences(CharacterRepository.SEED_PREFS, 0).edit().clear().commit()
         CharacterRepository.initialize(context)
     }
 
@@ -45,7 +46,7 @@ class CharacterRepositoryTest {
             "SELECT card_json FROM roleplay_characters WHERE id = ?", arrayOf(profile.id),
         ).use { cursor ->
             assertTrue(cursor.moveToFirst())
-            assertTrue(cursor.getString(0).startsWith("@eta:chunks:v1:"))
+            assertTrue(cursor.getString(0).startsWith(ChunkedTextDao.REFERENCE_PREFIX))
         }
         val copy = CharacterRepository.duplicate(profile.id)
         assertEquals(description, copy.card.description)

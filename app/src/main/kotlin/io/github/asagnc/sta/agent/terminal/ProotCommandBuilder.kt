@@ -17,7 +17,7 @@ internal object ProotCommandBuilder {
         tempDirectory: File = TerminalRuntime.temporaryDirectory,
         publicStorageGranted: Boolean = TerminalRuntime.publicStorageGranted,
     ): String {
-        val native = nativeDirectory ?: return "echo ETA_PROOT_UNAVAILABLE >&2; exit 127"
+        val native = nativeDirectory ?: return "echo STA_PROOT_UNAVAILABLE >&2; exit 127"
         val proot = File(native, "libproot_exec.so").absolutePath
         val loader = File(native, "libproot_loader.so").absolutePath
         val args = mutableListOf(proot, "--root-id", "--link2symlink", "--kill-on-exit", "--sysvipc", "-r", rootfsPath, "-w", "/workspace")
@@ -41,7 +41,7 @@ internal object ProotCommandBuilder {
         if (command != null) args += "NO_COLOR=1"
         args += "/bin/sh"
         if (command != null) args += listOf("-lc", command)
-        return "[ -x ${shellQuote(proot)} ] && [ -x ${shellQuote(loader)} ] || { echo ETA_PROOT_UNAVAILABLE >&2; exit 127; }; " +
+        return "[ -x ${shellQuote(proot)} ] && [ -x ${shellQuote(loader)} ] || { echo STA_PROOT_UNAVAILABLE >&2; exit 127; }; " +
             "mkdir -p ${shellQuote(workspace)} ${shellQuote(tempDirectory.absolutePath)} || exit 125; " +
             "export PROOT_LOADER=${shellQuote(loader)} PROOT_TMP_DIR=${shellQuote(tempDirectory.absolutePath)}; " +
             "unset LD_PRELOAD; " + args.joinToString(" ", transform = ::shellQuote)

@@ -111,21 +111,21 @@ internal class PinnedLinuxToolInstaller(
         val uvxPath = File(rootfs, "usr/local/bin/uvx")
         return """
             ${AndroidBusyBox.discoveryScript()}
-            [ -n "${'$'}eta_busybox" ] || exit 127
-            eta_archive=${shellQuote(archive.absolutePath)}
-            eta_staging=${shellQuote(staging.absolutePath)}
-            eta_target=${shellQuote(target.absolutePath)}
-            "${'$'}eta_busybox" rm -rf "${'$'}eta_staging"
-            "${'$'}eta_busybox" mkdir -p "${'$'}eta_staging" || exit 66
-            "${'$'}eta_busybox" tar -xzf "${'$'}eta_archive" -C "${'$'}eta_staging" --strip-components=1 || exit 67
-            "${'$'}eta_busybox" mkdir -p ${shellQuote(versionsRoot.parentFile!!.absolutePath)} ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)} || exit 66
-            "${'$'}eta_busybox" rm -rf ${shellQuote(versionsRoot.absolutePath)}
-            "${'$'}eta_busybox" mkdir -p ${shellQuote(versionsRoot.absolutePath)} || exit 66
-            "${'$'}eta_busybox" mv "${'$'}eta_staging" "${'$'}eta_target" || exit 69
-            "${'$'}eta_busybox" chmod 0755 "${'$'}eta_target/uv" "${'$'}eta_target/uvx" || exit 70
+            [ -n "${'$'}sta_busybox" ] || exit 127
+            sta_archive=${shellQuote(archive.absolutePath)}
+            sta_staging=${shellQuote(staging.absolutePath)}
+            sta_target=${shellQuote(target.absolutePath)}
+            "${'$'}sta_busybox" rm -rf "${'$'}sta_staging"
+            "${'$'}sta_busybox" mkdir -p "${'$'}sta_staging" || exit 66
+            "${'$'}sta_busybox" tar -xzf "${'$'}sta_archive" -C "${'$'}sta_staging" --strip-components=1 || exit 67
+            "${'$'}sta_busybox" mkdir -p ${shellQuote(versionsRoot.parentFile!!.absolutePath)} ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)} || exit 66
+            "${'$'}sta_busybox" rm -rf ${shellQuote(versionsRoot.absolutePath)}
+            "${'$'}sta_busybox" mkdir -p ${shellQuote(versionsRoot.absolutePath)} || exit 66
+            "${'$'}sta_busybox" mv "${'$'}sta_staging" "${'$'}sta_target" || exit 69
+            "${'$'}sta_busybox" chmod 0755 "${'$'}sta_target/uv" "${'$'}sta_target/uvx" || exit 70
             printf %s ${shellQuote(uvWrapper)} > ${shellQuote(uvPath.absolutePath)} || exit 71
             printf %s ${shellQuote(uvxWrapper)} > ${shellQuote(uvxPath.absolutePath)} || exit 71
-            "${'$'}eta_busybox" chmod 0755 ${shellQuote(uvPath.absolutePath)} ${shellQuote(uvxPath.absolutePath)} || exit 71
+            "${'$'}sta_busybox" chmod 0755 ${shellQuote(uvPath.absolutePath)} ${shellQuote(uvxPath.absolutePath)} || exit 71
         """.trimIndent()
     }
 
@@ -150,20 +150,20 @@ internal class PinnedLinuxToolInstaller(
         val localBin = File(rootfs, "usr/local/bin")
         return """
             ${AndroidBusyBox.discoveryScript()}
-            [ -n "${'$'}eta_busybox" ] || exit 127
-            eta_archive=${shellQuote(archive.absolutePath)}
-            eta_staging=${shellQuote(staging.absolutePath)}
-            eta_target=${shellQuote(target.absolutePath)}
-            "${'$'}eta_busybox" rm -rf "${'$'}eta_staging"
-            "${'$'}eta_busybox" mkdir -p "${'$'}eta_staging" || exit 66
-            "${'$'}eta_busybox" tar -xJf "${'$'}eta_archive" -C "${'$'}eta_staging" --strip-components=1 || exit 67
-            "${'$'}eta_busybox" mkdir -p ${shellQuote(versionsRoot.parentFile!!.absolutePath)} ${shellQuote(localBin.absolutePath)} || exit 66
-            "${'$'}eta_busybox" rm -rf ${shellQuote(versionsRoot.absolutePath)}
-            "${'$'}eta_busybox" mkdir -p ${shellQuote(versionsRoot.absolutePath)} || exit 66
-            "${'$'}eta_busybox" mv "${'$'}eta_staging" "${'$'}eta_target" || exit 69
-            "${'$'}eta_busybox" ln -sfn ${shellQuote("/opt/eta/node/${artifact.version}/bin/node")} ${shellQuote(File(localBin, "node").absolutePath)} || exit 71
-            "${'$'}eta_busybox" ln -sfn ${shellQuote("/opt/eta/node/${artifact.version}/bin/npm")} ${shellQuote(File(localBin, "npm").absolutePath)} || exit 71
-            "${'$'}eta_busybox" ln -sfn ${shellQuote("/opt/eta/node/${artifact.version}/bin/npx")} ${shellQuote(File(localBin, "npx").absolutePath)} || exit 71
+            [ -n "${'$'}sta_busybox" ] || exit 127
+            sta_archive=${shellQuote(archive.absolutePath)}
+            sta_staging=${shellQuote(staging.absolutePath)}
+            sta_target=${shellQuote(target.absolutePath)}
+            "${'$'}sta_busybox" rm -rf "${'$'}sta_staging"
+            "${'$'}sta_busybox" mkdir -p "${'$'}sta_staging" || exit 66
+            "${'$'}sta_busybox" tar -xJf "${'$'}sta_archive" -C "${'$'}sta_staging" --strip-components=1 || exit 67
+            "${'$'}sta_busybox" mkdir -p ${shellQuote(versionsRoot.parentFile!!.absolutePath)} ${shellQuote(localBin.absolutePath)} || exit 66
+            "${'$'}sta_busybox" rm -rf ${shellQuote(versionsRoot.absolutePath)}
+            "${'$'}sta_busybox" mkdir -p ${shellQuote(versionsRoot.absolutePath)} || exit 66
+            "${'$'}sta_busybox" mv "${'$'}sta_staging" "${'$'}sta_target" || exit 69
+            "${'$'}sta_busybox" ln -sfn ${shellQuote("/opt/eta/node/${artifact.version}/bin/node")} ${shellQuote(File(localBin, "node").absolutePath)} || exit 71
+            "${'$'}sta_busybox" ln -sfn ${shellQuote("/opt/eta/node/${artifact.version}/bin/npm")} ${shellQuote(File(localBin, "npm").absolutePath)} || exit 71
+            "${'$'}sta_busybox" ln -sfn ${shellQuote("/opt/eta/node/${artifact.version}/bin/npx")} ${shellQuote(File(localBin, "npx").absolutePath)} || exit 71
         """.trimIndent()
     }
 }

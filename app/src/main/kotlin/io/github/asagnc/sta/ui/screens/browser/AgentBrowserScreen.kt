@@ -266,7 +266,7 @@ internal fun AgentBrowserScreen(
         WindowDialog(
             show = true,
             title = stringResource(R.string.ui_reset_browser_session_791b36),
-            summary = stringResource(R.string.ui_this_will_close_the_current_page_and_clear_eta_brows_1cd331),
+            summary = stringResource(R.string.ui_this_will_close_the_current_page_and_clear_sta_brows_1cd331),
             onDismissRequest = { showResetDialog = false },
         ) {
             MiuixDialogActions(

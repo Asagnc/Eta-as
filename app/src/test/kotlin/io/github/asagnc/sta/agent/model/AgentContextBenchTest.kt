@@ -14,7 +14,7 @@ import org.junit.Test
 class AgentContextBenchTest {
 
     private val benchEnabled =
-        System.getProperty("eta.bench") == "true" || System.getenv("ETA_BENCH") == "true"
+        System.getProperty("eta.bench") == "true" || System.getenv("STA_BENCH") == "true"
 
     /** 构造一段接近真实的对话：n 轮，每轮一个助手工具调用 + 一条工具结果。 */
     private fun conversation(rounds: Int, resultChars: Int): JSONArray {

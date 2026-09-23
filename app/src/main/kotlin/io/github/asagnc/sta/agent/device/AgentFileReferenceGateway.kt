@@ -308,13 +308,13 @@ internal class AgentFileReferenceGateway(
             val quotedPath = shellQuote(path)
             return buildString {
                 append("[ \"\$(id -u)\" = 0 ] || exit ").append(EXIT_ROOT_UNAVAILABLE).append("; ")
-                append("eta_path=\$(readlink -f ").append(quotedPath).append(" 2>/dev/null) || exit ")
+                append("sta_path=\$(readlink -f ").append(quotedPath).append(" 2>/dev/null) || exit ")
                 append(EXIT_PATH_NOT_FOUND).append("; ")
-                append("[ -n \"\$eta_path\" ] || exit ").append(EXIT_PATH_NOT_FOUND).append("; ")
-                append("if [ -f \"\$eta_path\" ]; then eta_kind=").append(KIND_FILE).append("; ")
-                append("elif [ -d \"\$eta_path\" ]; then eta_kind=").append(KIND_DIRECTORY).append("; ")
+                append("[ -n \"\$sta_path\" ] || exit ").append(EXIT_PATH_NOT_FOUND).append("; ")
+                append("if [ -f \"\$sta_path\" ]; then sta_kind=").append(KIND_FILE).append("; ")
+                append("elif [ -d \"\$sta_path\" ]; then sta_kind=").append(KIND_DIRECTORY).append("; ")
                 append("else exit ").append(EXIT_UNSUPPORTED_TYPE).append("; fi; ")
-                append("printf '%s\\n%s' \"\$eta_kind\" \"\$eta_path\"")
+                append("printf '%s\\n%s' \"\$sta_kind\" \"\$sta_path\"")
             }
         }
 

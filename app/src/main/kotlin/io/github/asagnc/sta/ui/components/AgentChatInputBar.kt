@@ -251,7 +251,7 @@ internal fun AgentChatInputBar(
                 ) {
                     if (textFieldState.text.isBlank()) {
                         Text(
-                            text = if (isStreaming) stringResource(R.string.chat_eta_working) else stringResource(R.string.chat_input_hint),
+                            text = if (isStreaming) stringResource(R.string.chat_sta_working) else stringResource(R.string.chat_input_hint),
                             style = MiuixTheme.textStyles.body1,
                             color = StaColors.textSecondary,
                         )

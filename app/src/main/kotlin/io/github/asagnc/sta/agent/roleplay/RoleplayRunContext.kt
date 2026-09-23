@@ -71,7 +71,7 @@ internal data class RoleplayRunContext(
 
     private fun isDialogue(message: JSONObject): Boolean =
         message.optString("role") in setOf("user", "assistant") &&
-            !message.optBoolean("_eta_observation") && !message.optBoolean("_eta_context_summary") &&
+            !message.optBoolean("_sta_observation") && !message.optBoolean("_sta_context_summary") &&
             message.optJSONArray("tool_calls").let { it == null || it.length() == 0 } &&
             dialogueText(message).isNotBlank()
 
@@ -113,7 +113,7 @@ internal data class RoleplayRunContext(
     }.trim()
 
     companion object {
-        private const val PERSONA_MARKER = "_eta_character_profile"
+        private const val PERSONA_MARKER = "_sta_character_profile"
         private val json = Json { ignoreUnknownKeys = true }
 
         suspend fun resolve(

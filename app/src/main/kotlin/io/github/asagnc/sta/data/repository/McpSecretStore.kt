@@ -78,9 +78,9 @@ internal class McpSecretStore(context: Context) {
     private fun tokenKey(serverId: String): String = "bearer_$serverId"
 
     private companion object {
-        const val PREFERENCES_NAME = "eta_mcp_secrets"
+        const val PREFERENCES_NAME = "sta_mcp_secrets"
         const val KEYSTORE_PROVIDER = "AndroidKeyStore"
-        const val KEY_ALIAS = "eta_mcp_credentials_v1"
+        const val KEY_ALIAS = "sta_mcp_credentials_v1"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
         const val GCM_IV_BYTES = 12
         const val GCM_TAG_BITS = 128

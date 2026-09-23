@@ -54,15 +54,15 @@ class RootlessDeviceToolsTest {
     @Test
     fun publicNetworkSettingsAndOrderSourcesNeverInvokeRoot() {
         val context = RuntimeEnvironment.getApplication()
-        Settings.System.putString(context.contentResolver, "eta_test_setting", "public-value")
+        Settings.System.putString(context.contentResolver, "sta_test_setting", "public-value")
         rejectingRootExecutor().use { root ->
             val tools = AgentStructuredDeviceTools(context, NoOpLogger, root, rootAvailable = { false })
             assertTrue(JSONObject(tools.execute("network_info", JSONObject())!!.content).getBoolean("ok"))
             val setting = JSONObject(tools.execute("get_setting", JSONObject()
-                .put("namespace", "system").put("key", "eta_test_setting"))!!.content)
+                .put("namespace", "system").put("key", "sta_test_setting"))!!.content)
             assertEquals("public-value", setting.getString("value"))
             val missing = JSONObject(tools.execute("get_setting", JSONObject()
-                .put("namespace", "system").put("key", "eta_missing_setting"))!!.content)
+                .put("namespace", "system").put("key", "sta_missing_setting"))!!.content)
             assertTrue(missing.isNull("value"))
             val orders = JSONObject(tools.execute("search_personal_orders", JSONObject())!!.content)
             assertEquals("ROOT_REQUIRED", orders.getJSONObject("system_memory").getString("code"))

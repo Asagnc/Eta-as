@@ -179,7 +179,7 @@ internal class ShellProcessSupervisor(
         ptyRows: Int = DEFAULT_PTY_ROWS,
     ): String {
         val managedCommand = command?.let { value ->
-            "$value\neta_status=${'$'}?\nwait\nexit ${'$'}eta_status"
+            "$value\nsta_status=${'$'}?\nwait\nexit ${'$'}sta_status"
         }
         val payload = when (environment) {
             TerminalEnvironment.ANDROID -> buildAndroidPayload(
@@ -197,9 +197,9 @@ internal class ShellProcessSupervisor(
         }
 
         val path = shellQuote(ownershipFile.absolutePath)
-        val exportOwner = "export $ETA_PROCESS_OWNER_ENV=${shellQuote(ownershipToken)}"
+        val exportOwner = "export $STA_PROCESS_OWNER_ENV=${shellQuote(ownershipToken)}"
         val cleanupGroup =
-                "eta_cleanup_proc_group() { " +
+                "sta_cleanup_proc_group() { " +
                 "for stat_file in /proc/[0-9]*/stat; do " +
                 "[ -r \"${'$'}stat_file\" ] || continue; " +
                 "IFS= read -r stat < \"${'$'}stat_file\" || continue; " +
@@ -207,16 +207,16 @@ internal class ShellProcessSupervisor(
                 "[ \"${'$'}3\" = \"${'$'}${'$'}\" ] || continue; " +
                 "[ \"${'$'}pid\" = \"${'$'}${'$'}\" ] || kill -9 \"${'$'}pid\" 2>/dev/null; " +
                 "done; }; " +
-                "eta_cleanup_ps_group() { " +
+                "sta_cleanup_ps_group() { " +
                 "for pid in ${'$'}(ps -axo pid=,pgid= | " +
                 "awk -v group=\"${'$'}${'$'}\" '${'$'}2 == group && ${'$'}1 != group { print ${'$'}1 }'); do " +
                 "kill -9 \"${'$'}pid\" 2>/dev/null; done; }; " +
                 "if [ -d /proc/${'$'}${'$'} ]; then " +
-                "eta_cleanup_proc_group; eta_cleanup_proc_group; " +
-                "else eta_cleanup_ps_group; eta_cleanup_ps_group; fi"
+                "sta_cleanup_proc_group; sta_cleanup_proc_group; " +
+                "else sta_cleanup_ps_group; sta_cleanup_ps_group; fi"
         val groupScript =
             "printf '%s group\\n' \"${'$'}${'$'}\" > $path; " +
-                "$payload; eta_status=${'$'}?; $cleanupGroup; exit ${'$'}eta_status"
+                "$payload; sta_status=${'$'}?; $cleanupGroup; exit ${'$'}sta_status"
         val treeScript =
             "printf '%s tree\\n' \"${'$'}${'$'}\" > $path; $payload"
         val fallback = if (allowTreeFallback) {
@@ -260,8 +260,8 @@ internal class ShellProcessSupervisor(
         val discovery = AndroidBusyBox.discoveryScript()
         val ptyScript = "stty rows $rows cols $cols 2>/dev/null; export TERM=$PTY_TERM_TYPE; $groupScript"
         val unavailable = "printf '%s unavailable\\n' \"\$\$\" > $path; exit 126"
-        val run = "\"\$eta_busybox\" script -qfc ${shellQuote(ptyScript)} /dev/null"
-        return "$exportOwner; $discovery; [ -n \"\$eta_busybox\" ] || { $unavailable; }; " +
+        val run = "\"\$sta_busybox\" script -qfc ${shellQuote(ptyScript)} /dev/null"
+        return "$exportOwner; $discovery; [ -n \"\$sta_busybox\" ] || { $unavailable; }; " +
             "if command -v $safeSetsid >/dev/null 2>&1; then " +
             "exec $safeSetsid -w $run; else $run; fi"
     }
@@ -274,9 +274,9 @@ internal class ShellProcessSupervisor(
         }
         val discovery = AndroidBusyBox.discoveryScript()
         return "$discovery; " +
-            "if [ -n \"${'$'}eta_busybox\" ]; then " +
-            "export ETA_BUSYBOX=\"${'$'}eta_busybox\" ASH_STANDALONE=1; " +
-            "\"${'$'}eta_busybox\" ash $shellArgument; " +
+            "if [ -n \"${'$'}sta_busybox\" ]; then " +
+            "export STA_BUSYBOX=\"${'$'}sta_busybox\" ASH_STANDALONE=1; " +
+            "\"${'$'}sta_busybox\" ash $shellArgument; " +
             "else sh $shellArgument; fi"
     }
 
@@ -300,62 +300,62 @@ internal class ShellProcessSupervisor(
         val payload = shellQuote(command.orEmpty())
         // name 经 SharedFolderMounts 校验只含 [A-Za-z0-9._-]，可安全拼进双引号路径。
         val mountsBlock = sharedMounts.joinToString("\n") { mount ->
-            "eta_mount_optional ${shellQuote(mount.sourcePath)} " +
-                "\"\$eta_rootfs${SharedFolderMounts.LINUX_MOUNTS_ROOT}/${mount.name}\" bind"
+            "sta_mount_optional ${shellQuote(mount.sourcePath)} " +
+                "\"\$sta_rootfs${SharedFolderMounts.LINUX_MOUNTS_ROOT}/${mount.name}\" bind"
         }
         val innerScriptHead = """
-            eta_rootfs=${'$'}1
-            eta_busybox=${'$'}2
-            eta_mode=${'$'}3
-            eta_payload=${'$'}4
-            eta_mount_required() {
-              eta_source=${'$'}1
-              eta_target=${'$'}2
-              eta_options=${'$'}3
-              "${'$'}eta_busybox" mkdir -p "${'$'}eta_target" || exit 125
-              "${'$'}eta_busybox" mount -o "${'$'}eta_options" "${'$'}eta_source" "${'$'}eta_target" || exit 125
+            sta_rootfs=${'$'}1
+            sta_busybox=${'$'}2
+            sta_mode=${'$'}3
+            sta_payload=${'$'}4
+            sta_mount_required() {
+              sta_source=${'$'}1
+              sta_target=${'$'}2
+              sta_options=${'$'}3
+              "${'$'}sta_busybox" mkdir -p "${'$'}sta_target" || exit 125
+              "${'$'}sta_busybox" mount -o "${'$'}sta_options" "${'$'}sta_source" "${'$'}sta_target" || exit 125
             }
-            eta_mount_optional() {
-              eta_source=${'$'}1
-              eta_target=${'$'}2
-              eta_options=${'$'}3
-              "${'$'}eta_busybox" mkdir -p "${'$'}eta_target" 2>/dev/null || return 0
-              "${'$'}eta_busybox" mount -o "${'$'}eta_options" "${'$'}eta_source" "${'$'}eta_target" 2>/dev/null || true
+            sta_mount_optional() {
+              sta_source=${'$'}1
+              sta_target=${'$'}2
+              sta_options=${'$'}3
+              "${'$'}sta_busybox" mkdir -p "${'$'}sta_target" 2>/dev/null || return 0
+              "${'$'}sta_busybox" mount -o "${'$'}sta_options" "${'$'}sta_source" "${'$'}sta_target" 2>/dev/null || true
             }
-            "${'$'}eta_busybox" mount -t proc proc "${'$'}eta_rootfs/proc" || exit 125
-            eta_mount_required /dev "${'$'}eta_rootfs/dev" rbind
-            eta_mount_optional /sys "${'$'}eta_rootfs/sys" rbind
+            "${'$'}sta_busybox" mount -t proc proc "${'$'}sta_rootfs/proc" || exit 125
+            sta_mount_required /dev "${'$'}sta_rootfs/dev" rbind
+            sta_mount_optional /sys "${'$'}sta_rootfs/sys" rbind
             if [ -d /storage/emulated/0 ]; then
-              eta_mount_optional /storage/emulated/0 "${'$'}eta_rootfs/storage/emulated/0" bind
+              sta_mount_optional /storage/emulated/0 "${'$'}sta_rootfs/storage/emulated/0" bind
             fi
             [ -d /data/local/tmp ] || exit 125
-            eta_mount_required /data/local/tmp "${'$'}eta_rootfs/data/local/tmp" bind
-            "${'$'}eta_busybox" mkdir -p /data/local/tmp/eta || exit 125
-            eta_mount_required /data/local/tmp/eta "${'$'}eta_rootfs/workspace" bind
+            sta_mount_required /data/local/tmp "${'$'}sta_rootfs/data/local/tmp" bind
+            "${'$'}sta_busybox" mkdir -p /data/local/tmp/eta || exit 125
+            sta_mount_required /data/local/tmp/eta "${'$'}sta_rootfs/workspace" bind
         """.trimIndent()
         val innerScriptTail = """
-            if [ "${'$'}eta_mode" = command ]; then
-              if [ -x "${'$'}eta_rootfs/usr/bin/env" ]; then
-                exec "${'$'}eta_busybox" chroot "${'$'}eta_rootfs" /usr/bin/env -i \
+            if [ "${'$'}sta_mode" = command ]; then
+              if [ -x "${'$'}sta_rootfs/usr/bin/env" ]; then
+                exec "${'$'}sta_busybox" chroot "${'$'}sta_rootfs" /usr/bin/env -i \
                   HOME=/root USER=root LOGNAME=root SHELL=/bin/sh TERM=$termType NO_COLOR=1 \
                   LANG=C.UTF-8 LC_ALL=C.UTF-8 \
                   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-                  /bin/sh -lc "${'$'}eta_payload"
+                  /bin/sh -lc "${'$'}sta_payload"
               fi
-              exec "${'$'}eta_busybox" chroot "${'$'}eta_rootfs" /bin/busybox env -i \
+              exec "${'$'}sta_busybox" chroot "${'$'}sta_rootfs" /bin/busybox env -i \
                 HOME=/root USER=root LOGNAME=root SHELL=/bin/sh TERM=$termType NO_COLOR=1 \
                 LANG=C.UTF-8 LC_ALL=C.UTF-8 \
                 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
-                /bin/sh -lc "${'$'}eta_payload"
+                /bin/sh -lc "${'$'}sta_payload"
             fi
-            if [ -x "${'$'}eta_rootfs/usr/bin/env" ]; then
-              exec "${'$'}eta_busybox" chroot "${'$'}eta_rootfs" /usr/bin/env -i \
+            if [ -x "${'$'}sta_rootfs/usr/bin/env" ]; then
+              exec "${'$'}sta_busybox" chroot "${'$'}sta_rootfs" /usr/bin/env -i \
                 HOME=/root USER=root LOGNAME=root SHELL=/bin/sh TERM=$termType \
                 LANG=C.UTF-8 LC_ALL=C.UTF-8 \
                 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
                 /bin/sh
             fi
-            exec "${'$'}eta_busybox" chroot "${'$'}eta_rootfs" /bin/busybox env -i \
+            exec "${'$'}sta_busybox" chroot "${'$'}sta_rootfs" /bin/busybox env -i \
               HOME=/root USER=root LOGNAME=root SHELL=/bin/sh TERM=$termType \
               LANG=C.UTF-8 LC_ALL=C.UTF-8 \
               PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
@@ -370,15 +370,15 @@ internal class ShellProcessSupervisor(
         // rootfs 里的 /bin/sh 是指向 /bin/dash 一类的绝对符号链接，Android 侧 -x 会按宿主根目录
         // 解析链接目标而误判缺失；符号链接视为存在，真实可执行性由 chroot 后的内核解析兜底。
         return "$discovery; " +
-            "[ -n \"${'$'}eta_busybox\" ] || { echo 'ETA_LINUX_BUSYBOX_MISSING' >&2; exit 127; }; " +
-            "eta_rootfs=$rootfs; " +
-            "[ -f \"${'$'}eta_rootfs/${LinuxEnvironmentPaths.READY_MARKER}\" ] && " +
-            "{ [ -x \"${'$'}eta_rootfs/bin/sh\" ] || [ -h \"${'$'}eta_rootfs/bin/sh\" ]; } && " +
-            "( [ -x \"${'$'}eta_rootfs/usr/bin/env\" ] || [ -x \"${'$'}eta_rootfs/bin/busybox\" ] ) || " +
-            "{ echo 'ETA_LINUX_ENVIRONMENT_NOT_READY' >&2; exit 127; }; " +
-            "\"${'$'}eta_busybox\" unshare -m --propagation private " +
-            "\"${'$'}eta_busybox\" sh -c ${shellQuote(innerScript)} eta-linux " +
-            "\"${'$'}eta_rootfs\" \"${'$'}eta_busybox\" $mode $payload"
+            "[ -n \"${'$'}sta_busybox\" ] || { echo 'STA_LINUX_BUSYBOX_MISSING' >&2; exit 127; }; " +
+            "sta_rootfs=$rootfs; " +
+            "[ -f \"${'$'}sta_rootfs/${LinuxEnvironmentPaths.READY_MARKER}\" ] && " +
+            "{ [ -x \"${'$'}sta_rootfs/bin/sh\" ] || [ -h \"${'$'}sta_rootfs/bin/sh\" ]; } && " +
+            "( [ -x \"${'$'}sta_rootfs/usr/bin/env\" ] || [ -x \"${'$'}sta_rootfs/bin/busybox\" ] ) || " +
+            "{ echo 'STA_LINUX_ENVIRONMENT_NOT_READY' >&2; exit 127; }; " +
+            "\"${'$'}sta_busybox\" unshare -m --propagation private " +
+            "\"${'$'}sta_busybox\" sh -c ${shellQuote(innerScript)} eta-linux " +
+            "\"${'$'}sta_rootfs\" \"${'$'}sta_busybox\" $mode $payload"
     }
 
     private fun terminateProcessTree(
@@ -471,7 +471,7 @@ internal class ShellProcessSupervisor(
         requireOwnershipProof: Boolean,
     ) {
         val procPath = "/proc/${ownership.pid}"
-        val expectedOwner = shellQuote("$ETA_PROCESS_OWNER_ENV=${metadata.ownershipToken}")
+        val expectedOwner = shellQuote("$STA_PROCESS_OWNER_ENV=${metadata.ownershipToken}")
         val guardedCommand = if (requireOwnershipProof) {
             "[ -e $procPath ] || exit 0; " +
                 "[ -r $procPath/environ ] || exit 0; " +
@@ -514,7 +514,7 @@ internal class ShellProcessSupervisor(
 }
 
 /** 写入托管进程环境块的归属标记；巡检与停止前用它防止 PID 复用误杀。 */
-internal const val ETA_PROCESS_OWNER_ENV = "ETA_PROCESS_OWNER"
+internal const val STA_PROCESS_OWNER_ENV = "STA_PROCESS_OWNER"
 
 internal fun shellQuote(value: String): String =
     "'" + value.replace("'", "'\\''") + "'"
@@ -532,7 +532,7 @@ internal data class OneShotShellResult(
  */
 internal fun ptySupported(processSupervisor: ShellProcessSupervisor): Boolean {
     val command = AndroidBusyBox.discoveryScript() +
-        "; [ -n \"\$eta_busybox\" ] || exit 1; \"\$eta_busybox\" --list 2>/dev/null | grep -qx script"
+        "; [ -n \"\$sta_busybox\" ] || exit 1; \"\$sta_busybox\" --list 2>/dev/null | grep -qx script"
     val result = runOneShotShell(
         processSupervisor = processSupervisor,
         identity = "root",

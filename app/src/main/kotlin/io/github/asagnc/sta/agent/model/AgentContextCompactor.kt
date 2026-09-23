@@ -24,14 +24,14 @@ internal class AgentContextCompactor(
         controller.throwIfCancelled()
         val history = (systemCount until messages.length()).map { messages.getJSONObject(it) }
         val latestUser = history.indexOfLast {
-            it.optString("role") == "user" && !it.has("_eta_observation")
+            it.optString("role") == "user" && !it.has("_sta_observation")
         }
         // 最新用户请求及其后尚在进行的工具链必须可以继续；长任务允许压缩该请求之后的已完成批次。
         val splitEnds = (1..history.size).filter { canSplit(history, it) }
         // 局部压缩：只压缩到指定消息之前，之后的历史原样保留。
         val requestedEnd = untilMessageId
             ?.takeIf { it.isNotBlank() }
-            ?.let { id -> history.indexOfLast { it.optString("_eta_message_id") == id } }
+            ?.let { id -> history.indexOfLast { it.optString("_sta_message_id") == id } }
             ?.takeIf { it > 0 }
         val safeEnds = if (requestedEnd != null) splitEnds.filter { it <= requestedEnd } else splitEnds
         val recentLimit = config.contextWindow?.takeIf { it > 0 }?.let { (it * AgentContextBudget.RECENT_RATIO).toInt() }

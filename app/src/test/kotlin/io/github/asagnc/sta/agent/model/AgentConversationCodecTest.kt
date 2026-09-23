@@ -150,6 +150,6 @@ class AgentConversationCodecTest {
         val stable = AgentConversationCodec.durableMessage(history)
         val encoded = AgentConversationCodec.encodeTranscriptForStorage(listOf(stable))
         assertFalse(encoded.contains("opaque-secret"))
-        assertFalse(encoded.contains("_eta_responses_output_items"))
+        assertFalse(encoded.contains("_sta_responses_output_items"))
     }
 }

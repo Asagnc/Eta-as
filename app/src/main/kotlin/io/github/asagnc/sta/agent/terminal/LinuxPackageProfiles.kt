@@ -250,9 +250,9 @@ internal class LinuxPackageProfileInstaller(
         val activateCommand = buildString {
             append("set -e\n")
             spec.setupScript?.let { script -> append(script).append('\n') }
-            append("cat > /").append(profile.markerName).append(" <<'ETA_PROFILE_EOF'\n")
+            append("cat > /").append(profile.markerName).append(" <<'STA_PROFILE_EOF'\n")
             append("profile=").append(profile.revision).append('\n')
-            append("ETA_PROFILE_EOF\n")
+            append("STA_PROFILE_EOF\n")
             append("chmod 0644 /").append(profile.markerName).append(" || exit 71")
         }
         val result = InstallerShellRunner.run(

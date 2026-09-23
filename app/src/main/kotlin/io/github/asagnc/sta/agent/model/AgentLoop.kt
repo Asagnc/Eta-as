@@ -240,7 +240,7 @@ internal class AgentLoop(
                 AgentConversationCodec.assistantHistoryMessage(
                     source = assistantMessage,
                     toolCalls = toolCalls,
-                ).put("_eta_message_id", "assistant-$operationId-$round")
+                ).put("_sta_message_id", "assistant-$operationId-$round")
             )
             onEvent(
                 AgentEvent.AssistantReceived(
@@ -385,7 +385,7 @@ internal class AgentLoop(
 
     private fun steeringMessage(supplement: String): JSONObject =
         AgentConversationCodec.userTextMessage(steeringPrompt(supplement))
-            .put("_eta_message_id", "user-$operationId-supplement-${++supplementIndex}")
+            .put("_sta_message_id", "user-$operationId-supplement-${++supplementIndex}")
 
     private fun executeTool(
         round: Int,
@@ -697,7 +697,7 @@ internal class AgentLoop(
         pendingToolImageMessage = AgentConversationCodec.userMessage(
             text = "Latest observation image(s) returned by tool(s): $toolNames.",
             images = images,
-        ).put("_eta_observation", true).also(messages::put)
+        ).put("_sta_observation", true).also(messages::put)
 
         imageOutcomes.forEach { outcome ->
             onEvent(

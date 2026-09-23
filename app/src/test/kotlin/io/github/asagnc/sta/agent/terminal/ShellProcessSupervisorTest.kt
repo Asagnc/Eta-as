@@ -48,14 +48,14 @@ class ShellProcessSupervisorTest {
         assertFalse(payload.contains("\\\""))
         assertTrue(payload.contains("unshare -m --propagation private"))
         assertTrue(payload.contains("mount -t proc"))
-        assertTrue(payload.contains("eta_mount_required /data/local/tmp"))
-        assertTrue(payload.contains("eta_mount_required /data/local/tmp/eta"))
-        assertTrue(payload.contains("eta_rootfs/workspace"))
+        assertTrue(payload.contains("sta_mount_required /data/local/tmp"))
+        assertTrue(payload.contains("sta_mount_required /data/local/tmp/eta"))
+        assertTrue(payload.contains("sta_rootfs/workspace"))
         assertTrue(payload.contains("chroot"))
         assertTrue(payload.contains(LinuxEnvironmentPaths.READY_MARKER))
         assertTrue(payload.contains("/bin/busybox env -i"))
         // rootfs 里的 /bin/sh 是绝对符号链接，Android 侧就绪检查必须放行符号链接。
-        assertTrue(payload.contains("[ -h \"\$eta_rootfs/bin/sh\" ]"))
+        assertTrue(payload.contains("[ -h \"\$sta_rootfs/bin/sh\" ]"))
 
         val debianPayload = supervisor.buildLinuxPayload(
             rootfsPath = "/data/user/0/io.github.asagnc.sta/files/terminal/debian/rootfs",

@@ -40,7 +40,7 @@ class RootShellTerminalControllerTest {
             val export = JSONObject(
                 controller.terminalAction(
                     action = "exec",
-                    command = "export ETA_TEST_VALUE=streaming",
+                    command = "export STA_TEST_VALUE=streaming",
                     cwd = null,
                     timeoutMs = 5_000,
                     identity = "user",
@@ -56,7 +56,7 @@ class RootShellTerminalControllerTest {
             val echo = JSONObject(
                 controller.terminalAction(
                     action = "exec",
-                    command = "printf %s \"\$ETA_TEST_VALUE\"",
+                    command = "printf %s \"\$STA_TEST_VALUE\"",
                     cwd = null,
                     timeoutMs = 5_000,
                     identity = "user",

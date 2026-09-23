@@ -1684,7 +1684,7 @@ internal class RootShellTerminalController(
         val maxEntries = limit.coerceIn(1, MAX_LIST_ENTRIES)
         // -A 而不是 -a：`.` 与 `..` 不该占列表名额。
         val flags = if (showHidden) "-lA" else "-l"
-        val marker = "@@eta-entry-count"
+        val marker = "@@sta-entry-count"
         // `ls -l` 首行是 `total N`（磁盘块统计，不是条目数），先 tail 掉；再用同一套 flags 数一遍总数，
         // 否则 head 截断之后，「看到的列表」和「目录里到底有多少东西」是两回事。
         val command = "cd ${shellQuote(safePath)} && { ls $flags | tail -n +2 | head -n $maxEntries; " +

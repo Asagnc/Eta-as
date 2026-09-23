@@ -11,7 +11,7 @@ import java.util.UUID
  */
 internal object SessionStatusProtocol {
 
-    fun newMarker(): String = "__ETA_STATUS_${UUID.randomUUID().toString().replace("-", "")}"
+    fun newMarker(): String = "__STA_STATUS_${UUID.randomUUID().toString().replace("-", "")}"
 
     fun statusCommand(marker: String): String =
         "printf '\\n$marker:%s:%s\\n' \"\$?\" \"\$PWD\""
@@ -22,7 +22,7 @@ internal object SessionStatusProtocol {
      * 会话运行期间写入的用户输入也完整留给前台进程。
      */
     fun commandLine(marker: String, command: String): String =
-        "eval ${shellQuote(command)}; eta_ec=\$?; printf '\\n$marker:%s:%s\\n' \"\$eta_ec\" \"\$PWD\""
+        "eval ${shellQuote(command)}; sta_ec=\$?; printf '\\n$marker:%s:%s\\n' \"\$sta_ec\" \"\$PWD\""
 
     fun isStatusLine(line: String, marker: String): Boolean = line.startsWith("$marker:")
 

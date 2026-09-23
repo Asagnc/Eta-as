@@ -10,8 +10,8 @@ import java.io.File
 /** 大文本通过已取消目录链接的只读文件传输；Binder 只携带描述符与长度。 */
 internal object AgentWireText {
     private const val INLINE_CHARS = 16_384
-    private const val FD_SUFFIX = "_eta_text_fd"
-    private const val SIZE_SUFFIX = "_eta_text_bytes"
+    private const val FD_SUFFIX = "_sta_text_fd"
+    private const val SIZE_SUFFIX = "_sta_text_bytes"
     // 单次物化的内存保护，超过时拒绝交付，不截断已落盘的历史。
     private const val MAX_TRANSFER_BYTES = 64L * 1024 * 1024
 

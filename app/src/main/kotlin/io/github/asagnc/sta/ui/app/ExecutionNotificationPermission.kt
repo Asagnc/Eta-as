@@ -15,7 +15,7 @@ import androidx.core.content.ContextCompat
 internal fun rememberExecutionNotificationRequest(): () -> Unit {
     val context = LocalContext.current
     val preferences = remember(context.applicationContext) {
-        context.applicationContext.getSharedPreferences("eta_execution_notifications", Context.MODE_PRIVATE)
+        context.applicationContext.getSharedPreferences("sta_execution_notifications", Context.MODE_PRIVATE)
     }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     return {

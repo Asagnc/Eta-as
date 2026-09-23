@@ -30,7 +30,7 @@ internal class AgentContextSession(
     private var consumedSupplementCount = 0
     private var consumedUserTurns = (systemCount until messages.length()).sumOf {
         val message = messages.getJSONObject(it)
-        message.optInt("_eta_compacted_users") + if (message.optString("role") == "user") 1 else 0
+        message.optInt("_sta_compacted_users") + if (message.optString("role") == "user") 1 else 0
     }
     private var committedSnapshot: AgentContextSnapshot? = null
 
@@ -135,7 +135,7 @@ internal class AgentContextSession(
         val durable = JSONArray()
         for (index in systemCount until source.length()) {
             val message = source.getJSONObject(index)
-            if (!message.optBoolean("_eta_observation")) durable.put(message)
+            if (!message.optBoolean("_sta_observation")) durable.put(message)
         }
         return AgentConversationCodec.transcript(durable, 0, sensitiveIds())
     }

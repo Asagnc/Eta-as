@@ -108,7 +108,7 @@ internal class AgentExecutionService : Service() {
     }
 
     companion object {
-        private const val CHANNEL = "eta_execution"
+        private const val CHANNEL = "sta_execution"
         private const val NOTIFICATION_ID = 1107
         private const val ACTION_STOP = "io.github.asagnc.sta.action.STOP_USER_EXECUTION"
         private val leases = ExecutionLeaseRegistry()
@@ -181,7 +181,7 @@ internal class AgentExecutionService : Service() {
             }
         }
 
-        private const val DONE_CHANNEL = "eta_execution_done"
+        private const val DONE_CHANNEL = "sta_execution_done"
         private const val DONE_NOTIFICATION_ID = 1108
     }
 }

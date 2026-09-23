@@ -25,7 +25,7 @@ internal data class RootAccessState(
 
 /** Root 探测归 App 进程所有；读取能力不会执行 su 或弹出授权。 */
 internal object RootAccess {
-    private const val PREFERENCES = "eta_root_access"
+    private const val PREFERENCES = "sta_root_access"
     private const val AUTOMATIC_REQUEST_ATTEMPTED = "automatic_request_attempted"
     private const val LAST_GRANTED = "last_granted"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

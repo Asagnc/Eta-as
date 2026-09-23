@@ -10,12 +10,12 @@ internal object AndroidBusyBox {
         "/system/bin/busybox",
     )
 
-    fun discoveryScript(variable: String = "eta_busybox"): String {
+    fun discoveryScript(variable: String = "sta_busybox"): String {
         require(variable.matches(Regex("[a-z_][a-z0-9_]*"))) { "非法 Shell 变量名" }
         val quotedCandidates = candidates.joinToString(" ") { shellQuote(it) }
         return "$variable=''; " +
-            "for eta_candidate in $quotedCandidates; do " +
-            "if [ -x \"${'$'}eta_candidate\" ]; then $variable=\"${'$'}eta_candidate\"; break; fi; " +
+            "for sta_candidate in $quotedCandidates; do " +
+            "if [ -x \"${'$'}sta_candidate\" ]; then $variable=\"${'$'}sta_candidate\"; break; fi; " +
             "done; " +
             "if [ -z \"${'$'}$variable\" ] && command -v busybox >/dev/null 2>&1; then " +
             "$variable=${'$'}(command -v busybox); fi"

@@ -139,5 +139,5 @@ internal object AgentContextPruner {
     }
 
     /** 瞬时观察消息上的标记键，与 `AgentLoop` 追加图片消息时写入的键一致。 */
-    private const val TRANSIENT_KEY = "_eta_observation"
+    private const val TRANSIENT_KEY = "_sta_observation"
 }
