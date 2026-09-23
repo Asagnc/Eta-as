@@ -177,7 +177,7 @@ internal object AgentSubAgentToolScope {
 
     /**
      * 是否落在 worktree 内。同时接受 Linux 形态与 Android 形态：
-     * 文件工具会把 `/workspace/x` 归一成 `/data/local/tmp/eta/x`，两种写法都要认，
+     * 文件工具会把 `/workspace/x` 归一成 `/data/local/tmp/sta/x`，两种写法都要认，
      * 否则子智能体按提示写的路径会被误判成越界。
      */
     fun isInsideWorktree(path: String, workspace: SubAgentWorkspace): Boolean {
@@ -198,7 +198,7 @@ internal object AgentSubAgentToolScope {
         }
     }
 
-    /** `/workspace/...` 在 Android 侧是 `/data/local/tmp/eta/...`，两种形态互认。 */
+    /** `/workspace/...` 在 Android 侧是 `/data/local/tmp/sta/...`，两种形态互认。 */
     private fun androidForm(path: String): String {
         val normalized = normalize(path)
         return if (normalized == LINUX_WORKSPACE) ANDROID_WORKSPACE
@@ -216,5 +216,5 @@ internal object AgentSubAgentToolScope {
     }
 
     private const val LINUX_WORKSPACE = "/workspace"
-    private const val ANDROID_WORKSPACE = "/data/local/tmp/eta"
+    private const val ANDROID_WORKSPACE = "/data/local/tmp/sta"
 }

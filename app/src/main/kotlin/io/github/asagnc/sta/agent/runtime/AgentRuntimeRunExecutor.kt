@@ -74,7 +74,7 @@ internal class AgentRuntimeRunExecutor(
         const val AGENT_SUB = "subagent"
 
         /** 主工作区根目录（Android 侧形态），用于归一子智能体证据里的相对路径。 */
-        const val WORKSPACE_ROOT = "/data/local/tmp/eta"
+        const val WORKSPACE_ROOT = "/data/local/tmp/sta"
     }
 
     fun execute(

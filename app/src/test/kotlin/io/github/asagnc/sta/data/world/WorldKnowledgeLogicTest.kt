@@ -156,7 +156,7 @@ class WorldKnowledgeLogicTest {
         // 否则依赖指纹永远算不出来（文件不存在）。
         val normalized = WorldKnowledgeLogic.normalizePath("/workspace/Sta-src/app/Main.kt", ROOT)
 
-        assertEquals("/data/local/tmp/eta/Sta-src/app/Main.kt", normalized)
+        assertEquals("/data/local/tmp/sta/Sta-src/app/Main.kt", normalized)
     }
 
     @Test
@@ -235,7 +235,7 @@ class WorldKnowledgeLogicTest {
     }
 
     private companion object {
-        const val ROOT = "/data/local/tmp/eta"
+        const val ROOT = "/data/local/tmp/sta"
     }
 
     private fun entity(kind: String, signature: String, summary: String) = WorldKnowledgeEntity(

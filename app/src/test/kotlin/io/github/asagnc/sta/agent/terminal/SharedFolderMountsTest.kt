@@ -33,7 +33,7 @@ class SharedFolderMountsTest {
         )
         assertEquals(
             SharedFolderMounts.SourceError.FORBIDDEN_ROOT,
-            SharedFolderMounts.validateSource("/data/local/tmp/eta/mounts/x", existing),
+            SharedFolderMounts.validateSource("/data/local/tmp/sta/mounts/x", existing),
         )
         assertEquals(
             SharedFolderMounts.SourceError.FORBIDDEN_ROOT,
@@ -132,7 +132,7 @@ class SharedFolderMountsTest {
         assertTrue(payload.contains("\$sta_rootfs/workspace/mounts/dl\" bind"))
         assertTrue(payload.contains("\$sta_rootfs/workspace/mounts/app\" bind"))
         // 共享挂载必须在 workspace bind 之后执行，目标路径才落在已挂载的 workspace 上。
-        val workspaceBind = payload.indexOf("sta_mount_required /data/local/tmp/eta")
+        val workspaceBind = payload.indexOf("sta_mount_required /data/local/tmp/sta")
         val sharedMount = payload.indexOf("workspace/mounts/dl")
         assertTrue(workspaceBind >= 0 && sharedMount > workspaceBind)
     }

@@ -91,7 +91,7 @@ class AgentSubAgentRunnerTest {
         val commands = Collections.synchronizedList(mutableListOf<String>())
         val workspace = SubAgentWorkspace(
             repoPath = "/workspace/Sta-src",
-            worktreePath = "/workspace/eta-worktree-x",
+            worktreePath = "/workspace/sta-worktree-x",
         )
 
         val outcome = runner(provider, events) { command ->
@@ -111,7 +111,7 @@ class AgentSubAgentRunnerTest {
             offered,
         )
         val system = provider.requests.first().messages.getJSONObject(0).getString("content")
-        assertTrue("系统提示要写明隔离目录", system.contains("/workspace/eta-worktree-x"))
+        assertTrue("系统提示要写明隔离目录", system.contains("/workspace/sta-worktree-x"))
         assertTrue("系统提示要要求自验证", system.contains("必须自己验证"))
         assertTrue(outcome.ok)
         assertEquals(1, outcome.changedFiles)

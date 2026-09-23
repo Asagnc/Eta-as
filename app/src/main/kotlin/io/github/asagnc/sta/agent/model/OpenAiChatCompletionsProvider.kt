@@ -133,7 +133,7 @@ internal object OpenAiChatCompletionsProvider : AgentProviderClient {
 
     /** 会话键为空时退回固定字面量：宁可不命中，也不要发一个每轮都变的键。 */
     private fun promptCacheKey(sessionId: String): String =
-        sessionId.takeIf { it.isNotBlank() } ?: "eta-default"
+        sessionId.takeIf { it.isNotBlank() } ?: "sta-default"
 
     private fun readStreamingAssistantMessage(
         stream: java.io.InputStream?,

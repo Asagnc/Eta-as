@@ -30,9 +30,9 @@ internal object TerminalRuntime {
     val nativeLibraryDir: File? get() = appContext?.applicationInfo?.nativeLibraryDir?.let(::File)
     val userWorkspacePath: String get() = appContext?.let {
         TerminalPrivateStorage.workspace(it.filesDir).absolutePath
-    } ?: File(System.getProperty("java.io.tmpdir"), "eta-terminal-workspace").absolutePath
+    } ?: File(System.getProperty("java.io.tmpdir"), "sta-terminal-workspace").absolutePath
     val temporaryDirectory: File get() = appContext?.let { File(it.cacheDir, "terminal/proot") }
-        ?: File(System.getProperty("java.io.tmpdir"), "eta-proot")
+        ?: File(System.getProperty("java.io.tmpdir"), "sta-proot")
 
     fun defaultIdentity(environment: TerminalEnvironment, rootfsPath: String? = null): String = when {
         environment.isLinux -> if (LinuxEnvironmentPaths.backendOf(rootfsPath) == LinuxExecutionBackend.PROOT) "user" else "root"
@@ -41,7 +41,7 @@ internal object TerminalRuntime {
     }
 
     fun workspace(identity: String): String =
-        if (identity == "root") "/data/local/tmp/eta" else userWorkspacePath
+        if (identity == "root") "/data/local/tmp/sta" else userWorkspacePath
 
     fun nativeExecutable(name: String): File? = nativeLibraryDir?.let { File(it, name) }
         ?.takeIf { it.isFile && it.canExecute() }

@@ -141,7 +141,7 @@ internal object WorldKnowledgeLogic {
     /**
      * 归一证据里的文件路径，使其可用于读取。
      *
-     * 子智能体按提示可能写 `/workspace/x`（Linux 侧）或 `/data/local/tmp/eta/x`（Android 侧），
+     * 子智能体按提示可能写 `/workspace/x`（Linux 侧）或 `/data/local/tmp/sta/x`（Android 侧），
      * 两者是同一个文件。相对路径按工作区根拼。返回 null 表示不是可读的绝对/相对文件引用。
      */
     fun normalizePath(path: String, workspaceRoot: String): String? {
@@ -156,7 +156,7 @@ internal object WorldKnowledgeLogic {
     }
 
     private const val LINUX_WORKSPACE_PREFIX = "/workspace"
-    private const val ANDROID_WORKSPACE_PREFIX = "/data/local/tmp/eta"
+    private const val ANDROID_WORKSPACE_PREFIX = "/data/local/tmp/sta"
 
     /**
      * 把读回的历史结论格式化成可注入的文本行。
@@ -204,7 +204,7 @@ internal object WorldKnowledgeLogic {
     /**
      * 异空间来源的简短标注；同空间或坐标未知时返回空串。
      *
-     * 只取路径末段而不是完整路径：注入的是给模型看的上下文，`/data/local/tmp/eta/Sta-src`
+     * 只取路径末段而不是完整路径：注入的是给模型看的上下文，`/data/local/tmp/sta/Sta-src`
      * 这种前缀在这里不携带信息（所有条目都共享它），末段才是区分点。
      */
     fun originLabel(scope: String, currentScope: String): String {

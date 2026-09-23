@@ -12,7 +12,7 @@ class ShellProcessSupervisorTest {
     fun missingSetsidFailsClosedWhenTreeFallbackIsDisabled() {
         val supervisor = ShellProcessSupervisor(
             allowTreeFallback = false,
-            setsidCommand = "eta-test-missing-setsid",
+            setsidCommand = "sta-test-missing-setsid",
         )
 
         val process = supervisor.startShellProcess(
@@ -49,7 +49,7 @@ class ShellProcessSupervisorTest {
         assertTrue(payload.contains("unshare -m --propagation private"))
         assertTrue(payload.contains("mount -t proc"))
         assertTrue(payload.contains("sta_mount_required /data/local/tmp"))
-        assertTrue(payload.contains("sta_mount_required /data/local/tmp/eta"))
+        assertTrue(payload.contains("sta_mount_required /data/local/tmp/sta"))
         assertTrue(payload.contains("sta_rootfs/workspace"))
         assertTrue(payload.contains("chroot"))
         assertTrue(payload.contains(LinuxEnvironmentPaths.READY_MARKER))
@@ -68,7 +68,7 @@ class ShellProcessSupervisorTest {
     fun ptyLauncherWrapsPayloadWithScriptAndSetsSize() {
         val supervisor = ShellProcessSupervisor()
         val launcher = supervisor.buildTrackedShellLauncher(
-            ownershipFile = File(System.getProperty("java.io.tmpdir"), "eta-pty-test.owner"),
+            ownershipFile = File(System.getProperty("java.io.tmpdir"), "sta-pty-test.owner"),
             ownershipToken = "token123",
             command = null,
             identity = "user",

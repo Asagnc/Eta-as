@@ -37,7 +37,7 @@ class SkillPackageInstaller internal constructor(
     private val canonicalSkillsRoot = skillsRoot.canonicalFile
     private val workRoot = File(
         requireNotNull(canonicalSkillsRoot.parentFile) { "Skills 目录必须有父目录" },
-        ".eta-skill-installer",
+        ".sta-skill-installer",
     )
 
     fun installLocalZip(

@@ -11,7 +11,7 @@ class AgentSubAgentSummaryTest {
         val summary = AgentSubAgentSummary.parse(
             """
             结论：失败学习的读写已经从文件堆迁到观测库。
-            证据：app/src/main/kotlin/io/github/asagnc/eta/data/world/WorldKnowledgeStore.kt:42
+            证据：app/src/main/kotlin/io/github/asagnc/sta/data/world/WorldKnowledgeStore.kt:42
             证据：./gradlew :app:testDebugUnitTest → BUILD SUCCESSFUL
             不确定：未在真机验证数据库文件的实际增长。
             """.trimIndent(),
@@ -20,7 +20,7 @@ class AgentSubAgentSummaryTest {
         assertEquals("失败学习的读写已经从文件堆迁到观测库。", summary.conclusion)
         assertEquals(2, summary.evidence.size)
         assertEquals(
-            listOf("app/src/main/kotlin/io/github/asagnc/eta/data/world/WorldKnowledgeStore.kt"),
+            listOf("app/src/main/kotlin/io/github/asagnc/sta/data/world/WorldKnowledgeStore.kt"),
             summary.filePaths,
         )
         assertEquals(listOf("未在真机验证数据库文件的实际增长。"), summary.uncertainty)

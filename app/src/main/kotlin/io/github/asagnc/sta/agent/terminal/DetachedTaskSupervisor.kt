@@ -66,7 +66,7 @@ internal class DetachedTaskSupervisor(
     private val releaseUserLease: (String) -> Unit = TerminalRuntime::releaseUserTask,
 ) {
     companion object {
-        const val DEFAULT_DAEMON_DIR = "/data/local/tmp/eta/daemon"
+        const val DEFAULT_DAEMON_DIR = "/data/local/tmp/sta/daemon"
         const val LINUX_DAEMON_DIR = "/workspace/daemon"
         const val MAX_TASKS = 8
         const val MAX_RETAINED_RECORDS = 32
@@ -338,7 +338,7 @@ internal class DetachedTaskSupervisor(
                 releaseUserLease(lease)
                 return@synchronized DaemonStartResult.Failed("RECORDS_WRITE_FAILED", "无法保存后台任务，请检查内部存储")
             }
-            thread(name = "eta-daemon-wait", isDaemon = true) {
+            thread(name = "sta-daemon-wait", isDaemon = true) {
                 try { process.waitFor() } finally {
                     USER_WAITERS.remove(id)
                     releaseUserLease(lease)
@@ -360,7 +360,7 @@ internal class DetachedTaskSupervisor(
             USER_WAITERS.remove(task.id)
             return !stop(task.id)
         }
-        thread(name = "eta-daemon-adopt", isDaemon = true) {
+        thread(name = "sta-daemon-adopt", isDaemon = true) {
             try {
                 while (!stopped.get()) {
                     val result = runOneShotShell(

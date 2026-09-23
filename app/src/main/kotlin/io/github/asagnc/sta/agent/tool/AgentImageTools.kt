@@ -95,7 +95,7 @@ internal class AgentImageTools(
             else -> return sensitive(error("IMAGE_PATH_DENIED", "图片路径必须是绝对路径、file URI 或已授权的 content URI"))
         }
         val temporaryFile = runCatching {
-            File.createTempFile("eta-read-image-", ".img", imageCacheDirectory())
+            File.createTempFile("sta-read-image-", ".img", imageCacheDirectory())
         }.getOrElse {
             return sensitive(error("IMAGE_TEMPORARY_FILE_FAILED", "无法创建图片临时文件"))
         }

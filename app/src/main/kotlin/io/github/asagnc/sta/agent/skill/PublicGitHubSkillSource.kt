@@ -298,7 +298,7 @@ internal class PublicGitHubSkillSource(
         val commitSha = ref.takeIf(COMMIT_SHA_PATTERN::matches) ?: resolvedCommitSha
         ensureSafeCacheDirectory()
         cleanupStaleArchives()
-        val target = File.createTempFile("eta-skill-github-", ".zip", cacheDirectory)
+        val target = File.createTempFile("sta-skill-github-", ".zip", cacheDirectory)
         return try {
             val url = codeloadUrl(repository, commitSha)
             downloadTo(url, target, MAX_ARCHIVE_BYTES)
@@ -497,7 +497,7 @@ internal class PublicGitHubSkillSource(
             .asSequence()
             .filter { file ->
                 file.isFile &&
-                    file.name.startsWith("eta-skill-github-") &&
+                    file.name.startsWith("sta-skill-github-") &&
                     file.name.endsWith(".zip") &&
                     nowMillis - file.lastModified() > STALE_ARCHIVE_AGE_MILLIS
             }

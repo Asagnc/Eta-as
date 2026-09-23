@@ -2,10 +2,8 @@ package io.github.asagnc.sta.ui.screens.enhance
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ManageSearch
 import androidx.compose.material.icons.rounded.AccountTree
 import androidx.compose.material.icons.rounded.AdminPanelSettings
-import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Lock
@@ -104,16 +102,6 @@ fun SystemEnhanceScreen(
         item(key = "hook-title") { SmallTitle(stringResource(R.string.capability_system_features)) }
         item(key = "hook-features") {
             StaCard(modifier = Modifier.padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs)) {
-                BasicComponent(
-                    title = stringResource(R.string.capability_hook_assistants),
-                    summary = stringResource(R.string.capability_hook_assistants_summary),
-                    startAction = { PreferenceIcon(Icons.Rounded.AutoAwesome) },
-                )
-                BasicComponent(
-                    title = stringResource(R.string.capability_hook_google),
-                    summary = stringResource(R.string.capability_hook_google_summary),
-                    startAction = { PreferenceIcon(Icons.AutoMirrored.Rounded.ManageSearch) },
-                )
                 BasicComponent(
                     title = stringResource(R.string.capability_hook_accessibility),
                     summary = stringResource(R.string.capability_hook_accessibility_summary),

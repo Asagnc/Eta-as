@@ -254,7 +254,7 @@ internal class AgentPrivateDatabaseTools(
 
     private companion object {
         val snapshotLock = Any()
-        const val SNAPSHOT_PREFIX = "eta-private-data-"
+        const val SNAPSHOT_PREFIX = "sta-private-data-"
         const val MAX_FIELD_CHARS = 4_000
         const val DAY_MS = 24L * 60 * 60 * 1_000
         val CLOCK_DATABASE = DatabaseSource(

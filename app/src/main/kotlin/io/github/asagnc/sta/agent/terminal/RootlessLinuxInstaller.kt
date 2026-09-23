@@ -123,9 +123,9 @@ internal object RootlessLinuxInstaller {
             val sources = AptDistributionSpecs.mirrorsOf(distribution).first().sources
             File(staging, "etc/apt/sources.list").writeText(sources.joinToString("\n") + "\n")
             File(staging, "etc/apt/apt.conf.d").mkdirs()
-            File(staging, "etc/apt/apt.conf.d/99eta-rootless").writeText("APT::Sandbox::User \"root\";\nAcquire::Retries \"2\";\n")
+            File(staging, "etc/apt/apt.conf.d/99sta-rootless").writeText("APT::Sandbox::User \"root\";\nAcquire::Retries \"2\";\n")
             File(staging, "usr/sbin/policy-rc.d").apply { writeText("#!/bin/sh\nexit 101\n"); setExecutable(true, false) }
-            val helper = "eta-apt" to AptEnvironmentInstaller.aptMirrorScript(distribution)
+            val helper = "sta-apt" to AptEnvironmentInstaller.aptMirrorScript(distribution)
             File(staging, "usr/local/bin/${helper.first}").apply { writeText(helper.second + "\n"); setExecutable(true, false) }
             val result = InstallerShellRunner.run("/bin/sh -c ':'", 20, distribution.terminalEnvironment, staging.absolutePath)
             if (result.exitCode != 0) throw RootlessInstallFailure("PROOT_START_FAILED", "免 Root Linux 无法启动（退出码 ${result.exitCode}），请确认使用受支持的 64 位设备并重试")

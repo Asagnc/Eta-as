@@ -63,7 +63,7 @@ internal object AgentTerminalToolCatalog {
                                     "cwd",
                                     JSONObject()
                                         .put("type", "string")
-                                        .put("description", "Working directory. Defaults to /data/local/tmp/eta for android and /workspace for linux. Relative paths use the environment default. ~/ means /storage/emulated/0.")
+                                        .put("description", "Working directory. Defaults to /data/local/tmp/sta for android and /workspace for linux. Relative paths use the environment default. ~/ means /storage/emulated/0.")
                                 )
                                 .put(
                                     "timeout_ms",
@@ -142,7 +142,7 @@ internal object AgentTerminalToolCatalog {
                                     "cwd",
                                     JSONObject()
                                         .put("type", "string")
-                                        .put("description", "工作目录，默认 /data/local/tmp/eta。相对路径也按该目录解析；用户存储可用 ~/ 表示 /storage/emulated/0。")
+                                        .put("description", "工作目录，默认 /data/local/tmp/sta。相对路径也按该目录解析；用户存储可用 ~/ 表示 /storage/emulated/0。")
                                 )
                                 .put(
                                     "timeout_seconds",
@@ -225,7 +225,7 @@ internal object AgentTerminalToolCatalog {
             .put(
                 AgentToolSchema.function(
                     name = "list_directory",
-                    description = "列出 Android 目录内容。默认 /data/local/tmp/eta，输出类似 ls -l（不含 . 与 ..）；" +
+                    description = "列出 Android 目录内容。默认 /data/local/tmp/sta，输出类似 ls -l（不含 . 与 ..）；" +
                         "返回 entry_count（目录内条目总数）与 truncated（是否因 limit 截断）。",
                     parameters = JSONObject()
                         .put("type", "object")
@@ -253,7 +253,7 @@ internal object AgentTerminalToolCatalog {
                         .put(
                             "properties",
                             JSONObject()
-                                .put("path", JSONObject().put("type", "string").put("description", "起始目录，默认 /data/local/tmp/eta。"))
+                                .put("path", JSONObject().put("type", "string").put("description", "起始目录，默认 /data/local/tmp/sta。"))
                                 .put("glob", JSONObject().put("type", "string").put("description", "文件名匹配，例如 *.kt 或 SKILL.md；不支持引号、分号、管道等 Shell 字符。"))
                                 .put("limit", JSONObject().put("type", "integer").put("description", "最多返回 1 到 200 条，默认 80。"))
                                 .put("no_ignore", JSONObject().put("type", "boolean").put("description", "true 时不遵守 .gitignore，默认 false。"))
@@ -274,7 +274,7 @@ internal object AgentTerminalToolCatalog {
                         .put(
                             "properties",
                             JSONObject()
-                                .put("path", JSONObject().put("type", "string").put("description", "文件或目录路径，默认 /data/local/tmp/eta。"))
+                                .put("path", JSONObject().put("type", "string").put("description", "文件或目录路径，默认 /data/local/tmp/sta。"))
                                 .put("pattern", JSONObject().put("type", "string").put("description", "正则表达式（POSIX ERE 风格，\\d/\\s/\\w 会被自动翻成 [0-9]/[[:space:]]/[[:alnum:]]），按单行内容匹配；不支持反向引用与环视。"))
                                 .put("glob", JSONObject().put("type", "string").put("description", "文件名过滤，例如 *.kt；省略表示不过滤。"))
                                 .put("max_results", JSONObject().put("type", "integer").put("description", "每页最多返回的匹配行数，1 到 500，默认 50。"))

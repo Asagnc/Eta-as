@@ -416,7 +416,7 @@ private fun isStrictChild(root: File, target: File): Boolean {
 
 internal fun skillInstallerWorkRoot(skillsRoot: File): File = File(
     requireNotNull(skillsRoot.canonicalFile.parentFile) { "Skills 目录必须有父目录" },
-    ".eta-skill-installer",
+    ".sta-skill-installer",
 )
 
 private fun recoveryFailure(message: String): Nothing =

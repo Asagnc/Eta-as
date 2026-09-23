@@ -133,7 +133,7 @@ class AnthropicMessagesProviderTest {
             )
 
             val body = requestBody.get()
-            assertFalse(body.contains("eta-thinking-placeholder"))
+            assertFalse(body.contains("sta-thinking-placeholder"))
             val messages = JSONObject(body).getJSONArray("messages")
             val assistant = messages.getJSONObject(1)
             assertEquals(listOf("text", "tool_use"), blockTypes(assistant.getJSONArray("content")))

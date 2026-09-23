@@ -13,14 +13,14 @@ class AgentColorOsMemoryToolsTest {
     fun snapshotCopiesAllSqliteSidecars() {
         val command = buildColorOsMemorySnapshotCommand(
             source = "/data/user/0/com.oplus.aimemory/databases/ai_memory",
-            snapshot = File("/data/user/0/io.github.asagnc.sta/cache/eta-coloros-memory-test.db"),
+            snapshot = File("/data/user/0/io.github.asagnc.sta/cache/sta-coloros-memory-test.db"),
         )
 
         assertTrue(command.contains("ai_memory-wal"))
         assertTrue(command.contains("ai_memory-shm"))
         assertTrue(command.contains("ai_memory-journal"))
-        assertTrue(command.contains("eta-coloros-memory-test.db-shm"))
-        assertTrue(command.contains("rm -f '/data/user/0/io.github.asagnc.sta/cache/eta-coloros-memory-test.db-journal'"))
+        assertTrue(command.contains("sta-coloros-memory-test.db-shm"))
+        assertTrue(command.contains("rm -f '/data/user/0/io.github.asagnc.sta/cache/sta-coloros-memory-test.db-journal'"))
     }
 
     @Test

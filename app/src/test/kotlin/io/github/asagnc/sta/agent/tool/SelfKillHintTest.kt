@@ -28,7 +28,7 @@ class SelfKillHintTest {
     fun `sigkill counts as well`() {
         val sigkill = JSONObject().put("ok", false).put("exit_code", 137).toString()
 
-        assertTrue(SelfKillHint.hintFor("killall eta", sigkill).orEmpty().contains("exit=137"))
+        assertTrue(SelfKillHint.hintFor("killall sta", sigkill).orEmpty().contains("exit=137"))
     }
 
     @Test

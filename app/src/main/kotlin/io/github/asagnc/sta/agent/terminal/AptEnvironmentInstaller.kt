@@ -185,7 +185,7 @@ internal class AptEnvironmentInstaller(
         }
         val parent = rootfs.parentFile ?: return false
         val temporaryRootfs = File(parent, "rootfs.installing")
-        val etaSources = AptDistributionSpecs.mirrorsOf(distribution).first().sources
+        val staSources = AptDistributionSpecs.mirrorsOf(distribution).first().sources
             .joinToString(" ") { line -> shellQuote(line) }
         val markerBody = "version=${artifact.version}\\ndistribution=${distribution.wireName}\\nsha256=${artifact.sha256}\\n"
         val command = """
@@ -236,15 +236,15 @@ internal class AptEnvironmentInstaller(
             "${'$'}sta_busybox" rm -rf "${'$'}sta_temporary/etc/apt/sources.list.d"
             "${'$'}sta_busybox" mkdir -p "${'$'}sta_temporary/etc/apt/sources.list.d"
             "${'$'}sta_busybox" mkdir -p "${'$'}sta_temporary/etc/apt/apt.conf.d" "${'$'}sta_temporary/usr/local/bin"
-            cat > "${'$'}sta_temporary/etc/apt/apt.conf.d/99eta-network" <<'STA_APT_CONFIG_EOF'
+            cat > "${'$'}sta_temporary/etc/apt/apt.conf.d/99sta-network" <<'STA_APT_CONFIG_EOF'
             Acquire::Retries "2";
             Acquire::http::Pipeline-Depth "0";
             Acquire::https::Pipeline-Depth "0";
             STA_APT_CONFIG_EOF
-            printf '%s\n' ${etaSources} > "${'$'}sta_temporary/etc/apt/sources.list"
-            printf '%s\n' '#!/bin/sh' > "${'$'}sta_temporary/usr/local/bin/eta-apt"
-            printf %s ${shellQuote(aptMirrorScriptBody(distribution))} >> "${'$'}sta_temporary/usr/local/bin/eta-apt"
-            "${'$'}sta_busybox" chmod 0755 "${'$'}sta_temporary/usr/local/bin/eta-apt"
+            printf '%s\n' ${staSources} > "${'$'}sta_temporary/etc/apt/sources.list"
+            printf '%s\n' '#!/bin/sh' > "${'$'}sta_temporary/usr/local/bin/sta-apt"
+            printf %s ${shellQuote(aptMirrorScriptBody(distribution))} >> "${'$'}sta_temporary/usr/local/bin/sta-apt"
+            "${'$'}sta_busybox" chmod 0755 "${'$'}sta_temporary/usr/local/bin/sta-apt"
             printf ${shellQuote(markerBody)} > "${'$'}sta_temporary/${LinuxEnvironmentPaths.READY_MARKER}"
             "${'$'}sta_busybox" chmod 0644 "${'$'}sta_temporary/${LinuxEnvironmentPaths.READY_MARKER}"
             "${'$'}sta_busybox" rm -rf "${'$'}sta_rootfs"
@@ -263,17 +263,17 @@ internal class AptEnvironmentInstaller(
         val command = """
             export DEBIAN_FRONTEND=noninteractive
             mkdir -p /usr/local/bin
-            printf '%s\n' '#!/bin/sh' > /usr/local/bin/eta-apt
-            printf %s ${shellQuote(aptMirrorScriptBody(distribution))} >> /usr/local/bin/eta-apt
-            chmod 0755 /usr/local/bin/eta-apt
-            /usr/local/bin/eta-apt install $packages || exit 70
+            printf '%s\n' '#!/bin/sh' > /usr/local/bin/sta-apt
+            printf %s ${shellQuote(aptMirrorScriptBody(distribution))} >> /usr/local/bin/sta-apt
+            chmod 0755 /usr/local/bin/sta-apt
+            /usr/local/bin/sta-apt install $packages || exit 70
             if command -v fdfind >/dev/null 2>&1; then ln -sf /usr/bin/fdfind /usr/local/bin/fd; fi
-            cat > /${COMMON_TOOLS_MARKER} <<'STA_TOOLSET_EOF'
+            cat > /${LinuxEnvironmentPaths.COMMON_TOOLS_MARKER} <<'STA_TOOLSET_EOF'
             ${distribution.wireName}=${AptDistributionSpecs.versionOf(distribution)}
-            toolset=$TOOLSET_REVISION
+            toolset=${LinuxEnvironmentPaths.TOOLSET_REVISION}
             profiles=agent
             STA_TOOLSET_EOF
-            chmod 0644 /${COMMON_TOOLS_MARKER}
+            chmod 0644 /${LinuxEnvironmentPaths.COMMON_TOOLS_MARKER}
         """.trimIndent()
         val result = InstallerShellRunner.run(
             command,
@@ -314,10 +314,12 @@ internal class AptEnvironmentInstaller(
     }
 
     private fun commonToolsReady(rootfs: File): Boolean {
-        val marker = File(rootfs, COMMON_TOOLS_MARKER)
+        val marker = File(rootfs, LinuxEnvironmentPaths.COMMON_TOOLS_MARKER)
         if (!baseRootfsReady(rootfs) || !marker.isFile) return false
         return runCatching {
-            marker.useLines { lines -> lines.any { it.trim() == "toolset=$TOOLSET_REVISION" } }
+            marker.useLines { lines ->
+                lines.any { it.trim() == "toolset=${LinuxEnvironmentPaths.TOOLSET_REVISION}" }
+            }
         }.getOrDefault(false)
     }
 
@@ -329,8 +331,6 @@ internal class AptEnvironmentInstaller(
     }.getOrNull()
 
     companion object {
-        private const val COMMON_TOOLS_MARKER = ".eta-common-tools-ready"
-        private const val TOOLSET_REVISION = 1
         private const val COMMON_TOOLS_TIMEOUT_SECONDS = 900L
         private const val UNINSTALL_TIMEOUT_SECONDS = 180L
         private const val PREFLIGHT_ROOT_UNAVAILABLE = 40
@@ -379,7 +379,7 @@ internal class AptEnvironmentInstaller(
                 append("update) for sta_apt_mirror in $mirrorIds; do ")
                 append("sta_apt_write_sources \"${'$'}sta_apt_mirror\" || exit 65; ")
                 append("apt-get -o Acquire::Retries=2 -o Acquire::http::Pipeline-Depth=0 update && exit 0; done; exit 1;; ")
-                append("*) echo \"usage: eta-apt install PACKAGE... | update\" >&2; exit 64;; esac")
+                append("*) echo \"usage: sta-apt install PACKAGE... | update\" >&2; exit 64;; esac")
             }
         }
 

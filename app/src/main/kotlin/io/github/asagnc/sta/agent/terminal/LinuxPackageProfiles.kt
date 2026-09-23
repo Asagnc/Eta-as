@@ -58,7 +58,7 @@ internal object LinuxPackageProfiles {
             LinuxDistribution.DEBIAN to LinuxPackageSpec(
                 managedTool = ManagedLinuxTool.UV,
                 setupScript = """
-                    UV_PYTHON_INSTALL_DIR=/opt/eta/python UV_PYTHON_BIN_DIR=/usr/local/bin UV_PYTHON_INSTALL_BIN=1 uv python install --default --force
+                    UV_PYTHON_INSTALL_DIR=/opt/sta/python UV_PYTHON_BIN_DIR=/usr/local/bin UV_PYTHON_INSTALL_BIN=1 uv python install --default --force
                 """.trimIndent(),
             ),
         ),
@@ -148,13 +148,13 @@ internal object LinuxPackageProfiles {
         specs = mapOf(
             LinuxDistribution.DEBIAN to LinuxPackageSpec(
                 setupScript = """
-                    UV_PYTHON_INSTALL_DIR=/opt/eta/python uv python install 3.13
+                    UV_PYTHON_INSTALL_DIR=/opt/sta/python uv python install 3.13
                     # 重建 venv：旧目录可能仍绑定着别的解释器版本
-                    rm -rf /opt/eta/ctf
-                    UV_PYTHON_INSTALL_DIR=/opt/eta/python uv venv --python 3.13 /opt/eta/ctf
-                    UV_PYTHON_INSTALL_DIR=/opt/eta/python uv pip install --python /opt/eta/ctf/bin/python --upgrade pwntools z3-solver capstone ROPgadget pycryptodome
+                    rm -rf /opt/sta/ctf
+                    UV_PYTHON_INSTALL_DIR=/opt/sta/python uv venv --python 3.13 /opt/sta/ctf
+                    UV_PYTHON_INSTALL_DIR=/opt/sta/python uv pip install --python /opt/sta/ctf/bin/python --upgrade pwntools z3-solver capstone ROPgadget pycryptodome
                     for tool in pwn checksec cyclic asm disasm ROPgadget; do
-                        if [ -x "/opt/eta/ctf/bin/${'$'}tool" ]; then ln -sf "/opt/eta/ctf/bin/${'$'}tool" "/usr/local/bin/${'$'}tool"; fi
+                        if [ -x "/opt/sta/ctf/bin/${'$'}tool" ]; then ln -sf "/opt/sta/ctf/bin/${'$'}tool" "/usr/local/bin/${'$'}tool"; fi
                     done
                 """.trimIndent(),
             ),
@@ -231,7 +231,7 @@ internal class LinuxPackageProfileInstaller(
             }
         }
 
-        val packageHelper = "/usr/local/bin/eta-apt"
+        val packageHelper = "/usr/local/bin/sta-apt"
         onProgress(PackageProfileInstallProgress(PackageProfileInstallStage.INSTALLING))
         if (spec.packages.isNotEmpty()) {
             val installResult = InstallerShellRunner.run(

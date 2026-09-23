@@ -24,8 +24,8 @@ class CredentialBoundaryTest {
         assertFalse(CredentialBoundary.denies(dataDir, "$dataDir/files/skills/capture/SKILL.md"))
         assertFalse(CredentialBoundary.denies(dataDir, "$dataDir/files/MEMORY.md"))
         assertFalse(CredentialBoundary.denies(dataDir, "$dataDir/cache/tmp.txt"))
-        assertFalse(CredentialBoundary.denies(dataDir, "/data/local/tmp/eta/Sta-src/README.md"))
-        assertFalse(CredentialBoundary.denies(dataDir, "/storage/emulated/0/Download/update/eta-release.apk"))
+        assertFalse(CredentialBoundary.denies(dataDir, "/data/local/tmp/sta/Sta-src/README.md"))
+        assertFalse(CredentialBoundary.denies(dataDir, "/storage/emulated/0/Download/update/sta-release.apk"))
         assertFalse(CredentialBoundary.denies("", "$dataDir/databases/sta.db"))
     }
 

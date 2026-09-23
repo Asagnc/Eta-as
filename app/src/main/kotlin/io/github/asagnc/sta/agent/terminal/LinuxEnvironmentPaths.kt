@@ -6,17 +6,17 @@ import java.io.File
 
 /** 各 Linux rootfs 共用的磁盘布局和就绪判定。 */
 internal object LinuxEnvironmentPaths {
-    const val READY_MARKER = ".eta-environment-ready"
-    const val COMMON_TOOLS_MARKER = ".eta-common-tools-ready"
-    const val APK_ANALYSIS_MARKER = ".eta-apk-analysis-ready"
-    const val PYTHON_TOOLS_MARKER = ".eta-python-tools-ready"
-    const val NODE_TOOLS_MARKER = ".eta-node-tools-ready"
-    const val SSH_TOOLS_MARKER = ".eta-ssh-tools-ready"
-    const val GIT_TOOLS_MARKER = ".eta-git-tools-ready"
-    const val CLI_TOOLS_MARKER = ".eta-cli-tools-ready"
-    const val BUILD_TOOLS_MARKER = ".eta-build-tools-ready"
-    const val SECURITY_TOOLS_MARKER = ".eta-security-tools-ready"
-    const val CTF_TOOLS_MARKER = ".eta-ctf-tools-ready"
+    const val READY_MARKER = ".sta-environment-ready"
+    const val COMMON_TOOLS_MARKER = ".sta-common-tools-ready"
+    const val APK_ANALYSIS_MARKER = ".sta-apk-analysis-ready"
+    const val PYTHON_TOOLS_MARKER = ".sta-python-tools-ready"
+    const val NODE_TOOLS_MARKER = ".sta-node-tools-ready"
+    const val SSH_TOOLS_MARKER = ".sta-ssh-tools-ready"
+    const val GIT_TOOLS_MARKER = ".sta-git-tools-ready"
+    const val CLI_TOOLS_MARKER = ".sta-cli-tools-ready"
+    const val BUILD_TOOLS_MARKER = ".sta-build-tools-ready"
+    const val SECURITY_TOOLS_MARKER = ".sta-security-tools-ready"
+    const val CTF_TOOLS_MARKER = ".sta-ctf-tools-ready"
     const val TOOLSET_REVISION = 1
     const val APK_ANALYSIS_REVISION = 1
     const val PYTHON_TOOLS_REVISION = 1

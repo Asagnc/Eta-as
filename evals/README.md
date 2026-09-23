@@ -11,13 +11,13 @@ harness 与环境改动只有两种结局：变好、变差。没有数字就分
 | 内部 | App 内的同一次 run | harness 行为：工具调用次数与失败数、耗时、并发批次、token | `run_stats` 工具 + 归档事件 `RunStatsReported` |
 
 两层共用 `tasks.json`：外部层只发提示词与工具声明，不执行工具；内部层由人把同一条提示词交给
-App 里的 Eta，再用 `run_stats` 读回度量。跨 provider 比较稳定性看外部的失败类型分布，
+App 里的 Sta，再用 `run_stats` 读回度量。跨 provider 比较稳定性看外部的失败类型分布，
 判断 harness 改动看内部与外部共用的轮次／token／成功率。
 
 ## 运行
 
 ```bash
-export ETA_EVAL_API_KEY=...            # 只从环境变量读取，仓库里不写任何凭据
+export STA_EVAL_API_KEY=...            # 只从环境变量读取，仓库里不写任何凭据
 python3 evals/run_eval.py --provider-url https://example.com/v1 --model deepseek-v4-flash
 python3 evals/run_eval.py --dry-run    # 本地桩模型，验证脚本本身，不联网
 python3 evals/run_eval.py --baseline evals/results/baseline.json --repeat 3
@@ -35,7 +35,7 @@ python3 evals/run_eval.py --baseline evals/results/baseline.json --repeat 3
   这份快照由单测生成与校验：
 
   ```bash
-  ETA_EVAL_WRITE_SNAPSHOT=1 ./gradlew :app:testDebugUnitTest --tests "*EvalToolSnapshotTest*"   # 重新生成
+  STA_EVAL_WRITE_SNAPSHOT=1 ./gradlew :app:testDebugUnitTest --tests "*EvalToolSnapshotTest*"   # 重新生成
   ./gradlew :app:testDebugUnitTest --tests "*EvalToolSnapshotTest*"                             # 校验漂移
   ```
 
@@ -49,7 +49,7 @@ python3 evals/run_eval.py --baseline evals/results/baseline.json --repeat 3
 
 ## 实验怎么跑
 
-- **命名空间（工具名前缀 vs 后缀）**：`--tool-name-style prefixed` 会把同一批工具改名成 `eta_<name>` 再发，
+- **命名空间（工具名前缀 vs 后缀）**：`--tool-name-style prefixed` 会把同一批工具改名成 `sta_<name>` 再发，
   其他条件不变，对比两次的通过率与 `wrong_tool` 分布即可。这是纯测量，不改 App 行为。
 - **上下文策略**：`agent_context_notice_percent`（默认 60，设 0 关闭提示）与 `agent_tool_result_keep`
   （默认 6，负数关闭清理）都是运行时可配项。跑 App 内任务时先取 `run_stats` 的 `context_notices`

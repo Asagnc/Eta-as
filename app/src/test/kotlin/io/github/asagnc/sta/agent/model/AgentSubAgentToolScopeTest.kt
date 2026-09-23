@@ -10,7 +10,7 @@ class AgentSubAgentToolScopeTest {
 
     private val workspace = SubAgentWorkspace(
         repoPath = "/workspace/Sta-src",
-        worktreePath = "/workspace/eta-worktree-a",
+        worktreePath = "/workspace/sta-worktree-a",
     )
 
     private fun scope(name: String, json: String) =
@@ -30,25 +30,25 @@ class AgentSubAgentToolScopeTest {
 
     @Test
     fun `相对路径挂到 worktree 下`() {
-        assertEquals("/workspace/eta-worktree-a/app/src/A.kt", AgentSubAgentToolScope.mapPath("app/src/A.kt", workspace))
-        assertEquals("/workspace/eta-worktree-a/A.kt", AgentSubAgentToolScope.mapPath("./A.kt", workspace))
+        assertEquals("/workspace/sta-worktree-a/app/src/A.kt", AgentSubAgentToolScope.mapPath("app/src/A.kt", workspace))
+        assertEquals("/workspace/sta-worktree-a/A.kt", AgentSubAgentToolScope.mapPath("./A.kt", workspace))
     }
 
     @Test
     fun `主工作区路径映射到 worktree 同名位置`() {
         assertEquals(
-            "/workspace/eta-worktree-a/app/src/A.kt",
+            "/workspace/sta-worktree-a/app/src/A.kt",
             AgentSubAgentToolScope.mapPath("/workspace/Sta-src/app/src/A.kt", workspace),
         )
         assertEquals(
-            "/workspace/eta-worktree-a",
+            "/workspace/sta-worktree-a",
             AgentSubAgentToolScope.mapPath("/workspace/Sta-src", workspace),
         )
     }
 
     @Test
     fun `空白路径落到 worktree 根`() {
-        assertEquals("/workspace/eta-worktree-a", AgentSubAgentToolScope.mapPath("", workspace))
+        assertEquals("/workspace/sta-worktree-a", AgentSubAgentToolScope.mapPath("", workspace))
     }
 
     @Test
@@ -58,33 +58,33 @@ class AgentSubAgentToolScopeTest {
 
     @Test
     fun `越界判定认两种命名空间`() {
-        assertTrue(AgentSubAgentToolScope.isInsideWorktree("/workspace/eta-worktree-a/x", workspace))
-        assertTrue(AgentSubAgentToolScope.isInsideWorktree("/workspace/eta-worktree-a", workspace))
+        assertTrue(AgentSubAgentToolScope.isInsideWorktree("/workspace/sta-worktree-a/x", workspace))
+        assertTrue(AgentSubAgentToolScope.isInsideWorktree("/workspace/sta-worktree-a", workspace))
         assertTrue(
-            AgentSubAgentToolScope.isInsideWorktree("/data/local/tmp/eta/eta-worktree-a/x", workspace),
+            AgentSubAgentToolScope.isInsideWorktree("/data/local/tmp/sta/sta-worktree-a/x", workspace),
         )
         assertFalse(AgentSubAgentToolScope.isInsideWorktree("/workspace/Sta-src/x", workspace))
         assertFalse(AgentSubAgentToolScope.isInsideWorktree("/etc/x", workspace))
-        assertFalse(AgentSubAgentToolScope.isInsideWorktree("/workspace/eta-worktree-ab/x", workspace))
+        assertFalse(AgentSubAgentToolScope.isInsideWorktree("/workspace/sta-worktree-ab/x", workspace))
     }
 
     @Test
     fun `重复斜杠不会造成假越界`() {
-        assertTrue(AgentSubAgentToolScope.isInsideWorktree("/workspace//eta-worktree-a//x", workspace))
+        assertTrue(AgentSubAgentToolScope.isInsideWorktree("/workspace//sta-worktree-a//x", workspace))
     }
 
     @Test
     fun `提及主工作区的命令被判越界`() {
         assertTrue(AgentSubAgentToolScope.mentionsRepo("rm -rf /workspace/Sta-src/build", workspace))
-        assertTrue(AgentSubAgentToolScope.mentionsRepo("sed -i s/a/b/ /data/local/tmp/eta/Sta-src/x", workspace))
+        assertTrue(AgentSubAgentToolScope.mentionsRepo("sed -i s/a/b/ /data/local/tmp/sta/Sta-src/x", workspace))
         assertFalse(AgentSubAgentToolScope.mentionsRepo("ls -la", workspace))
-        assertFalse(AgentSubAgentToolScope.mentionsRepo("git -C /workspace/eta-worktree-a status", workspace))
+        assertFalse(AgentSubAgentToolScope.mentionsRepo("git -C /workspace/sta-worktree-a status", workspace))
     }
 
     @Test
     fun `写文件相对路径被收进 worktree`() {
         val args = ok("write_file", """{"path":"app/src/A.kt","content":"x"}""")
-        assertEquals("/workspace/eta-worktree-a/app/src/A.kt", args.getString("path"))
+        assertEquals("/workspace/sta-worktree-a/app/src/A.kt", args.getString("path"))
         assertEquals("x", args.getString("content"))
     }
 
@@ -93,7 +93,7 @@ class AgentSubAgentToolScopeTest {
         // 模型常照抄主工作区路径。映射到 worktree 同名位置比拒绝更符合预期：
         // 它想改的还是那个文件，只是落在隔离副本里。
         val args = ok("write_file", """{"path":"/workspace/Sta-src/app/src/A.kt","content":"x"}""")
-        assertEquals("/workspace/eta-worktree-a/app/src/A.kt", args.getString("path"))
+        assertEquals("/workspace/sta-worktree-a/app/src/A.kt", args.getString("path"))
     }
 
     @Test
@@ -112,26 +112,26 @@ class AgentSubAgentToolScopeTest {
 
     @Test
     fun `写文件指向 worktree 绝对路径通过`() {
-        val args = ok("edit_file", """{"path":"/workspace/eta-worktree-a/A.kt","old_text":"a","new_text":"b"}""")
-        assertEquals("/workspace/eta-worktree-a/A.kt", args.getString("path"))
+        val args = ok("edit_file", """{"path":"/workspace/sta-worktree-a/A.kt","old_text":"a","new_text":"b"}""")
+        assertEquals("/workspace/sta-worktree-a/A.kt", args.getString("path"))
     }
 
     @Test
     fun `读文件允许读主工作区，但路径被映射`() {
         val args = ok("read_file", """{"path":"/workspace/Sta-src/app/src/A.kt"}""")
-        assertEquals("/workspace/eta-worktree-a/app/src/A.kt", args.getString("path"))
+        assertEquals("/workspace/sta-worktree-a/app/src/A.kt", args.getString("path"))
     }
 
     @Test
     fun `检索工具同样收口`() {
         val args = ok("search_code", """{"pattern":"foo","path":"app/src"}""")
-        assertEquals("/workspace/eta-worktree-a/app/src", args.getString("path"))
+        assertEquals("/workspace/sta-worktree-a/app/src", args.getString("path"))
     }
 
     @Test
     fun `命令工具缺省 cwd 落到 worktree`() {
         val args = ok("terminal", """{"action":"open_and_exec","command":"ls"}""")
-        assertEquals("/workspace/eta-worktree-a", args.getString("cwd"))
+        assertEquals("/workspace/sta-worktree-a", args.getString("cwd"))
     }
 
     @Test
@@ -172,7 +172,7 @@ class AgentSubAgentToolScopeTest {
     @Test
     fun `空参数按空对象处理`() {
         val args = ok("read_file", "")
-        assertEquals("/workspace/eta-worktree-a", args.getString("path"))
+        assertEquals("/workspace/sta-worktree-a", args.getString("path"))
     }
 
     // ---- 数组型路径参数（read_files / edit_files）----
@@ -182,8 +182,8 @@ class AgentSubAgentToolScopeTest {
         val args = ok("read_files", """{"paths":["app/src/A.kt","/workspace/Sta-src/B.kt"]}""")
         val paths = args.getJSONArray("paths")
 
-        assertEquals("/workspace/eta-worktree-a/app/src/A.kt", paths.getString(0))
-        assertEquals("/workspace/eta-worktree-a/B.kt", paths.getString(1))
+        assertEquals("/workspace/sta-worktree-a/app/src/A.kt", paths.getString(0))
+        assertEquals("/workspace/sta-worktree-a/B.kt", paths.getString(1))
     }
 
     @Test
@@ -201,7 +201,7 @@ class AgentSubAgentToolScopeTest {
         )
         val entry = args.getJSONArray("edits").getJSONObject(0)
 
-        assertEquals("/workspace/eta-worktree-a/app/src/A.kt", entry.getString("path"))
+        assertEquals("/workspace/sta-worktree-a/app/src/A.kt", entry.getString("path"))
         assertEquals("a", entry.getString("old_text"))
     }
 
@@ -229,7 +229,7 @@ class AgentSubAgentToolScopeTest {
         )
 
         assertEquals(
-            "/workspace/eta-worktree-a/app/src/B.kt",
+            "/workspace/sta-worktree-a/app/src/B.kt",
             args.getJSONArray("edits").getJSONObject(0).getString("path"),
         )
     }

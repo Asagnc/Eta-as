@@ -48,7 +48,7 @@ internal fun linuxApkAnalysisReady(rootfs: File): Boolean {
 internal fun linuxApkJavaInstallCommand(distribution: LinuxDistribution): String =
     when (distribution) {
         LinuxDistribution.DEBIAN, LinuxDistribution.UBUNTU, LinuxDistribution.KALI ->
-            "/usr/local/bin/eta-apt install openjdk-25-jdk-headless"
+            "/usr/local/bin/sta-apt install openjdk-25-jdk-headless"
     }
 
 /** 为当前 Linux 发行版安装 Java 分析工具；APK 资源回编译仍需 ARM64 AAPT2 支持。 */
@@ -227,7 +227,7 @@ internal class LinuxApkAnalysisInstaller(
         if (LinuxEnvironmentPaths.backendOf(rootfs.absolutePath) == LinuxExecutionBackend.PROOT) {
             return activateRootless(rootfs, staging)
         }
-        val profileRoot = File(rootfs, "opt/eta/apk-analysis")
+        val profileRoot = File(rootfs, "opt/sta/apk-analysis")
         val current = File(profileRoot, "current")
         val installing = File(profileRoot, "current.installing")
         val previous = File(profileRoot, "previous")
@@ -248,12 +248,12 @@ internal class LinuxApkAnalysisInstaller(
               for sta_command in java jadx apktool smali baksmali; do
                 "${'$'}sta_busybox" rm -f ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)}/"${'$'}sta_command"
               done
-              "${'$'}sta_busybox" ln -s ../../../opt/eta/apk-analysis/current/bin/java \
+              "${'$'}sta_busybox" ln -s ../../../opt/sta/apk-analysis/current/bin/java \
                 ${shellQuote(File(rootfs, "usr/local/bin/java").absolutePath)} || return 1
-              "${'$'}sta_busybox" ln -s ../../../opt/eta/apk-analysis/current/jadx/bin/jadx \
+              "${'$'}sta_busybox" ln -s ../../../opt/sta/apk-analysis/current/jadx/bin/jadx \
                 ${shellQuote(File(rootfs, "usr/local/bin/jadx").absolutePath)} || return 1
               for sta_command in apktool smali baksmali; do
-                "${'$'}sta_busybox" ln -s ../../../opt/eta/apk-analysis/current/bin/"${'$'}sta_command" \
+                "${'$'}sta_busybox" ln -s ../../../opt/sta/apk-analysis/current/bin/"${'$'}sta_command" \
                   ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)}/"${'$'}sta_command" || return 1
               done
             }
@@ -320,7 +320,7 @@ internal class LinuxApkAnalysisInstaller(
     }
 
     private suspend fun rollback(rootfs: File) {
-        val profileRoot = File(rootfs, "opt/eta/apk-analysis")
+        val profileRoot = File(rootfs, "opt/sta/apk-analysis")
         val current = File(profileRoot, "current")
         val previous = File(profileRoot, "previous")
         if (LinuxEnvironmentPaths.backendOf(rootfs.absolutePath) == LinuxExecutionBackend.PROOT) {
@@ -343,7 +343,7 @@ internal class LinuxApkAnalysisInstaller(
 
     private suspend fun cleanupAfterSuccess(rootfs: File, artifacts: Collection<File>) {
         artifacts.forEach(File::delete)
-        val previous = File(rootfs, "opt/eta/apk-analysis/previous")
+        val previous = File(rootfs, "opt/sta/apk-analysis/previous")
         if (LinuxEnvironmentPaths.backendOf(rootfs.absolutePath) == LinuxExecutionBackend.PROOT) {
             previous.deleteRecursively()
             return
@@ -357,7 +357,7 @@ internal class LinuxApkAnalysisInstaller(
     }
 
     private fun activateRootless(rootfs: File, staging: File): Boolean {
-        val profileRoot = File(rootfs, "opt/eta/apk-analysis").apply { mkdirs() }
+        val profileRoot = File(rootfs, "opt/sta/apk-analysis").apply { mkdirs() }
         val current = File(profileRoot, "current")
         val previous = File(profileRoot, "previous")
         if (previous.exists() && !previous.deleteRecursively()) return false
@@ -372,7 +372,7 @@ internal class LinuxApkAnalysisInstaller(
                 val path = File(localBin, name).toPath()
                 java.nio.file.Files.deleteIfExists(path)
                 val relative = if (name == "jadx") "jadx/bin/jadx" else "bin/$name"
-                java.nio.file.Files.createSymbolicLink(path, java.nio.file.Path.of("../../../opt/eta/apk-analysis/current/$relative"))
+                java.nio.file.Files.createSymbolicLink(path, java.nio.file.Path.of("../../../opt/sta/apk-analysis/current/$relative"))
             }
             File(rootfs, LinuxEnvironmentPaths.APK_ANALYSIS_MARKER).delete()
             return true
@@ -468,7 +468,7 @@ internal class LinuxApkAnalysisInstaller(
                 exit 64
                 ;;
             esac
-            exec java -jar /opt/eta/apk-analysis/current/lib/apktool.jar "${'$'}@"
+            exec java -jar /opt/sta/apk-analysis/current/lib/apktool.jar "${'$'}@"
         """.trimIndent() + "\n"
 
         internal val JAVA_WRAPPER = """
@@ -477,6 +477,6 @@ internal class LinuxApkAnalysisInstaller(
         """.trimIndent() + "\n"
 
         private fun javaJarWrapper(fileName: String): String =
-            "#!/bin/sh\nexec java -jar /opt/eta/apk-analysis/current/lib/$fileName \"${'$'}@\"\n"
+            "#!/bin/sh\nexec java -jar /opt/sta/apk-analysis/current/lib/$fileName \"${'$'}@\"\n"
     }
 }

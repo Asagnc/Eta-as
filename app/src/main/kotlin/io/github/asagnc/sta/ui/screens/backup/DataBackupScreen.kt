@@ -232,4 +232,4 @@ private fun BackupIcon(icon: ImageVector, loading: Boolean) {
 }
 
 private fun defaultBackupFileName(): String =
-    "Sta-backup-${SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())}.eta-backup.json"
+    "Sta-backup-${SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date())}.sta-backup.json"

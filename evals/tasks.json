@@ -23,10 +23,10 @@
     {
       "id": "locate-concurrency-constant",
       "category": "code",
-      "prompt": "在 Eta 源码里找出 AgentLoop 的并发上限常量定义，把定义那一行和它前后的实现一起给我。",
+      "prompt": "在 Sta 源码里找出 AgentLoop 的并发上限常量定义，把定义那一行和它前后的实现一起给我。",
       "tools": ["search_code", "read_file", "list_directory", "run_stats"],
       "expect_first_tool": ["search_code"],
-      "expect_arguments": {"pattern": "MAX_PARALLEL_TOOL_CALLS", "path": "/workspace/Eta-src"},
+      "expect_arguments": {"pattern": "MAX_PARALLEL_TOOL_CALLS", "path": "/workspace/Sta-src"},
       "tool_result": {"ok": true, "matches": 3}
     },
     {
@@ -35,7 +35,7 @@
       "prompt": "把 Prefs.kt 里 agent_parallel_tool_limit 的默认值从 4 改成 8，改完告诉我改动了哪一行。",
       "tools": ["edit_file", "read_file", "search_code"],
       "expect_first_tool": ["read_file", "search_code", "edit_file"],
-      "expect_arguments": {"path": "/workspace/Eta-src/app/src/main/kotlin/io/github/asagnc/eta/config/Prefs.kt"},
+      "expect_arguments": {"path": "/workspace/Sta-src/app/src/main/kotlin/io/github/asagnc/sta/config/Prefs.kt"},
       "tool_result": {"ok": true, "bytes_written": 8271}
     },
     {
@@ -53,7 +53,7 @@
       "prompt": "先确认一下当前的抓包环境是什么状态，再决定要不要重建 CA 注入。",
       "tools": ["terminal", "read_file"],
       "expect_first_tool": ["terminal"],
-      "expect_arguments": {"action": "open_and_exec", "command": "bash /data/local/tmp/eta/capture-status.sh", "environment": "android"},
+      "expect_arguments": {"action": "open_and_exec", "command": "bash /data/local/tmp/sta/capture-status.sh", "environment": "android"},
       "tool_result": {"ok": true, "output": "capture disabled"},
       "held_out": true
     },
@@ -102,7 +102,7 @@
     {
       "id": "recall-build-command",
       "category": "memory",
-      "prompt": "我之前把 Eta 的构建命令记在哪了？",
+      "prompt": "我之前把 Sta 的构建命令记在哪了？",
       "tools": ["memory_get", "search_code", "read_file"],
       "expect_first_tool": ["memory_get"],
       "expect_arguments": {"query": "构建"},

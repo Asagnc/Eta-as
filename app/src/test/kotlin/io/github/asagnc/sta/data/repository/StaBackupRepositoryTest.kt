@@ -158,7 +158,7 @@ class StaBackupRepositoryTest {
     @Test
     fun versionOneBackupRemainsReadable() = runBlocking {
         val summary = StaBackupRepository.inspect(ByteArrayInputStream(
-            """{"format":"eta-backup","schemaVersion":1,"exportedAt":0}""".toByteArray(),
+            """{"format":"sta-backup","schemaVersion":1,"exportedAt":0}""".toByteArray(),
         ))
         assertEquals(0, summary.characterCount)
     }

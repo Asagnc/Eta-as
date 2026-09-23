@@ -1,22 +1,22 @@
 # 普通设备与 Root 设备
 
-Eta 使用同一个 APK，根据实际授权提供能力。基础功能不会等待 Root 探测，Root 授权与框架服务连接分别展示；授权拒绝、断连或恢复都不改写用户保存的开关。
+Sta 使用同一个 APK，根据实际授权提供能力。基础功能不会等待 Root 探测，Root 授权与框架服务连接分别展示；授权拒绝、断连或恢复都不改写用户保存的开关。
 
-系统增强页的“框架通信”仅表示收到框架服务 Binder，不代表 LSPosed 管理器中的 Eta 开关已开启或 Hook 已生效。当前 libxposed Service 接口没有模块开关查询或变更通知；关闭模块后，已有服务连接仍可能保留。模块开关与作用域以管理器为准，具体功能还取决于目标进程中的加载情况。运行目标列表也不能代替模块开关：空列表只能说明没有返回运行目标。
+系统增强页的“框架通信”仅表示收到框架服务 Binder，不代表 LSPosed 管理器中的 Sta 开关已开启或 Hook 已生效。当前 libxposed Service 接口没有模块开关查询或变更通知；关闭模块后，已有服务连接仍可能保留。模块开关与作用域以管理器为准，具体功能还取决于目标进程中的加载情况。运行目标列表也不能代替模块开关：空列表只能说明没有返回运行目标。
 
 ## 能力边界
 
 | 功能 | 普通设备 | 增强条件 |
 | --- | --- | --- |
 | 聊天、模型、记忆、Skills、MCP、内置浏览器 | 可用，按各自开关与配置运行 | 无 |
-| GUI 截图、节点、手势、输入与等待 | 开启 Eta 无障碍服务 | LSPosed 系统保护可提供有限重绑 |
+| GUI 截图、节点、手势、输入与等待 | 开启 Sta 无障碍服务 | LSPosed 系统保护可提供有限重绑 |
 | 启动应用、打开链接、闹钟与计时器 | 使用 Android 前台 Intent | 无障碍不作为前置条件 |
 | 当前通知与通知历史 | 授予通知使用权；当前通知要求监听服务已连接 | Root 用户保留已有系统来源 |
 | 应用使用情况、位置 | 授予对应 Android 访问权限 | 后台位置需要始终允许 |
 | Android Shell、文件与图片 | App UID，私有工作区或已授权来源 | Root 用户保留特权路径 |
 | Debian、PTY | 通过 PRoot 运行 | 可另外安装 chroot |
 | 系统修改、冻结应用、私有数据读取 | 不向模型提供 | 需要 Root；部分数据还要求对应 ROM |
-| 厂商助手接管、Gemini 与一圈即搜 | 可在系统增强中了解 | 需要 LSPosed 与对应 ROM，系统化另需 Root |
+| 无障碍保护 | 可在系统增强中了解 | 需要 LSPosed 与对应 ROM |
 
 工具页默认“当前设备”。普通 Android 权限尚未开启的功能仍可发现；“全部能力”显示额外介绍与实际条件，查看不会申请权限，也不扩大模型权限。系统增强入口使用普通设置行，不持续提示未授权。Root 用户原有配置位置保持不变；失联时保留已使用配置，设置页顶部不显示重连提示卡片，框架通信状态可在系统增强页查看。
 
@@ -26,7 +26,7 @@ Eta 使用同一个 APK，根据实际授权提供能力。基础功能不会等
 
 新建普通工作区位于 `filesDir/terminal-user/workspace`，PRoot 环境位于 `filesDir/terminal-user/proot/<发行版>`，避开旧版可能由 Root 创建的 `filesDir/terminal` 父目录。已存在于旧布局的普通工作区与 PRoot 环境继续使用原位置，不自动迁移或修改属主；目录选择不依赖 Root 授权。工作区在 Linux 中仍映射为 `/workspace`。文件选择器返回的 URI 如果无法作为 App UID 可读路径使用，会先有界导入工作区再引用；不能直接导入的目录会给出明确说明。公共目录共享按需申请“所有文件访问”，拒绝后仍可使用私有工作区与导入导出。
 
-PRoot 与 chroot 使用独立 rootfs。旧 chroot、`/data/local/tmp/eta` 与特权共享挂载不迁移；运行会话和任务固定创建时的后端与路径。Root 状态变化不会删除环境、更改属主或自动切换已有会话。PRoot 内的模拟 root 没有 Android Root 权限。
+PRoot 与 chroot 使用独立 rootfs。旧 chroot、`/data/local/tmp/sta` 与特权共享挂载不迁移；运行会话和任务固定创建时的后端与路径。Root 状态变化不会删除环境、更改属主或自动切换已有会话。PRoot 内的模拟 root 没有 Android Root 权限。
 
 免 Root 安装器复用固定 rootfs 的下载校验，在临时目录流式解包，处理归档路径、链接、取消与失败清理，运行检查成功后才写完成标记。基础工具、Python/uv、Node.js、SSH 和 APK 分析通过所选后端执行安装与检查。
 
@@ -36,7 +36,7 @@ PRoot 与 chroot 使用独立 rootfs。旧 chroot、`/data/local/tmp/eta` 与特
 
 Root daemon 沿用原有独立生命周期，不由普通任务服务批量回收。
 
-通知权限拒绝不会直接阻止合法启动。前台服务仍受 Android 的[后台启动限制](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start)和厂商进程管理影响；启动被拒绝时返回 Eta 重试。强停或重启后不自动重放命令。
+通知权限拒绝不会直接阻止合法启动。前台服务仍受 Android 的[后台启动限制](https://developer.android.com/develop/background-work/services/fgs/restrictions-bg-start)和厂商进程管理影响；启动被拒绝时返回 Sta 重试。强停或重启后不自动重放命令。
 
 ## 验证边界与真机清单
 

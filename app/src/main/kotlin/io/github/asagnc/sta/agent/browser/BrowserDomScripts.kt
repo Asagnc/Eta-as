@@ -369,7 +369,7 @@ internal object BrowserDomScripts {
         """
         var markdownHolder = function (html) {
           var holder = document.createElement('div');
-          holder.setAttribute('data-eta-readability', '1');
+          holder.setAttribute('data-sta-readability', '1');
           holder.style.position = 'fixed';
           holder.style.left = '-10000px';
           holder.style.top = '0';
@@ -814,11 +814,11 @@ internal object BrowserDomScripts {
           var originalOpen = XMLHttpRequest.prototype.open;
           var originalSend = XMLHttpRequest.prototype.send;
           XMLHttpRequest.prototype.open = function(method, url) {
-            this.__etaHeaderUrl = url;
+            this.__staHeaderUrl = url;
             return originalOpen.apply(this, arguments);
           };
           XMLHttpRequest.prototype.send = function() {
-            if (sameOrigin(this.__etaHeaderUrl || '')) {
+            if (sameOrigin(this.__staHeaderUrl || '')) {
               for (var index = 0; index < NAMES.length; index++) {
                 try {
                   this.setRequestHeader(NAMES[index], HEADERS[NAMES[index]]);

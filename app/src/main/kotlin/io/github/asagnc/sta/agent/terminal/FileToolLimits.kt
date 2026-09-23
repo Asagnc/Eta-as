@@ -17,7 +17,7 @@ internal object FileToolLimits {
     const val MAX_OUTPUT_CHARS = 16_000
 
     /** 写文件的同目录临时文件后缀：写完立即被 rename 顶替，失败则删掉。 */
-    const val WRITE_TEMP_SUFFIX = ".eta-tmp"
+    const val WRITE_TEMP_SUFFIX = ".sta-tmp"
 
     /**
      * 错误文案上限。300 字符装不下 PathHints 的「路径不存在 + 最近可用目录 + 其下条目」，

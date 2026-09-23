@@ -17,43 +17,43 @@ internal object BrowserRequestHeaderScript {
         }
         return """
         (function() {
-          var etaHeaders = { $headerPairs };
-          var etaOrigin = ${JSONObject.quote(origin)};
-          function etaSameOrigin(url) {
+          var staHeaders = { $headerPairs };
+          var staOrigin = ${JSONObject.quote(origin)};
+          function staSameOrigin(url) {
             try {
-              return new URL(url, document.baseURI).origin === etaOrigin;
+              return new URL(url, document.baseURI).origin === staOrigin;
             } catch (error) {
               return false;
             }
           }
-          var etaFetch = window.fetch;
-          if (typeof etaFetch === 'function') {
+          var staFetch = window.fetch;
+          if (typeof staFetch === 'function') {
             window.fetch = function(input, init) {
               var url = typeof input === 'string' ? input : (input && input.url) || '';
-              if (!etaSameOrigin(url)) return etaFetch.call(this, input, init);
+              if (!staSameOrigin(url)) return staFetch.call(this, input, init);
               init = init || {};
               var headers = new Headers(init.headers || (input && input.headers) || undefined);
-              for (var name in etaHeaders) headers.set(name, etaHeaders[name]);
+              for (var name in staHeaders) headers.set(name, staHeaders[name]);
               init.headers = headers;
-              return etaFetch.call(this, input, init);
+              return staFetch.call(this, input, init);
             };
           }
-          var etaOpen = XMLHttpRequest.prototype.open;
-          var etaSend = XMLHttpRequest.prototype.send;
+          var staOpen = XMLHttpRequest.prototype.open;
+          var staSend = XMLHttpRequest.prototype.send;
           XMLHttpRequest.prototype.open = function(method, url) {
-            this.__etaSameOrigin = etaSameOrigin(url);
-            return etaOpen.apply(this, arguments);
+            this.__staSameOrigin = staSameOrigin(url);
+            return staOpen.apply(this, arguments);
           };
           XMLHttpRequest.prototype.send = function() {
-            if (this.__etaSameOrigin) {
-              for (var name in etaHeaders) {
+            if (this.__staSameOrigin) {
+              for (var name in staHeaders) {
                 try {
-                  this.setRequestHeader(name, etaHeaders[name]);
+                  this.setRequestHeader(name, staHeaders[name]);
                 } catch (error) {
                 }
               }
             }
-            return etaSend.apply(this, arguments);
+            return staSend.apply(this, arguments);
           };
         })();
         """.trimIndent()

@@ -182,7 +182,7 @@
         "type": "object",
         "properties": {
           "path": {
-            "description": "文件或目录路径，默认 /data/local/tmp/eta。",
+            "description": "文件或目录路径，默认 /data/local/tmp/sta。",
             "type": "string"
           },
           "files_only": {
@@ -215,7 +215,7 @@
     },
     {
       "name": "list_directory",
-      "description": "列出 Android 目录内容。默认 /data/local/tmp/eta，输出类似 ls -l。",
+      "description": "列出 Android 目录内容。默认 /data/local/tmp/sta，输出类似 ls -l。",
       "parameters": {
         "type": "object",
         "properties": {
@@ -230,7 +230,7 @@
     },
     {
       "name": "terminal",
-      "description": "Manage terminal sessions on the current device. environment=android runs Android system commands and root operations; environment=linux runs the distribution selected in Eta settings, and environment=debian, ubuntu or kali runs that installed distribution directly. Apktool build is unavailable until an ARM64 AAPT2 runtime is installed. Use open_and_exec for one-shot commands. Use open to create a persistent shell session and exec with session_id for multi-step work. Use async=true without session_id for long-running independent commands, then read_async_result with job_id to stream output chunks. Use daemon_start for services that must keep running after the Agent run (listening ports, web panels, watchers): the process detaches from any command shell, logs to a file, and survives until daemon_stop or device reboot. Manage daemons with daemon_list, daemon_logs and daemon_stop by task_id. Use close to stop jobs or close sessions.",
+      "description": "Manage terminal sessions on the current device. environment=android runs Android system commands and root operations; environment=linux runs the distribution selected in Sta settings, and environment=debian, ubuntu or kali runs that installed distribution directly. Apktool build is unavailable until an ARM64 AAPT2 runtime is installed. Use open_and_exec for one-shot commands. Use open to create a persistent shell session and exec with session_id for multi-step work. Use async=true without session_id for long-running independent commands, then read_async_result with job_id to stream output chunks. Use daemon_start for services that must keep running after the Agent run (listening ports, web panels, watchers): the process detaches from any command shell, logs to a file, and survives until daemon_stop or device reboot. Manage daemons with daemon_list, daemon_logs and daemon_stop by task_id. Use close to stop jobs or close sessions.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -259,7 +259,7 @@
             "type": "string"
           },
           "cwd": {
-            "description": "Working directory. Defaults to /data/local/tmp/eta for android and /workspace for linux. Relative paths use the environment default. ~/ means /storage/emulated/0.",
+            "description": "Working directory. Defaults to /data/local/tmp/sta for android and /workspace for linux. Relative paths use the environment default. ~/ means /storage/emulated/0.",
             "type": "string"
           },
           "async": {
@@ -267,7 +267,7 @@
             "type": "boolean"
           },
           "environment": {
-            "description": "android uses the native Android shell with BusyBox applets when available. linux uses the distribution selected in Eta settings; debian, ubuntu and kali target that distribution, which must be installed first. Default android.",
+            "description": "android uses the native Android shell with BusyBox applets when available. linux uses the distribution selected in Sta settings; debian, ubuntu and kali target that distribution, which must be installed first. Default android.",
             "type": "string",
             "enum": [
               "android",
@@ -345,7 +345,7 @@
     },
     {
       "name": "tap_element",
-      "description": "点击指定观察快照中的 UI 节点。index 与 observation_id 必须来自同一次最近的 observe_screen；若观察已过期，先重新观察。Runtime 会在执行前确认 Eta 无障碍服务已经连接。",
+      "description": "点击指定观察快照中的 UI 节点。index 与 observation_id 必须来自同一次最近的 observe_screen；若观察已过期，先重新观察。Runtime 会在执行前确认 Sta 无障碍服务已经连接。",
       "parameters": {
         "type": "object",
         "properties": {

@@ -22,11 +22,11 @@ class BrowserDomScriptsTest {
     fun `script evaluation keeps the result on the page until it is read`() {
         val script = BrowserDomScripts.evaluateScript(
             expression = "await fetch('/token').then(function(response) { return response.text(); })",
-            resultKey = "etaScriptProbe",
+            resultKey = "staScriptProbe",
             maxChars = 2_000,
         )
 
-        assertTrue(script.trimStart().startsWith("var key = \"etaScriptProbe\";"))
+        assertTrue(script.trimStart().startsWith("var key = \"staScriptProbe\";"))
         assertTrue(script.contains("var limit = 2000;"))
         assertTrue(script.contains("return (await fetch('/token')"))
         assertTrue(script.contains("window[key] = JSON.stringify(payload);"))
@@ -37,9 +37,9 @@ class BrowserDomScriptsTest {
 
     @Test
     fun `script outcome reads the stored result once`() {
-        val script = BrowserDomScripts.scriptOutcome("etaScriptProbe")
+        val script = BrowserDomScripts.scriptOutcome("staScriptProbe")
 
-        assertTrue(script.trimStart().startsWith("var key = \"etaScriptProbe\";"))
+        assertTrue(script.trimStart().startsWith("var key = \"staScriptProbe\";"))
         assertTrue(script.contains("if (window[key] === undefined) return { done: false };"))
         assertTrue(script.contains("delete window[key];"))
         assertTrue(script.contains("return { done: true, payload: String(payload) };"))

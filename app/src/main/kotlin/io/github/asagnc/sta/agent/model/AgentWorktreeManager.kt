@@ -16,7 +16,7 @@ import java.io.File
 internal object AgentWorktreeManager {
 
     /** worktree 放在源仓库同级，名字带固定前缀，便于一眼看出归属、能安全批量清理。 */
-    const val DIRECTORY_PREFIX = "eta-worktree-"
+    const val DIRECTORY_PREFIX = "sta-worktree-"
 
     /** 一次 run 内最多同时存在的 worktree 数；超了先回收最旧的，避免悄悄吃掉用户存储。 */
     const val MAX_LIVE_WORKTREES = 3
@@ -43,7 +43,7 @@ internal object AgentWorktreeManager {
         return collapsed.take(MAX_TOKEN_CHARS).ifBlank { DEFAULT_TOKEN }
     }
 
-    /** worktree 绝对路径：`<仓库父目录>/eta-worktree-<token>`。 */
+    /** worktree 绝对路径：`<仓库父目录>/sta-worktree-<token>`。 */
     fun worktreePath(repoRoot: String, token: String): String {
         val parent = File(repoRoot).absoluteFile.parentFile?.absolutePath
             ?: error("无法解析仓库父目录：$repoRoot")

@@ -513,7 +513,7 @@ private fun SettingsPageContent(
                         onClick = {
                             val intent = android.content.Intent(
                                 android.content.Intent.ACTION_VIEW,
-                                android.net.Uri.parse("https://github.com/Mangi-11/Sta"),
+                                android.net.Uri.parse("https://github.com/Asagnc/Sta"),
                             )
                             context.startActivity(intent)
                         },

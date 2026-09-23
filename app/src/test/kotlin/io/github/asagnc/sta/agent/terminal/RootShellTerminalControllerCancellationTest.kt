@@ -47,7 +47,7 @@ class RootShellTerminalControllerCancellationTest {
     @Test
     fun interruptAllStopsDescendantProcess() {
         val controller = RootShellTerminalController(NoOpLogger)
-        val childPidFile = File.createTempFile("eta-terminal-child-", ".pid")
+        val childPidFile = File.createTempFile("sta-terminal-child-", ".pid")
         val finished = CountDownLatch(1)
         val result = AtomicReference<String>()
         val worker = thread(name = "terminal-child-cancel-test", isDaemon = true) {
@@ -186,7 +186,7 @@ class RootShellTerminalControllerCancellationTest {
         }.getOrDefault(false)
 
     private fun newIsolatedGroupController(): RootShellTerminalController {
-        val setsid = File.createTempFile("eta-test-setsid-", ".py").apply {
+        val setsid = File.createTempFile("sta-test-setsid-", ".py").apply {
             writeText(
                 """
                 #!/usr/bin/python3

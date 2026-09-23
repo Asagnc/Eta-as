@@ -136,7 +136,7 @@ internal class HookRegistrar(
         hooker: (XposedInterface.Chain) -> Any?
     ): XposedInterface.HookHandle? {
         require(STABLE_ID.matches(id)) { "Hook id 格式无效: $id" }
-        val fullId = "eta.$id"
+        val fullId = "sta.$id"
         val registrationKey = RegistrationKey(executable, fullId)
         if (!registrationKeys.add(registrationKey)) {
             val detail = "重复 Hook 注册: $description ($fullId)"

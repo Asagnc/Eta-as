@@ -51,7 +51,7 @@ internal data class WorldKnowledgeEntity(
     @ColumnInfo(name = "dependencies") val dependencies: String,
     @ColumnInfo(name = "sensitive") val sensitive: Boolean,
     /**
-     * 该条观测所属的空间坐标（工作区根路径，形如 `/data/local/tmp/eta/Sta-src`）。
+     * 该条观测所属的空间坐标（工作区根路径，形如 `/data/local/tmp/sta/Sta-src`）。
      *
      * 「空间」这个维度不是装饰：同一句结论在不同工作区里含义不同，只按关键词检索会让
      * 两个项目的同名文件互相污染。空串表示「坐标未知」，排序时按最远处理而不丢弃

@@ -56,7 +56,7 @@ internal class ShellProcessSupervisor(
         if (environment.isLinux && identity == "root" && LinuxEnvironmentPaths.backendOf(linuxRootfsPath) == LinuxExecutionBackend.PROOT) return null
         if (identity == "root" && !rootAvailable()) return null
         val ownershipFile = runCatching {
-            File.createTempFile("eta-terminal-", ".owner")
+            File.createTempFile("sta-terminal-", ".owner")
         }.getOrNull() ?: return null
         val ownershipToken = UUID.randomUUID().toString().replace("-", "")
         val launcher = try {
@@ -330,8 +330,8 @@ internal class ShellProcessSupervisor(
             fi
             [ -d /data/local/tmp ] || exit 125
             sta_mount_required /data/local/tmp "${'$'}sta_rootfs/data/local/tmp" bind
-            "${'$'}sta_busybox" mkdir -p /data/local/tmp/eta || exit 125
-            sta_mount_required /data/local/tmp/eta "${'$'}sta_rootfs/workspace" bind
+            "${'$'}sta_busybox" mkdir -p /data/local/tmp/sta || exit 125
+            sta_mount_required /data/local/tmp/sta "${'$'}sta_rootfs/workspace" bind
         """.trimIndent()
         val innerScriptTail = """
             if [ "${'$'}sta_mode" = command ]; then
@@ -377,7 +377,7 @@ internal class ShellProcessSupervisor(
             "( [ -x \"${'$'}sta_rootfs/usr/bin/env\" ] || [ -x \"${'$'}sta_rootfs/bin/busybox\" ] ) || " +
             "{ echo 'STA_LINUX_ENVIRONMENT_NOT_READY' >&2; exit 127; }; " +
             "\"${'$'}sta_busybox\" unshare -m --propagation private " +
-            "\"${'$'}sta_busybox\" sh -c ${shellQuote(innerScript)} eta-linux " +
+            "\"${'$'}sta_busybox\" sh -c ${shellQuote(innerScript)} sta-linux " +
             "\"${'$'}sta_rootfs\" \"${'$'}sta_busybox\" $mode $payload"
     }
 

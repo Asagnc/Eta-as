@@ -13,13 +13,13 @@ import org.junit.Test
  */
 class WorldEntityExtractorTest {
 
-    private val root = "/data/local/tmp/eta"
+    private val root = "/data/local/tmp/sta"
 
     @Test
     fun `从证据里抽出文件路径并归一`() {
         val bundle = WorldEntityExtractor.extract(
             conclusion = "工具描述在 AgentLocalTools.kt 里",
-            evidence = "read_file /workspace/Sta-src/app/src/main/kotlin/io/github/asagnc/eta/agent/model/AgentLocalTools.kt:120",
+            evidence = "read_file /workspace/Sta-src/app/src/main/kotlin/io/github/asagnc/sta/agent/model/AgentLocalTools.kt:120",
             workspaceRoot = root,
         )
         // Linux 侧路径应被归一成 Android 侧，与 WorldKnowledgeLogic 同一口径。

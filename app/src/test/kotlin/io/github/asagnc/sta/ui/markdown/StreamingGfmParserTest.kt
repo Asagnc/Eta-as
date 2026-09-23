@@ -147,21 +147,21 @@ class StreamingGfmParserTest {
 
     @Test
     fun completedSnapshotIncludesReferenceLinksBeforeStableHandoff() {
-        val content = "查看 [文档][eta]\n\n[eta]: https://example.com/docs"
+        val content = "查看 [文档][ref]\n\n[ref]: https://example.com/docs"
         val snapshot = StreamingGfmParserSession().parse(content, isComplete = true)
 
         assertTrue(snapshot.state.linksLookedUp)
-        assertEquals("https://example.com/docs", snapshot.state.referenceLinkHandler.find("[eta]"))
+        assertEquals("https://example.com/docs", snapshot.state.referenceLinkHandler.find("[ref]"))
     }
 
     @Test
     fun correctedSnapshotDoesNotRetainOrMutatePreviousLinkDefinitions() {
         val parser = StreamingGfmParserSession()
-        val original = parser.parse("[文档][eta]\n\n[eta]: https://example.com/docs", isComplete = true)
-        val replacement = parser.parse("[文档][eta]", isComplete = true)
+        val original = parser.parse("[文档][ref]\n\n[ref]: https://example.com/docs", isComplete = true)
+        val replacement = parser.parse("[文档][ref]", isComplete = true)
 
-        assertEquals("", replacement.state.referenceLinkHandler.find("[eta]"))
-        assertEquals("https://example.com/docs", original.state.referenceLinkHandler.find("[eta]"))
+        assertEquals("", replacement.state.referenceLinkHandler.find("[ref]"))
+        assertEquals("https://example.com/docs", original.state.referenceLinkHandler.find("[ref]"))
     }
 
     private fun ASTNode.findRecursively(type: IElementType): ASTNode? {

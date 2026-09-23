@@ -84,7 +84,7 @@ internal fun prepareSkillInstallerWorkRoot(skillsRoot: File): File {
     if (!Files.isDirectory(parent.toPath(), LinkOption.NOFOLLOW_LINKS)) {
         throw IOException("Skills 父目录不可用")
     }
-    val workRoot = File(parent, ".eta-skill-installer")
+    val workRoot = File(parent, ".sta-skill-installer")
     val path = workRoot.toPath()
     if (!Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
         try {

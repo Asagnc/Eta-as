@@ -99,16 +99,13 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import io.github.asagnc.sta.ui.theme.StaType
 
-// Miuix 未提供语义 success 色，沿用项目既有值；失败色走主题 error
-private val SuccessColor = Color(0xFF34C759)
-
 private const val SupplementExitDelayMs = 380L
 
 @Composable
 private fun phaseAccent(phase: AgentOverlayPhase): Color = when (phase) {
     AgentOverlayPhase.RUNNING -> StaColors.accent
-    AgentOverlayPhase.PAUSED -> Color(0xFFFF9F0A)
-    AgentOverlayPhase.FINISHED -> SuccessColor
+    AgentOverlayPhase.PAUSED -> StaColors.warning
+    AgentOverlayPhase.FINISHED -> StaColors.success
     AgentOverlayPhase.FAILED -> StaColors.danger
 }
 

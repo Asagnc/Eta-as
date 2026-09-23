@@ -80,7 +80,7 @@ class PublicGitHubSkillSourceTest {
             }
         }
         val cacheDirectory = File(temporaryFolder.root, "skill-github").also { it.mkdirs() }
-        val staleArchive = File(cacheDirectory, "eta-skill-github-stale.zip").also {
+        val staleArchive = File(cacheDirectory, "sta-skill-github-stale.zip").also {
             it.writeBytes(byteArrayOf(1))
             it.setLastModified(System.currentTimeMillis() - 25L * 60 * 60 * 1_000)
         }

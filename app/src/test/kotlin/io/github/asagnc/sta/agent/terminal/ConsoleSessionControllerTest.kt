@@ -15,7 +15,7 @@ class ConsoleSessionControllerTest {
             logger = NoopLogger,
             processSupervisor = ShellProcessSupervisor(
                 allowTreeFallback = false,
-                setsidCommand = "eta-test-missing-setsid",
+                setsidCommand = "sta-test-missing-setsid",
             ),
         )
         try {
@@ -44,7 +44,7 @@ class ConsoleSessionControllerTest {
             logger = NoopLogger,
             processSupervisor = ShellProcessSupervisor(
                 allowTreeFallback = false,
-                setsidCommand = "eta-test-missing-setsid",
+                setsidCommand = "sta-test-missing-setsid",
             ),
         )
         try {
@@ -71,7 +71,7 @@ class ConsoleSessionControllerTest {
     fun closeIsIdempotentAndRejectsFurtherSessions() {
         val supervisor = ShellProcessSupervisor(
             allowTreeFallback = false,
-            setsidCommand = "eta-test-missing-setsid",
+            setsidCommand = "sta-test-missing-setsid",
         )
         val controller = ConsoleSessionController(logger = NoopLogger, processSupervisor = supervisor)
 

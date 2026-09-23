@@ -8,9 +8,9 @@ import org.junit.Test
 class PathHintsTest {
     @Test
     fun `probe output splits into nearest directory and entries`() {
-        val probe = PathHints.parseProbe("NEAREST=/data/local/tmp/eta\nSta-src/\nprobe-dir/\n")
+        val probe = PathHints.parseProbe("NEAREST=/data/local/tmp/sta\nSta-src/\nprobe-dir/\n")
 
-        assertEquals("/data/local/tmp/eta", probe.nearest)
+        assertEquals("/data/local/tmp/sta", probe.nearest)
         assertEquals(listOf("Sta-src/", "probe-dir/"), probe.entries)
     }
 

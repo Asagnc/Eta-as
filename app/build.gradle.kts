@@ -5,10 +5,10 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-val releaseStoreFile = System.getenv("ETA_RELEASE_STORE_FILE")
-val releaseStorePassword = System.getenv("ETA_RELEASE_STORE_PASSWORD")
-val releaseKeyAlias = System.getenv("ETA_RELEASE_KEY_ALIAS")
-val releaseKeyPassword = System.getenv("ETA_RELEASE_KEY_PASSWORD")
+val releaseStoreFile = System.getenv("STA_RELEASE_STORE_FILE")
+val releaseStorePassword = System.getenv("STA_RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = System.getenv("STA_RELEASE_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("STA_RELEASE_KEY_PASSWORD")
 val hasReleaseSigning = listOf(
     releaseStoreFile,
     releaseStorePassword,
@@ -36,10 +36,10 @@ android {
         // Sta 是独立产品（applicationId io.github.asagnc.sta），有自己的日期码基数：
         // 首版 2026092301 > 分叉时继承来的 2026091202，保证升级不被应用市场/系统拒绝。
         // versionName 是本产品的构建序号：CI 用 GitHub run number（前缀 as），
-        // 本地备用出包用 etaBuildPrefix=ac 的独立序号（见 tools/build-release-local.sh），
+        // 本地备用出包用 staBuildPrefix=ac 的独立序号（见 tools/build-release-local.sh），
         // 两类版本名不会互相顶替：sta-as1 / sta-ac1。
-        val buildNumber = providers.gradleProperty("etaBuildNumber").orNull?.takeIf { it.isNotBlank() }
-        val buildPrefix = providers.gradleProperty("etaBuildPrefix").orNull
+        val buildNumber = providers.gradleProperty("staBuildNumber").orNull?.takeIf { it.isNotBlank() }
+        val buildPrefix = providers.gradleProperty("staBuildPrefix").orNull
             ?.takeIf { it.matches(Regex("[a-z]{1,4}")) }
             ?: "as"
         versionCode = 2026092301

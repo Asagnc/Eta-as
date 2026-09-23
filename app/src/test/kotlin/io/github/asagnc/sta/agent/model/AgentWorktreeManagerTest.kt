@@ -36,7 +36,7 @@ class AgentWorktreeManagerTest {
     @Test
     fun `worktreePath 与源仓库同级`() {
         assertEquals(
-            "/workspace/eta-worktree-demo",
+            "/workspace/sta-worktree-demo",
             AgentWorktreeManager.worktreePath("/workspace/Sta-src", "demo"),
         )
     }
@@ -44,10 +44,10 @@ class AgentWorktreeManagerTest {
     @Test
     fun `isManagedWorktree 只接受同级目录且带前缀`() {
         val repo = "/workspace/Sta-src"
-        assertTrue(AgentWorktreeManager.isManagedWorktree(repo, "/workspace/eta-worktree-a"))
+        assertTrue(AgentWorktreeManager.isManagedWorktree(repo, "/workspace/sta-worktree-a"))
         assertFalse(AgentWorktreeManager.isManagedWorktree(repo, "/workspace/other"))
-        assertFalse(AgentWorktreeManager.isManagedWorktree(repo, "/etc/eta-worktree-a"))
-        assertFalse(AgentWorktreeManager.isManagedWorktree(repo, "/workspace/Sta-src/eta-worktree-a"))
+        assertFalse(AgentWorktreeManager.isManagedWorktree(repo, "/etc/sta-worktree-a"))
+        assertFalse(AgentWorktreeManager.isManagedWorktree(repo, "/workspace/Sta-src/sta-worktree-a"))
     }
 
     @Test
@@ -90,20 +90,20 @@ class AgentWorktreeManagerTest {
             HEAD abc
             branch refs/heads/main
 
-            worktree /workspace/eta-worktree-a
+            worktree /workspace/sta-worktree-a
             HEAD def
             detached
 
-            worktree /workspace/eta-worktree-b
+            worktree /workspace/sta-worktree-b
             HEAD 123
             detached
 
-            worktree /elsewhere/eta-worktree-c
+            worktree /elsewhere/sta-worktree-c
             HEAD 456
             detached
         """.trimIndent()
         assertEquals(
-            listOf("/workspace/eta-worktree-a", "/workspace/eta-worktree-b"),
+            listOf("/workspace/sta-worktree-a", "/workspace/sta-worktree-b"),
             AgentWorktreeManager.parseManagedWorktrees("/workspace/Sta-src", porcelain),
         )
     }
@@ -117,11 +117,11 @@ class AgentWorktreeManagerTest {
     fun `cleanupCommands 逐个移除后统一 prune`() {
         val commands = AgentWorktreeManager.cleanupCommands(
             "/workspace/Sta-src",
-            listOf("/workspace/eta-worktree-a", "/workspace/eta-worktree-b"),
+            listOf("/workspace/sta-worktree-a", "/workspace/sta-worktree-b"),
         )
         assertEquals(3, commands.size)
-        assertTrue(commands[0].contains("worktree remove --force '/workspace/eta-worktree-a'"))
-        assertTrue(commands[1].contains("worktree remove --force '/workspace/eta-worktree-b'"))
+        assertTrue(commands[0].contains("worktree remove --force '/workspace/sta-worktree-a'"))
+        assertTrue(commands[1].contains("worktree remove --force '/workspace/sta-worktree-b'"))
         assertTrue(commands[2].endsWith("worktree prune"))
     }
 

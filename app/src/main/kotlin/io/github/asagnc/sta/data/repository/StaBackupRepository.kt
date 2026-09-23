@@ -36,7 +36,7 @@ internal data class StaBackupDocument(
     val roleplay: CharacterBackupData? = null,
 ) {
     companion object {
-        const val FORMAT = "eta-backup"
+        const val FORMAT = "sta-backup"
         const val SCHEMA_VERSION = 2
     }
 }

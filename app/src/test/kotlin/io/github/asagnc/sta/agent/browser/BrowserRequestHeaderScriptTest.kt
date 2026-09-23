@@ -14,7 +14,7 @@ class BrowserRequestHeaderScriptTest {
     fun `headers and origin are embedded as json literals`() {
         assertTrue(script.contains("\"Authorization\": \"Bearer t0ken\""))
         assertTrue(script.contains("\"X-Sta-Probe\": \"1\""))
-        assertTrue(script.contains("var etaOrigin = \"https://example.com\";"))
+        assertTrue(script.contains("var staOrigin = \"https://example.com\";"))
         assertFalse(script.contains("\$"))
     }
 
@@ -23,8 +23,8 @@ class BrowserRequestHeaderScriptTest {
         assertTrue(script.contains("window.fetch = function(input, init)"))
         assertTrue(script.contains("XMLHttpRequest.prototype.open = function(method, url)"))
         assertTrue(script.contains("XMLHttpRequest.prototype.send = function()"))
-        assertTrue(script.contains("if (!etaSameOrigin(url)) return etaFetch.call(this, input, init);"))
-        assertTrue(script.contains("if (this.__etaSameOrigin) {"))
-        assertTrue(script.contains("new URL(url, document.baseURI).origin === etaOrigin"))
+        assertTrue(script.contains("if (!staSameOrigin(url)) return staFetch.call(this, input, init);"))
+        assertTrue(script.contains("if (this.__staSameOrigin) {"))
+        assertTrue(script.contains("new URL(url, document.baseURI).origin === staOrigin"))
     }
 }

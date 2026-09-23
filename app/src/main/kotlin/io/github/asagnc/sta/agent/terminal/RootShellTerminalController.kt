@@ -24,7 +24,7 @@ internal class RootShellTerminalController(
     private val rootAvailable: () -> Boolean = { TerminalRuntime.rootAvailable },
 ) : AutoCloseable {
     private companion object {
-        const val DEFAULT_CWD = "/data/local/tmp/eta"
+        const val DEFAULT_CWD = "/data/local/tmp/sta"
 
         /** Linux 工具环境的工作目录；它与 DEFAULT_CWD 指向同一份目录（chroot 里 bind 过去）。 */
         const val LINUX_DEFAULT_CWD = "/workspace"

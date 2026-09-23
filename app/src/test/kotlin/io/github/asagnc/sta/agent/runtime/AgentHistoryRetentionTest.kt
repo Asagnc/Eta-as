@@ -132,7 +132,7 @@ class AgentHistoryRetentionTest {
             contextSnapshot = AgentContextSnapshot(operationId = request.runId, messages = history))
         val resultBundle = AgentRuntimeWire.toBundle(result, context.cacheDir)
         assertEquals(result, AgentRuntimeWire.runResultFromBundle(resultBundle))
-        assertTrue(context.cacheDir.listFiles().orEmpty().none { it.name.startsWith("eta-context-") })
+        assertTrue(context.cacheDir.listFiles().orEmpty().none { it.name.startsWith("sta-context-") })
     }
 
     @Test fun localMessengerOwnsIndependentDescriptorUntilReceiverConsumesIt() {

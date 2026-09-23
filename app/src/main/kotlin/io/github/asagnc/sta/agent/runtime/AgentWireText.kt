@@ -23,7 +23,7 @@ internal object AgentWireText {
         require(text.length <= MAX_TRANSFER_BYTES) { "历史传输超过单次内存预算，原始记录仍保留" }
         val bytes = text.toByteArray(Charsets.UTF_8)
         require(bytes.size <= MAX_TRANSFER_BYTES) { "历史传输超过单次内存预算，原始记录仍保留" }
-        val file = File.createTempFile("eta-context-", ".json", directory)
+        val file = File.createTempFile("sta-context-", ".json", directory)
         try {
             file.outputStream().use { it.write(bytes) }
             val descriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)

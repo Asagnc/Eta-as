@@ -28,10 +28,9 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal object SettingsIconColors {
-    val Blue = Color(0xFF0080FF)
-    val Green = StatusSuccess
+    val Blue = StaColors.info
+    val Green = StaColors.success
     val Orange = Color(0xFFFF7700)
-    val Yellow = StatusWarning
 }
 
 internal object SettingsItemLayout {

@@ -107,7 +107,7 @@ internal object AgentBrowserSession {
     private const val MAX_COOKIE_ITEMS = 100
     private const val MAX_COOKIE_HEADER_CHARS = 4_000
     private const val REPEATED_TEXT_PREVIEW_CHARS = 200
-    private const val SCRIPT_BRIDGE_NAME = "etaBridge"
+    private const val SCRIPT_BRIDGE_NAME = "staBridge"
     private const val BRIDGE_WAIT_INTERVAL_MS = 200L
     private const val BLOB_DOWNLOAD_TIMEOUT_MS = 30_000L
     private const val POST_ACTION_TIMEOUT_MS = 10_000L
@@ -885,7 +885,7 @@ internal object AgentBrowserSession {
         val timeout = args.optLong("timeout_ms", JAVASCRIPT_TIMEOUT_MS)
             .coerceIn(500L, NAVIGATION_TIMEOUT_MS)
         val view = requirePage()
-        val resultKey = "etaScript" + System.nanoTime().toString(36)
+        val resultKey = "staScript" + System.nanoTime().toString(36)
         val urlAtStart = currentUrl
         val payload = try {
             runScript(view, expression, resultKey, maxChars, timeout, urlAtStart)
@@ -1275,7 +1275,7 @@ internal object AgentBrowserSession {
                 "当前 WebView 不支持页面内取文件（需要 WebMessageListener 特性）",
             )
         }
-        val resultKey = "etaBlob" + System.nanoTime().toString(36)
+        val resultKey = "staBlob" + System.nanoTime().toString(36)
         val blob = awaitBridgeBlob(view, url, resultKey)
         val saved = try {
             BrowserDownloader.saveBytes(context, fileName ?: blob.fileName, blob.mimeType, blob.bytes)

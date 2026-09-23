@@ -31,7 +31,7 @@ internal object InstallerShellRunner {
             linuxRootfsPath = linuxRootfsPath,
         ) ?: return@runInterruptible InstallerCommandResult(exitCode = -1, output = "")
         val output = ByteArrayOutputStream()
-        val reader = thread(name = "eta-installer-output", isDaemon = true) {
+        val reader = thread(name = "sta-installer-output", isDaemon = true) {
             runCatching {
                 process.inputStream.use { input ->
                     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)

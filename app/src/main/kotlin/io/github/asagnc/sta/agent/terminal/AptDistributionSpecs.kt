@@ -47,10 +47,10 @@ internal object AptDistributionSpecs {
             AptMirror(
                 id = "official",
                 sources = listOf(
-                    "deb http://archive.ubuntu.com/ubuntu resolute main restricted universe multiverse",
-                    "deb http://archive.ubuntu.com/ubuntu resolute-updates main restricted universe multiverse",
-                    "deb http://security.ubuntu.com/ubuntu resolute-security main restricted universe multiverse",
-                    "deb http://archive.ubuntu.com/ubuntu resolute-backports main restricted universe multiverse",
+                    "deb https://archive.ubuntu.com/ubuntu resolute main restricted universe multiverse",
+                    "deb https://archive.ubuntu.com/ubuntu resolute-updates main restricted universe multiverse",
+                    "deb https://security.ubuntu.com/ubuntu resolute-security main restricted universe multiverse",
+                    "deb https://archive.ubuntu.com/ubuntu resolute-backports main restricted universe multiverse",
                 ),
             ),
         )
@@ -64,7 +64,7 @@ internal object AptDistributionSpecs {
             AptMirror(
                 id = "official",
                 sources = listOf(
-                    "deb http://http.kali.org/kali kali-rolling main contrib non-free non-free-firmware",
+                    "deb https://http.kali.org/kali kali-rolling main contrib non-free non-free-firmware",
                 ),
             ),
         )

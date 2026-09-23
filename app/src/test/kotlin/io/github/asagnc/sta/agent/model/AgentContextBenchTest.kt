@@ -8,13 +8,13 @@ import org.junit.Test
  * 上下文组装热路径的基准测量。
  *
  * 不是断言测试，是量尺：`prune` 与 `rawEstimate` 每轮请求都跑，且随对话长度线性增长，
- * 优化前后必须用同一把尺子量。用 `-Deta.bench=true` 才输出数字，平时静默，
+ * 优化前后必须用同一把尺子量。用 `-Dsta.bench=true` 才输出数字，平时静默，
  * 不拖慢常规单测。
  */
 class AgentContextBenchTest {
 
     private val benchEnabled =
-        System.getProperty("eta.bench") == "true" || System.getenv("STA_BENCH") == "true"
+        System.getProperty("sta.bench") == "true" || System.getenv("STA_BENCH") == "true"
 
     /** 构造一段接近真实的对话：n 轮，每轮一个助手工具调用 + 一条工具结果。 */
     private fun conversation(rounds: Int, resultChars: Int): JSONArray {

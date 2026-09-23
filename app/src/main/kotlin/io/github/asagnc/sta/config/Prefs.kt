@@ -26,7 +26,6 @@ internal object Prefs {
 
     /** 所有功能开关 key。默认值按功能风险独立定义。 */
     object Keys {
-        const val POWER_KEY_ASSISTANT_TARGET = "power_key_assistant_target"
         const val AGENT_TERMINAL_TOOLS = "agent_terminal_tools"
         const val AGENT_BROWSER_TOOLS = "agent_browser_tools"
         const val AGENT_DEVICE_DIRECT_TOOLS = "agent_device_direct_tools"

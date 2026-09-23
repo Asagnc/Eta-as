@@ -183,7 +183,7 @@ internal class AgentColorOsMemoryTools(
     }
 
     private companion object {
-        const val SNAPSHOT_PREFIX = "eta-coloros-memory-"
+        const val SNAPSHOT_PREFIX = "sta-coloros-memory-"
         const val DATABASE_SUFFIX = ".db"
         const val WAL_SUFFIX = "-wal"
         const val SHM_SUFFIX = "-shm"

@@ -2709,7 +2709,7 @@ private const val MAX_SKILL_COMMAND_ARGUMENTS = 1_000
 private const val SKILL_BODY_SPLIT_HINT_CHARS = 12_000
 
 /** find_files 的取值范围与拒绝的 Shell 元字符。 */
-private const val DEFAULT_FILE_WORKSPACE = "/data/local/tmp/eta"
+private const val DEFAULT_FILE_WORKSPACE = "/data/local/tmp/sta"
 private const val DEFAULT_FIND_LIMIT = 80
 private const val MAX_FIND_LIMIT = 200
 private const val FIND_TIMEOUT_SECONDS = 20

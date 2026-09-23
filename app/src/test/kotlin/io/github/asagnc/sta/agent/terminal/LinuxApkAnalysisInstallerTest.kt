@@ -83,7 +83,7 @@ class LinuxApkAnalysisInstallerTest {
     @Test
     fun javaRuntimeUsesSelectedDistributionStablePackage() {
         assertEquals(
-            "/usr/local/bin/eta-apt install openjdk-25-jdk-headless",
+            "/usr/local/bin/sta-apt install openjdk-25-jdk-headless",
             linuxApkJavaInstallCommand(LinuxDistribution.DEBIAN),
         )
     }
