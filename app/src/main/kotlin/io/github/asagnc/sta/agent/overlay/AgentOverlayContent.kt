@@ -95,6 +95,7 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 // Miuix 未提供语义 success 色，沿用项目既有值；失败色走主题 error
 private val SuccessColor = Color(0xFF34C759)
@@ -366,7 +367,7 @@ internal fun AgentOverlayBubble(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(7.dp)
+                        .size(StaIconSize.xs)
                         .graphicsLayer(alpha = dotAlpha)
                         .clip(CircleShape)
                         .background(accent),
@@ -492,7 +493,7 @@ private fun OverlayControlButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            modifier = Modifier.size(15.dp),
+            modifier = Modifier.size(StaIconSize.md),
             tint = tint,
         )
     }
@@ -524,7 +525,7 @@ private fun SupplementInput(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 44.dp, max = 112.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(StaRadius.xl))
                 .background(fieldBg)
                 .padding(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
             contentAlignment = Alignment.TopStart,
@@ -608,7 +609,7 @@ internal fun AgentResultCard(
         modifier = Modifier
             .fillMaxSize()
             .navigationBarsPadding()
-            .padding(start = StaSpacing.md, end = StaRadius.lg, bottom = StaRadius.xxl),
+            .padding(start = StaSpacing.md, end = StaSpacing.md, bottom = StaSpacing.xl),
     ) {
         AnimatedVisibility(
             visible = visible,
@@ -630,7 +631,7 @@ internal fun AgentResultCard(
                     .fillMaxWidth()
                     .heightIn(max = 360.dp)
                     .shadow(8.dp, RoundedCornerShape(CardDefaults.CornerRadius)),
-                insideMargin = PaddingValues(horizontal = StaSpacing.lg, vertical = 14.dp),
+                insideMargin = PaddingValues(horizontal = StaSpacing.lg, vertical = StaSpacing.lg),
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -642,7 +643,7 @@ internal fun AgentResultCard(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
+                                .size(StaIconSize.xs)
                                 .clip(CircleShape)
                                 .background(dotColor),
                         )
@@ -664,7 +665,7 @@ internal fun AgentResultCard(
                             Icon(
                                 imageVector = Icons.Rounded.Close,
                                 contentDescription = stringResource(R.string.action_close),
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(StaIconSize.md),
                                 tint = StaColors.textAction,
                             )
                         }

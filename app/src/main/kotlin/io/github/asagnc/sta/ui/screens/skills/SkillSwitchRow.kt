@@ -35,6 +35,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.menu.OverlayIconDropdownMenu
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 @Composable
 internal fun SkillSwitchRow(
@@ -69,7 +70,7 @@ internal fun SkillSwitchRow(
                 Icon(
                     imageVector = Icons.Rounded.MoreHoriz,
                     contentDescription = stringResource(R.string.skills_more_named, skill.name),
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(StaIconSize.lg),
                     tint = StaColors.textAction,
                 )
             }

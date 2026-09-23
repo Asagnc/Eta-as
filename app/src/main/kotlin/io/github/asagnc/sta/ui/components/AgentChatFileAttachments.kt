@@ -64,6 +64,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
 import top.yukonga.miuix.kmp.window.WindowListPopup
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaStroke
 
 internal val ChatInputPopupMargin = 8.dp
 internal val ChatInputActionSize = 40.dp
@@ -215,14 +217,14 @@ internal fun PendingFileReferenceStrip(
                     .widthIn(max = 250.dp)
                     .squircleSurface(
                         color = StaColors.surfaceRaisedHigh,
-                        cornerRadius = 14.dp,
+                        cornerRadius = StaRadius.xl,
                     )
                     .squircleBorder(
-                        width = 0.5.dp,
+                        width = StaStroke.hair,
                         color = StaColors.outline.copy(alpha = 0.5f),
-                        cornerRadius = 14.dp,
+                        cornerRadius = StaRadius.xl,
                     )
-                    .padding(start = StaSpacing.md, end = StaRadius.xs),
+                    .padding(start = StaSpacing.md, end = StaSpacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
             ) {
@@ -233,7 +235,7 @@ internal fun PendingFileReferenceStrip(
                         Icons.Rounded.Description
                     },
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(StaIconSize.lg),
                     tint = StaColors.accent,
                 )
                 Text(
@@ -255,7 +257,7 @@ internal fun PendingFileReferenceStrip(
                     Icon(
                         imageVector = Icons.Rounded.Close,
                         contentDescription = stringResource(R.string.ui_remove_file_reference_04bbfc),
-                        modifier = Modifier.size(15.dp),
+                        modifier = Modifier.size(StaIconSize.md),
                         tint = StaColors.textAction,
                     )
                 }
@@ -285,11 +287,11 @@ internal fun SentFileReferenceFlow(
                         cornerRadius = StaRadius.lg,
                     )
                     .squircleBorder(
-                        width = 0.5.dp,
+                        width = StaStroke.hair,
                         color = StaColors.outline.copy(alpha = 0.45f),
                         cornerRadius = StaRadius.lg,
                     )
-                    .padding(horizontal = 11.dp),
+                    .padding(horizontal = StaSpacing.md),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
             ) {
@@ -300,7 +302,7 @@ internal fun SentFileReferenceFlow(
                         Icons.Rounded.Description
                     },
                     contentDescription = null,
-                    modifier = Modifier.size(17.dp),
+                    modifier = Modifier.size(StaIconSize.md),
                     tint = StaColors.accent,
                 )
                 Text(

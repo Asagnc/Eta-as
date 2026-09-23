@@ -68,6 +68,8 @@ import top.yukonga.miuix.kmp.overlay.OverlayListPopup
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaStroke
 
 @Composable
 internal fun AgentModelPickerButton(
@@ -190,7 +192,7 @@ private fun ModelProviderGroupHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(start = StaSpacing.lg, end = 14.dp, top = 11.dp, bottom = 9.dp),
+            .padding(start = StaSpacing.lg, end = StaSpacing.lg, top = StaSpacing.md, bottom = StaSpacing.compact),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -210,7 +212,7 @@ private fun ModelProviderGroupHeader(
                 stringResource(R.string.model_expand_provider, name)
             },
             modifier = Modifier
-                .size(15.dp)
+                .size(StaIconSize.md)
                 .graphicsLayer { rotationZ = arrowRotation },
             tint = StaColors.textAction,
         )
@@ -236,7 +238,7 @@ private fun ModelPickerRow(
                 cornerRadius = StaRadius.lg,
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = StaSpacing.compact, vertical = 9.dp),
+            .padding(horizontal = StaSpacing.compact, vertical = StaSpacing.compact),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -252,7 +254,7 @@ private fun ModelPickerRow(
             Icon(
                 imageVector = Icons.Rounded.Check,
                 contentDescription = stringResource(R.string.ui_current_model_a0af8f),
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(StaIconSize.lg),
                 tint = StaColors.textAction,
             )
         }
@@ -313,7 +315,7 @@ internal fun AgentContextUsageButton(
                             },
                             minWidth = 0.dp,
                             minHeight = 34.dp,
-                            cornerRadius = 17.dp,
+                            cornerRadius = StaRadius.xl,
                             colors = ButtonDefaults.textButtonColorsPrimary(),
                             insideMargin = PaddingValues(horizontal = StaSpacing.lg, vertical = StaSpacing.xs),
                         )
@@ -346,7 +348,7 @@ internal fun AgentContextUsageButton(
                     disabledForegroundColor = progressColor,
                     backgroundColor = StaColors.neutralContainer,
                 ),
-                strokeWidth = 2.5.dp,
+                strokeWidth = StaStroke.bar,
                 size = ChatInputActionIconSize,
                 modifier = Modifier.semantics {
                     contentDescription = usageDescription

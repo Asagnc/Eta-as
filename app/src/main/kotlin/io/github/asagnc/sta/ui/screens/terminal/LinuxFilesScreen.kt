@@ -37,6 +37,7 @@ import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 /**
  * Linux rootfs 只读文件浏览：目录列举与文件读取都经一次性 root Shell 完成，
@@ -273,7 +274,7 @@ private fun FileRow(
                 contentDescription = null,
                 modifier = Modifier
                     .padding(end = StaSpacing.md)
-                    .size(20.dp),
+                    .size(StaIconSize.lg),
                 tint = StaColors.textAction,
             )
         },

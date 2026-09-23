@@ -91,7 +91,7 @@ internal fun CharacterDetailScreen(
                     Text(
                         text = profile.card.description,
                         style = MiuixTheme.textStyles.body2,
-                        modifier = Modifier.padding(top = 14.dp),
+                        modifier = Modifier.padding(top = StaSpacing.lg),
                         maxLines = 6,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -153,7 +153,7 @@ internal fun CharacterDetailScreen(
                                     style = MiuixTheme.textStyles.footnote1,
                                     color = StaColors.accent,
                                     modifier = Modifier
-                                        .padding(start = StaSpacing.lg, bottom = StaRadius.md)
+                                        .padding(start = StaSpacing.lg, bottom = StaSpacing.compact)
                                         .clickable {
                                             preview = CharacterTextPreview(
                                                 if (index == 0) "默认开场白" else "开场白 ${index + 1}",

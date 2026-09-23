@@ -29,6 +29,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 @Composable
 fun AgentStatusCard(
@@ -86,25 +87,25 @@ fun AgentStatusCard(
 private fun StatusIndicator(status: RunStatusUi) {
     when (status) {
         RunStatusUi.Running -> InfiniteProgressIndicator(
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(StaIconSize.lg),
             color = StaColors.accent,
         )
         RunStatusUi.Success -> Icon(
             imageVector = Icons.Rounded.Check,
             contentDescription = null,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(StaIconSize.lg),
             tint = StaColors.accent,
         )
         RunStatusUi.Failed -> Icon(
             imageVector = Icons.Rounded.Close,
             contentDescription = null,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(StaIconSize.lg),
             tint = StaColors.accent,
         )
         RunStatusUi.Cancelled -> Icon(
             imageVector = Icons.Rounded.MoreHoriz,
             contentDescription = null,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(StaIconSize.lg),
             tint = StaColors.textAction,
         )
     }

@@ -41,6 +41,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 @Composable
 internal fun ToolCard(
@@ -84,7 +85,7 @@ internal fun ToolCard(
             Icon(
                 imageVector = iconForTool(tool.id),
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(StaIconSize.xl),
                 tint = StaColors.onSurfaceRaised,
             )
             Spacer(modifier = Modifier.weight(1f))
@@ -93,7 +94,7 @@ internal fun ToolCard(
                     Icon(
                         imageVector = Icons.Rounded.Info,
                         contentDescription = stringResource(R.string.ui_description_named, tool.title),
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(StaIconSize.lg),
                         tint = StaColors.textAction,
                     )
                 }
@@ -137,7 +138,7 @@ internal fun ToolCard(
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(StaIconSize.md),
                     tint = StaColors.accent,
                 )
             }

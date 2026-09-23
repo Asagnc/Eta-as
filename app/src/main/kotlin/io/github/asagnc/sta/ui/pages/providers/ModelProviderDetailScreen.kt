@@ -518,7 +518,7 @@ private fun ProviderConfigTab(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 14.dp),
+                            .padding(vertical = StaSpacing.lg),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(

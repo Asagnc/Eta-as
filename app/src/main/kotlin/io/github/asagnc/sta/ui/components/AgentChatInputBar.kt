@@ -91,6 +91,8 @@ import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowListPopup
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaStroke
 
 private val SendButtonVisualSize = ChatInputActionIconSize
 private val SendIconSize = 16.dp
@@ -209,7 +211,7 @@ internal fun AgentChatInputBar(
                 },
                 style = MiuixTheme.textStyles.body2,
                 color = StaColors.textSecondary,
-                modifier = Modifier.padding(start = StaSpacing.sm, bottom = StaRadius.xs),
+                modifier = Modifier.padding(start = StaSpacing.sm, bottom = StaSpacing.xs),
             )
         }
 
@@ -236,7 +238,7 @@ internal fun AgentChatInputBar(
                         cornerRadius = StaRadius.xxl,
                     )
                     .squircleBorder(
-                        width = 0.5.dp,
+                        width = StaStroke.hair,
                         color = StaColors.outline.copy(alpha = 0.55f),
                         cornerRadius = StaRadius.xxl,
                     )
@@ -246,7 +248,7 @@ internal fun AgentChatInputBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .defaultMinSize(minHeight = 40.dp)
-                        .padding(horizontal = StaSpacing.sm, vertical = 5.dp),
+                        .padding(horizontal = StaSpacing.sm, vertical = StaSpacing.xs),
                     contentAlignment = Alignment.TopStart,
                 ) {
                     if (textFieldState.text.isBlank()) {
@@ -509,8 +511,8 @@ private fun PendingImageStrip(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(3.dp)
-                        .size(18.dp)
+                        .padding(StaSpacing.xxs)
+                        .size(StaIconSize.lg)
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.58f))
                         .clickable { onRemoveImage(image.id) },
@@ -519,7 +521,7 @@ private fun PendingImageStrip(
                     Icon(
                         imageVector = Icons.Rounded.Close,
                         contentDescription = stringResource(R.string.ui_remove_image_089db3),
-                        modifier = Modifier.size(11.dp),
+                        modifier = Modifier.size(StaIconSize.sm),
                         tint = Color.White,
                     )
                 }

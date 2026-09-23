@@ -104,7 +104,7 @@ private fun ProviderHeaderRow(
     val context = LocalContext.current
     var visible by remember(row.id) { mutableStateOf(false) }
     Row(
-        modifier = Modifier.padding(start = StaSpacing.lg, top = StaRadius.lg, bottom = StaRadius.lg, end = StaRadius.xs),
+        modifier = Modifier.padding(start = StaSpacing.lg, top = StaSpacing.md, bottom = StaSpacing.md, end = StaSpacing.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(

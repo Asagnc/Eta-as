@@ -32,6 +32,7 @@ import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 /** 分组标题 + 卡片的标准组合，Provider 相关页面统一使用。 */
 @Composable
@@ -71,7 +72,7 @@ private fun ProviderBrandImage(
         contentScale = ContentScale.Fit,
         modifier = modifier
             .padding(end = StaSpacing.xs)
-            .size(24.dp)
+            .size(StaIconSize.xl)
             .clip(CircleShape),
     )
 }

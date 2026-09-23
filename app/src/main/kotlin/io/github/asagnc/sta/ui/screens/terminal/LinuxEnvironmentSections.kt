@@ -25,6 +25,7 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 @Composable
 internal fun LinuxEnvironmentStatusCard(
@@ -54,7 +55,7 @@ internal fun LinuxEnvironmentStatusCard(
                 horizontalArrangement = Arrangement.spacedBy(StaSpacing.compact),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (busy) InfiniteProgressIndicator(size = 20.dp)
+                if (busy) InfiniteProgressIndicator(size = StaIconSize.lg)
                 Text(
                     text = summary,
                     style = MiuixTheme.textStyles.body2,

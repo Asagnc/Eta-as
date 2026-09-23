@@ -42,6 +42,7 @@ import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.window.WindowDialog
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 @Composable
 internal fun DataBackupScreen(
@@ -214,16 +215,16 @@ private fun BackupIcon(icon: ImageVector, loading: Boolean) {
     Box(
         modifier = Modifier
             .padding(end = StaSpacing.xs)
-            .size(24.dp),
+            .size(StaIconSize.xl),
         contentAlignment = Alignment.Center,
     ) {
         if (loading) {
-            InfiniteProgressIndicator(size = 20.dp)
+            InfiniteProgressIndicator(size = StaIconSize.lg)
         } else {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(StaIconSize.xl),
                 tint = StaColors.onBackground,
             )
         }

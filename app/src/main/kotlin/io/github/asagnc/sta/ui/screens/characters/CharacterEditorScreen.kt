@@ -66,7 +66,7 @@ internal fun CharacterEditorScreen(
         item(key = "greeting") { CharacterTextField("默认开场白", card.firstMessage, { value -> store.updateDraft { it.withEdits(firstMessage = value) } }, !store.busy) }
         itemsIndexed(card.alternateGreetings, key = { index, _ -> "alternate-$index" }) { index, value ->
             Row(
-                modifier = Modifier.fillMaxWidth().padding(start = StaSpacing.lg, end = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = StaSpacing.lg, end = StaSpacing.xxs),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextField(
@@ -101,7 +101,7 @@ internal fun CharacterEditorScreen(
                 "添加备用开场白",
                 onClick = { store.updateDraft { it.withEdits(alternateGreetings = it.alternateGreetings + "") } },
                 enabled = !store.busy,
-                modifier = Modifier.padding(start = StaSpacing.lg, top = 2.dp),
+                modifier = Modifier.padding(start = StaSpacing.lg, top = StaSpacing.hair),
             )
         }
         item(key = "advanced") {

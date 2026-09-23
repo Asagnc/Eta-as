@@ -140,7 +140,7 @@ internal fun CharacterLibraryScreen(
                 pressFeedbackType = PressFeedbackType.Sink,
                 onClick = { if (!store.busy) onNavigate(AppRoute.CharacterDetail(profile.id)) },
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(StaSpacing.xxs)) {
                     Text(
                         text = profile.card.name,
                         style = MiuixTheme.textStyles.body1,

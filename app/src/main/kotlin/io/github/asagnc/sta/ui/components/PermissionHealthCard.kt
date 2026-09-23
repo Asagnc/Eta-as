@@ -27,6 +27,7 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 @Composable
 fun PermissionHealthCard(
@@ -102,20 +103,20 @@ private fun PermissionStatusIcon(status: PermissionStatusUi) {
         PermissionStatusUi.Available -> Icon(
             imageVector = Icons.Rounded.Check,
             contentDescription = null,
-            modifier = Modifier.size(StaSpacing.xl),
+            modifier = Modifier.size(StaIconSize.lg),
             tint = tint,
         )
         PermissionStatusUi.Warning -> Icon(
             imageVector = Icons.Rounded.Warning,
             contentDescription = null,
-            modifier = Modifier.size(StaSpacing.xl),
+            modifier = Modifier.size(StaIconSize.lg),
             tint = tint,
         )
         PermissionStatusUi.Missing,
         PermissionStatusUi.Disabled -> Icon(
             imageVector = Icons.Rounded.Close,
             contentDescription = null,
-            modifier = Modifier.size(StaSpacing.xl),
+            modifier = Modifier.size(StaIconSize.lg),
             tint = tint,
         )
     }

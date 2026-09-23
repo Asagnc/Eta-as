@@ -330,7 +330,7 @@ internal fun ProviderModelsTab(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = StaSpacing.md)
-                        .padding(top = StaSpacing.md, bottom = StaRadius.sm),
+                        .padding(top = StaSpacing.md, bottom = StaSpacing.sm),
                 )
             }
 
@@ -629,7 +629,7 @@ private fun ModelSelectionBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = StaSpacing.xxs, end = StaRadius.sm, top = 4.dp, bottom = 4.dp),
+                .padding(start = StaSpacing.xxs, end = StaSpacing.sm, top = StaSpacing.xxs, bottom = StaSpacing.xxs),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(StaSpacing.sm),
         ) {
@@ -909,7 +909,7 @@ private fun ModelEditDialog(
                     text = stringResource(R.string.ui_this_value_is_used_for_session_clipping_and_context__c3f9e7),
                     style = MiuixTheme.textStyles.footnote2,
                     color = StaColors.textSecondary,
-                    modifier = Modifier.padding(top = StaSpacing.xxs, bottom = StaRadius.lg),
+                    modifier = Modifier.padding(top = StaSpacing.xxs, bottom = StaSpacing.md),
                 )
                 StaCard(modifier = Modifier.fillMaxWidth()) {
                     SwitchPreference(

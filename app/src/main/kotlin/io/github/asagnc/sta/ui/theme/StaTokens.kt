@@ -159,6 +159,9 @@ object StaRadius {
  */
 object StaStroke {
 
+    /** 0.5：发丝分隔线。改造前直接写 0.5.dp（19 处），比 1.dp 更细且不随密度跳动。 */
+    val hair = 0.5.dp
+
     /** 1：分隔线、卡片描边。 */
     val hairline = 1.dp
 

@@ -38,6 +38,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 /**
  * 会话顶部的任务进度面板，点击整块展开或折叠。
@@ -71,7 +72,7 @@ internal fun AgentTaskPlanPanel(
     }
     Card(
         modifier = modifier.fillMaxWidth().padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs),
-        insideMargin = PaddingValues(horizontal = 14.dp, vertical = StaSpacing.compact),
+        insideMargin = PaddingValues(horizontal = StaSpacing.lg, vertical = StaSpacing.compact),
         colors = CardDefaults.defaultColors(
             color = StaColors.surfaceRaised,
             contentColor = StaColors.onSurfaceRaised,
@@ -146,19 +147,19 @@ private fun AgentTaskPlanRow(item: AgentTaskPlanItemUi) {
             AgentTaskPlanStatus.COMPLETED -> Icon(
                 imageVector = Icons.Rounded.Check,
                 contentDescription = null,
-                modifier = Modifier.size(14.dp),
+                modifier = Modifier.size(StaIconSize.md),
                 tint = StaColors.textSecondary,
             )
 
             AgentTaskPlanStatus.IN_PROGRESS -> Icon(
                 imageVector = Icons.Rounded.PlayArrow,
                 contentDescription = null,
-                modifier = Modifier.size(14.dp),
+                modifier = Modifier.size(StaIconSize.md),
                 tint = StaColors.accent,
             )
 
             // 未开始的一项不配图标，留出同宽空位保持各行文字对齐。
-            AgentTaskPlanStatus.PENDING -> Spacer(modifier = Modifier.size(14.dp))
+            AgentTaskPlanStatus.PENDING -> Spacer(modifier = Modifier.size(StaIconSize.md))
         }
         Spacer(modifier = Modifier.width(StaSpacing.sm))
         Column(modifier = Modifier.weight(1f)) {

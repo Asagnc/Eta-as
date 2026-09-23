@@ -100,6 +100,8 @@ import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaStroke
 
 /**
  * Agent 与用户共享的浏览器会话。
@@ -196,7 +198,7 @@ internal fun AgentBrowserScreen(
                         Icons.Rounded.Language
                     },
                     contentDescription = null,
-                    modifier = Modifier.padding(start = StaSpacing.md).size(18.dp),
+                    modifier = Modifier.padding(start = StaSpacing.md).size(StaIconSize.lg),
                     tint = StaColors.textSecondary,
                 )
             },
@@ -211,7 +213,7 @@ internal fun AgentBrowserScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
                         contentDescription = stringResource(R.string.ui_access_7f5641),
-                        modifier = Modifier.size(19.dp),
+                        modifier = Modifier.size(StaIconSize.lg),
                         tint = StaColors.textPrimary,
                     )
                 }
@@ -350,7 +352,7 @@ private fun BrowserWindow(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(0.5.dp)
+                .height(StaStroke.hair)
                 .background(StaColors.outline.copy(alpha = 0.45f)),
         )
         Box(
@@ -491,7 +493,7 @@ private fun BrowserControlButton(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(StaIconSize.lg),
             tint = StaColors.textPrimary,
         )
     }
@@ -599,7 +601,7 @@ private fun ColumnScope.BrowserStatusBanner(snapshot: BrowserSessionSnapshot) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(17.dp),
+                    modifier = Modifier.size(StaIconSize.md),
                     tint = color,
                 )
                 Spacer(modifier = Modifier.width(StaSpacing.sm))
@@ -697,7 +699,7 @@ private fun BrowserLoadingState(
     ) {
         InfiniteProgressIndicator(
             color = StaColors.accent,
-            size = 34.dp,
+            size = StaIconSize.xxl,
         )
         Spacer(modifier = Modifier.height(StaSpacing.lg))
         Text(

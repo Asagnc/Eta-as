@@ -59,7 +59,7 @@ internal fun AgentPlanPanel(
     var expanded by rememberSaveable(plan.title, plan.status) { mutableStateOf(pending) }
     Card(
         modifier = modifier.fillMaxWidth().padding(horizontal = StaSpacing.md, vertical = StaSpacing.xs),
-        insideMargin = PaddingValues(horizontal = 14.dp, vertical = StaSpacing.compact),
+        insideMargin = PaddingValues(horizontal = StaSpacing.lg, vertical = StaSpacing.compact),
         colors = CardDefaults.defaultColors(
             color = StaColors.surfaceRaised,
             contentColor = StaColors.onSurfaceRaised,

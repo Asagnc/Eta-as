@@ -191,6 +191,8 @@ import top.yukonga.miuix.kmp.squircle.squircleBorder
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaStroke
 
 @Composable
 internal fun rememberDataUrlBitmap(dataUrl: String) = remember(dataUrl) {
@@ -230,7 +232,7 @@ fun AITypingIndicator(modifier: Modifier = Modifier) {
             )
             Box(
                 modifier = Modifier
-                    .size(6.dp)
+                    .size(StaIconSize.xxs)
                     .graphicsLayer(alpha = alpha)
                     .background(StaColors.textSecondary, CircleShape)
             )
@@ -273,7 +275,7 @@ private fun MessageTimestamp(timestamp: Long) {
         text = text,
         style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
         color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = StaSpacing.md, end = StaRadius.lg, top = 2.dp),
+        modifier = Modifier.padding(start = StaSpacing.md, end = StaSpacing.md, top = StaSpacing.hair),
     )
 }
 
@@ -450,12 +452,12 @@ internal fun AgentWorkProcess(
             .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xxs)
             .squircleSurface(
                 color = StaColors.surface,
-                cornerRadius = 14.dp,
+                cornerRadius = StaRadius.xl,
             )
             .squircleBorder(
-                width = 0.5.dp,
+                width = StaStroke.hair,
                 color = StaColors.outline.copy(alpha = 0.50f),
-                cornerRadius = 14.dp,
+                cornerRadius = StaRadius.xl,
             ),
     ) {
         Row(
@@ -465,7 +467,7 @@ internal fun AgentWorkProcess(
                     manuallyExpanded = true
                     expanded = !expanded
                 }
-                .padding(horizontal = 13.dp, vertical = StaSpacing.compact),
+                .padding(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -476,7 +478,7 @@ internal fun AgentWorkProcess(
                 },
                 contentDescription = null,
                 modifier = Modifier
-                    .size(15.dp)
+                    .size(StaIconSize.md)
                     .graphicsLayer(alpha = if (running) pulseAlpha else 1f),
                 tint = if (running) {
                     StaColors.accent
@@ -516,7 +518,7 @@ internal fun AgentWorkProcess(
                 contentDescription = stringResource(
                     if (expanded) R.string.work_collapse else R.string.work_expand,
                 ),
-                modifier = Modifier.size(14.dp),
+                modifier = Modifier.size(StaIconSize.md),
                 tint = StaColors.textSecondary.copy(alpha = 0.7f),
             )
         }
@@ -540,11 +542,11 @@ internal fun AgentWorkProcess(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 13.dp)
-                        .height(0.5.dp)
+                        .padding(horizontal = StaSpacing.md)
+                        .height(StaStroke.hair)
                         .background(StaColors.outline.copy(alpha = 0.45f)),
                 )
-                Column(modifier = Modifier.padding(top = StaSpacing.hair, bottom = StaRadius.sm)) {
+                Column(modifier = Modifier.padding(top = StaSpacing.hair, bottom = StaSpacing.sm)) {
                     messages.forEach { message ->
                         ChatMessageItem(
                             message = message,
@@ -589,7 +591,7 @@ private fun UserMessageBubble(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = StaSpacing.xl, vertical = 7.dp),
+            .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.sm),
         horizontalArrangement = Arrangement.End,
     ) {
         TooltipBox(
@@ -662,7 +664,7 @@ private fun UserMessageBubble(
                             Modifier
                         }
                     )
-                    .padding(horizontal = StaSpacing.lg, vertical = 11.dp),
+                    .padding(horizontal = StaSpacing.lg, vertical = StaSpacing.md),
             ) {
                 if (message.images.isNotEmpty()) {
                     Row(
@@ -725,12 +727,12 @@ private fun MessageTooltipAction(
             .clickable(onClick = onClick)
             .padding(horizontal = StaSpacing.compact, vertical = StaSpacing.xs),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
+        verticalArrangement = Arrangement.spacedBy(StaSpacing.xxs),
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(StaIconSize.md),
             tint = StaColors.textPrimary,
         )
         Text(
@@ -764,7 +766,7 @@ private fun ContextCompactionMarker(
                 .clip(RoundedCornerShape(percent = 50))
                 .background(StaColors.surface)
                 .border(
-                    0.5.dp,
+                    StaStroke.hair,
                     StaColors.outline.copy(alpha = 0.5f),
                     RoundedCornerShape(percent = 50),
                 )
@@ -775,7 +777,7 @@ private fun ContextCompactionMarker(
                 imageVector = Icons.Rounded.Compress,
                 contentDescription = null,
                 modifier = Modifier
-                    .size(12.dp)
+                    .size(StaIconSize.sm)
                     .graphicsLayer(alpha = if (message.running) pulseAlpha else 1f),
                 tint = if (message.running) {
                     StaColors.accent
@@ -844,7 +846,7 @@ private fun AgentMessageBlock(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = StaSpacing.xl, vertical = 7.dp),
+            .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.sm),
     ) {
         when {
             message.content.isBlank() && message.isStreaming -> {
@@ -898,7 +900,7 @@ private fun AgentMessageBlock(
                         text = formatMessageTimestamp(message.timestamp),
                         style = MiuixTheme.textStyles.footnote1,
                         color = StaColors.textSecondary.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(start = StaSpacing.xxs, end = 2.dp),
+                        modifier = Modifier.padding(start = StaSpacing.xxs, end = StaSpacing.hair),
                     )
                 }
                 IconButton(
@@ -916,7 +918,7 @@ private fun AgentMessageBlock(
                         contentDescription = stringResource(
                             if (copied) R.string.copy_copied else R.string.copy_answer,
                         ),
-                        modifier = Modifier.size(15.dp),
+                        modifier = Modifier.size(StaIconSize.md),
                         tint = if (copied) {
                             StaColors.accent
                         } else {
@@ -930,7 +932,7 @@ private fun AgentMessageBlock(
                             Icon(
                                 imageVector = Icons.Rounded.Edit,
                                 contentDescription = "编辑角色回复",
-                                modifier = Modifier.size(15.dp),
+                                modifier = Modifier.size(StaIconSize.md),
                                 tint = StaColors.textSecondary.copy(alpha = 0.75f),
                             )
                         }
@@ -945,7 +947,7 @@ private fun AgentMessageBlock(
                             Icon(
                                 imageVector = Icons.Rounded.Refresh,
                                 contentDescription = stringResource(R.string.ui_regenerate_reply_84a7d9),
-                                modifier = Modifier.size(15.dp),
+                                modifier = Modifier.size(StaIconSize.md),
                                 tint = StaColors.textSecondary.copy(alpha = 0.75f),
                             )
                         }
@@ -961,7 +963,7 @@ private fun AgentMessageBlock(
                                 Icon(
                                     imageVector = Icons.Rounded.Compress,
                                     contentDescription = stringResource(R.string.context_compact_until_here),
-                                    modifier = Modifier.size(15.dp),
+                                    modifier = Modifier.size(StaIconSize.md),
                                     tint = StaColors.textSecondary.copy(alpha = 0.75f),
                                 )
                             }
@@ -977,7 +979,7 @@ private fun AgentMessageBlock(
                             Icon(
                                 imageVector = Icons.Rounded.Delete,
                                 contentDescription = stringResource(R.string.ui_delete_this_conversation_3f351b),
-                                modifier = Modifier.size(15.dp),
+                                modifier = Modifier.size(StaIconSize.md),
                                 tint = StaColors.textSecondary.copy(alpha = 0.75f),
                             )
                         }
@@ -989,7 +991,7 @@ private fun AgentMessageBlock(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(percent = 50))
                                 .background(StaColors.surfaceRaisedHigh)
-                                .padding(horizontal = 3.dp, vertical = StaSpacing.hair),
+                                .padding(horizontal = StaSpacing.xxs, vertical = StaSpacing.hair),
                         ) {
                             IconButton(
                                 onClick = { onSelectCandidate(message.selectedCandidate - 1) },
@@ -999,7 +1001,7 @@ private fun AgentMessageBlock(
                                 Icon(
                                     imageVector = Icons.Rounded.ChevronLeft,
                                     contentDescription = "上一条候选回复",
-                                    modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(StaIconSize.md),
                                     tint = StaColors.textSecondary,
                                 )
                             }
@@ -1018,7 +1020,7 @@ private fun AgentMessageBlock(
                                 Icon(
                                     imageVector = Icons.Rounded.ChevronRight,
                                     contentDescription = "下一条候选回复",
-                                    modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(StaIconSize.md),
                                     tint = StaColors.textSecondary,
                                 )
                             }
@@ -1436,9 +1438,9 @@ private fun chatMarkdownColors(tone: ChatMarkdownTone) = markdownColor(
 
 @Composable
 private fun chatMarkdownDimens() = markdownDimens(
-    dividerThickness = 0.5.dp,
+    dividerThickness = StaStroke.hair,
     codeBackgroundCornerSize = 10.dp,
-    blockQuoteThickness = 3.dp,
+    blockQuoteThickness = StaStroke.bar,
 )
 
 @Composable
@@ -1449,10 +1451,10 @@ private fun chatMarkdownPadding() = markdownPadding(
     listItemTop = 3.dp,
     listItemBottom = 3.dp,
     listIndent = 14.dp,
-    codeBlock = PaddingValues(horizontal = 13.dp, vertical = 11.dp),
+    codeBlock = PaddingValues(horizontal = StaSpacing.md, vertical = StaSpacing.md),
     blockQuote = PaddingValues(horizontal = StaSpacing.md),
-    blockQuoteText = PaddingValues(vertical = 3.dp),
-    blockQuoteBar = PaddingValues.Absolute(left = 2.dp, top = 3.dp, right = 0.dp, bottom = 3.dp),
+    blockQuoteText = PaddingValues(vertical = StaSpacing.xxs),
+    blockQuoteBar = PaddingValues.Absolute(left = StaSpacing.hair, top = StaSpacing.xxs, right = StaSpacing.none, bottom = StaSpacing.xxs),
 )
 
 private fun chatMarkdownComponents(
@@ -1868,11 +1870,11 @@ private fun ChatCodeBlock(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 5.dp)
+            .padding(vertical = StaSpacing.xs)
             .clip(RoundedCornerShape(StaRadius.md))
             .background(StaColors.surface)
             .border(
-                0.5.dp,
+                StaStroke.hair,
                 StaColors.outline.copy(alpha = 0.5f),
                 RoundedCornerShape(StaRadius.md),
             ),
@@ -1880,7 +1882,7 @@ private fun ChatCodeBlock(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 13.dp, end = StaRadius.xs, top = 3.dp, bottom = 3.dp),
+                .padding(start = StaSpacing.md, end = StaSpacing.xs, top = StaSpacing.xxs, bottom = StaSpacing.xxs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -1904,7 +1906,7 @@ private fun ChatCodeBlock(
                     contentDescription = stringResource(
                         if (copied) R.string.copy_copied else R.string.copy_code,
                     ),
-                    modifier = Modifier.size(13.dp),
+                    modifier = Modifier.size(StaIconSize.sm),
                     tint = if (copied) {
                         StaColors.accent
                     } else {
@@ -1916,14 +1918,14 @@ private fun ChatCodeBlock(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 13.dp)
-                .height(0.5.dp)
+                .padding(horizontal = StaSpacing.md)
+                .height(StaStroke.hair)
                 .background(StaColors.outline.copy(alpha = 0.45f)),
         )
         val codeModifier = Modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 13.dp, vertical = 11.dp)
+            .padding(horizontal = StaSpacing.md, vertical = StaSpacing.md)
             .let { base ->
                 if (revealState != null) base.smoothTextReveal(revealState) else base
             }
@@ -1968,7 +1970,7 @@ private fun ChatMarkdownTable(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 5.dp),
+            .padding(vertical = StaSpacing.xs),
     ) {
         val tableWidth = ChatTableCellWidth * headerCells.size
         val scrollable = maxWidth <= tableWidth
@@ -1981,7 +1983,7 @@ private fun ChatMarkdownTable(
                 Modifier.fillMaxWidth()
             })
                 .clip(RoundedCornerShape(StaRadius.md))
-                .border(0.5.dp, borderColor, RoundedCornerShape(StaRadius.md))
+                .border(StaStroke.hair, borderColor, RoundedCornerShape(StaRadius.md))
                 .background(StaColors.surface),
         ) {
             Row(
@@ -1994,7 +1996,7 @@ private fun ChatMarkdownTable(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(horizontal = StaSpacing.md, vertical = 9.dp),
+                            .padding(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
                     ) {
                         ChatMarkdownTableCell(
                             content = content,
@@ -2011,7 +2013,7 @@ private fun ChatMarkdownTable(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(0.5.dp)
+                        .height(StaStroke.hair)
                         .background(borderColor.copy(alpha = 0.6f)),
                 )
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -2019,7 +2021,7 @@ private fun ChatMarkdownTable(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .padding(horizontal = StaSpacing.md, vertical = 9.dp),
+                                .padding(horizontal = StaSpacing.md, vertical = StaSpacing.compact),
                         ) {
                             ChatMarkdownTableCell(
                                 content = content,
@@ -2290,12 +2292,12 @@ private fun ThinkingRow(
             .padding(horizontal = StaSpacing.xl, vertical = StaSpacing.xxs)
             .squircleSurface(
                 color = StaColors.surface,
-                cornerRadius = 14.dp,
+                cornerRadius = StaRadius.xl,
             )
             .squircleBorder(
-                width = 0.5.dp,
+                width = StaStroke.hair,
                 color = StaColors.outline.copy(alpha = 0.50f),
-                cornerRadius = 14.dp,
+                cornerRadius = StaRadius.xl,
             )
     }
 
@@ -2317,7 +2319,7 @@ private fun ThinkingRow(
                 imageVector = Icons.Rounded.Lightbulb,
                 contentDescription = null,
                 modifier = Modifier
-                    .size(15.dp)
+                    .size(StaIconSize.md)
                     .graphicsLayer(alpha = if (message.isStreaming) pulseAlpha else 1f),
                 tint = if (message.isStreaming) {
                     StaColors.accent
@@ -2352,7 +2354,7 @@ private fun ThinkingRow(
                 contentDescription = stringResource(
                     if (expanded) R.string.reasoning_collapse else R.string.reasoning_expand,
                 ),
-                modifier = Modifier.size(14.dp),
+                modifier = Modifier.size(StaIconSize.md),
                 tint = StaColors.textSecondary.copy(alpha = 0.7f),
             )
         }
@@ -2363,8 +2365,8 @@ private fun ThinkingRow(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 13.dp)
-                            .height(0.5.dp)
+                            .padding(horizontal = StaSpacing.md)
+                            .height(StaStroke.hair)
                             .background(StaColors.outline.copy(alpha = 0.45f)),
                     )
                 }
@@ -2372,7 +2374,7 @@ private fun ThinkingRow(
                     .fillMaxWidth()
                     .padding(
                         start = if (compact) 27.dp else 13.dp,
-                        end = 13.dp,
+                        end = StaSpacing.md,
                         top = if (compact) 2.dp else 8.dp,
                         bottom = if (compact) 8.dp else 12.dp,
                     )
@@ -2422,7 +2424,7 @@ private fun SubAgentProgressRow(agent: AgentSubAgentItemUi) {
     ) {
         Box(
             modifier = Modifier
-                .size(6.dp)
+                .size(StaIconSize.xxs)
                 .clip(CircleShape)
                 .background(
                     when (agent.phase) {
@@ -2502,19 +2504,19 @@ private fun ToolActivityInline(
             .fillMaxWidth()
             .clip(RoundedCornerShape(StaRadius.md))
             .clickable { isExpanded = !isExpanded }
-            .padding(horizontal = if (compact) StaSpacing.compact else StaSpacing.xl, vertical = 3.dp)
+            .padding(horizontal = if (compact) StaSpacing.compact else StaSpacing.xl, vertical = StaSpacing.xxs)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = StaSpacing.xxs, vertical = 5.dp),
+                .padding(horizontal = StaSpacing.xxs, vertical = StaSpacing.xs),
         ) {
             // 工具图标与思考行的灯泡共用同一前导槽位，保证卡片内左边缘对齐。
             Icon(
                 imageVector = iconForTool(message.toolName),
                 contentDescription = null,
-                modifier = Modifier.size(15.dp),
+                modifier = Modifier.size(StaIconSize.md),
                 tint = when (message.status) {
                     ToolActivityStatusUi.Running -> StaColors.accent
                     ToolActivityStatusUi.Failed -> StatusError
@@ -2556,7 +2558,7 @@ private fun ToolActivityInline(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                horizontalArrangement = Arrangement.spacedBy(StaSpacing.xs)
             ) {
                 AnimatedContent(
                     targetState = message.status,
@@ -2573,20 +2575,20 @@ private fun ToolActivityInline(
                         Icon(
                             imageVector = Icons.Rounded.Check,
                             contentDescription = stringResource(R.string.tool_status_success),
-                            modifier = Modifier.size(13.dp),
+                            modifier = Modifier.size(StaIconSize.sm),
                             tint = StaColors.textSecondary.copy(alpha = 0.7f),
                         )
                     } else {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            horizontalArrangement = Arrangement.spacedBy(StaSpacing.xs),
                             modifier = Modifier.graphicsLayer(
                                 alpha = if (status == ToolActivityStatusUi.Running) pulseAlpha else 1f
                             ),
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(7.dp)
+                                    .size(StaIconSize.xs)
                                     .clip(CircleShape)
                                     .background(status.statusColor())
                             )
@@ -2602,7 +2604,7 @@ private fun ToolActivityInline(
                     imageVector = if (isExpanded) Icons.Rounded.ExpandMore
                         else Icons.Rounded.ChevronRight,
                     contentDescription = null,
-                    modifier = Modifier.size(13.dp),
+                    modifier = Modifier.size(StaIconSize.sm),
                     tint = StaColors.textSecondary.copy(alpha = 0.5f),
                 )
             }
@@ -2612,7 +2614,7 @@ private fun ToolActivityInline(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 27.dp, top = 2.dp, bottom = StaRadius.xs)
+                    .padding(start = 27.dp, top = StaSpacing.hair, bottom = StaSpacing.xs)
                     .squircleSurface(
                         color = StaColors.surfaceRaised,
                         cornerRadius = StaRadius.md,
@@ -2712,7 +2714,7 @@ private fun BrowserPagePreview(
         ) {
             Box(
                 modifier = Modifier
-                    .size(6.dp)
+                    .size(StaIconSize.xxs)
                     .clip(CircleShape)
                     .background(if (snapshot.isLoading) StatusRunning else StatusSuccess),
             )
@@ -2743,7 +2745,7 @@ private fun BrowserPagePreview(
                 Icon(
                     imageVector = Icons.Rounded.Language,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(StaIconSize.lg),
                     tint = StaColors.outline,
                 )
             }
@@ -2795,7 +2797,7 @@ private fun ToolCommandBlock(
                 cornerRadius = StaRadius.md,
             )
             .squircleBorder(
-                width = 0.5.dp,
+                width = StaStroke.hair,
                 color = StaColors.outline.copy(alpha = 0.5f),
                 cornerRadius = StaRadius.md,
             ),
@@ -2803,7 +2805,7 @@ private fun ToolCommandBlock(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = StaSpacing.md, end = 5.dp, top = 3.dp, bottom = 3.dp),
+                .padding(start = StaSpacing.md, end = StaSpacing.xs, top = StaSpacing.xxs, bottom = StaSpacing.xxs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -2829,7 +2831,7 @@ private fun ToolCommandBlock(
                     contentDescription = stringResource(
                         if (copied) R.string.copy_copied else R.string.copy_command,
                     ),
-                    modifier = Modifier.size(13.dp),
+                    modifier = Modifier.size(StaIconSize.sm),
                     tint = if (copied) {
                         StaColors.accent
                     } else {
@@ -2842,7 +2844,7 @@ private fun ToolCommandBlock(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = StaSpacing.md)
-                .height(0.5.dp)
+                .height(StaStroke.hair)
                 .background(StaColors.outline.copy(alpha = 0.45f)),
         )
         SelectionContainer {
@@ -2874,18 +2876,18 @@ private fun RunTraceRow(
             .clip(RoundedCornerShape(StaRadius.lg))
             .background(StaColors.surface)
             .border(
-                0.5.dp,
+                StaStroke.hair,
                 StaColors.outline.copy(alpha = 0.55f),
                 RoundedCornerShape(StaRadius.lg),
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 13.dp, vertical = 11.dp),
+            .padding(horizontal = StaSpacing.md, vertical = StaSpacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = Icons.Rounded.Check,
             contentDescription = null,
-            modifier = Modifier.size(15.dp),
+            modifier = Modifier.size(StaIconSize.md),
             tint = StaColors.accent,
         )
         Spacer(modifier = Modifier.width(StaSpacing.sm))
@@ -2898,7 +2900,7 @@ private fun RunTraceRow(
         Icon(
             imageVector = Icons.Rounded.ChevronRight,
             contentDescription = null,
-            modifier = Modifier.size(14.dp),
+            modifier = Modifier.size(StaIconSize.md),
             tint = StaColors.textSecondary.copy(alpha = 0.7f),
         )
     }
@@ -2916,7 +2918,7 @@ private fun ToolSummaryInline(
     FlowRow(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = if (compact) StaSpacing.compact else StaSpacing.xl, vertical = 3.dp),
+            .padding(horizontal = if (compact) StaSpacing.compact else StaSpacing.xl, vertical = StaSpacing.xxs),
         horizontalArrangement = Arrangement.spacedBy(StaSpacing.xs),
         verticalArrangement = Arrangement.spacedBy(StaSpacing.xs),
     ) {
@@ -2926,17 +2928,17 @@ private fun ToolSummaryInline(
                     .clip(RoundedCornerShape(StaRadius.md))
                     .background(StaColors.surface)
                     .border(
-                        0.5.dp,
+                        StaStroke.hair,
                         StaColors.outline.copy(alpha = 0.5f),
                         RoundedCornerShape(StaRadius.md),
                     )
-                    .padding(horizontal = 9.dp, vertical = 5.dp),
+                    .padding(horizontal = StaSpacing.compact, vertical = StaSpacing.xs),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = iconForTool(tool),
                     contentDescription = null,
-                    modifier = Modifier.size(12.dp),
+                    modifier = Modifier.size(StaIconSize.sm),
                     tint = StaColors.accent
                 )
                 Spacer(modifier = Modifier.width(5.dp))
@@ -2972,18 +2974,18 @@ private fun SuggestionChipsRow(
                     .clip(RoundedCornerShape(StaRadius.md))
                     .background(StaColors.surface)
                     .border(
-                        0.5.dp,
+                        StaStroke.hair,
                         StaColors.outline.copy(alpha = 0.55f),
                         RoundedCornerShape(StaRadius.md),
                     )
                     .clickable { onSuggestionClick(prompt) }
-                    .padding(horizontal = 13.dp, vertical = StaSpacing.sm),
+                    .padding(horizontal = StaSpacing.md, vertical = StaSpacing.sm),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = Icons.Rounded.AutoAwesome,
                     contentDescription = null,
-                    modifier = Modifier.size(12.dp),
+                    modifier = Modifier.size(StaIconSize.sm),
                     tint = StaColors.accent
                 )
                 Spacer(modifier = Modifier.width(StaSpacing.xs))

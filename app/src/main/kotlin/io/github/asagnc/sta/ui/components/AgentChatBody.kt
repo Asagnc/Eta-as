@@ -118,6 +118,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
+import io.github.asagnc.sta.ui.theme.StaStroke
 
 /**
  * 聊天主体：消息流 + 底部输入框。
@@ -331,10 +333,10 @@ private fun AgentChatScaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(
-            left = 0.dp,
-            top = 0.dp,
-            right = 0.dp,
-            bottom = 0.dp,
+            left = StaSpacing.none,
+            top = StaSpacing.none,
+            right = StaSpacing.none,
+            bottom = StaSpacing.none,
         ),
         topBar = {
             // 面板在列表为空时自身不渲染，因此这里始终挂载不会占位。
@@ -652,7 +654,7 @@ internal fun AgentConversationMessages(
                 .scrollEndHaptic()
                 .overScrollVertical(),
             contentPadding = PaddingValues(
-                top = 14.dp,
+                top = StaSpacing.lg,
                 bottom = bottomInset + 14.dp,
             ),
             overscrollEffect = null,
@@ -753,7 +755,7 @@ internal fun AgentConversationMessages(
                 Icon(
                     imageVector = Icons.Rounded.ArrowDownward,
                     contentDescription = stringResource(R.string.ui_back_to_bottom_32282e),
-                    modifier = Modifier.size(17.dp),
+                    modifier = Modifier.size(StaIconSize.md),
                     tint = StaColors.textPrimary,
                 )
             }
@@ -960,7 +962,7 @@ private fun AgentChatBottomBar(
                 .fillMaxWidth()
                 .background(StaColors.surface)
                 .navigationBarsPadding()
-                .padding(start = 14.dp, end = 14.dp, bottom = StaRadius.lg),
+                .padding(start = StaSpacing.lg, end = StaSpacing.lg, bottom = StaSpacing.md),
         ) {
             AgentChatInputBar(
                 input = input,
@@ -1137,17 +1139,17 @@ private fun SuggestionCard(
             .clip(RoundedCornerShape(StaRadius.lg))
             .background(StaColors.surface)
             .border(
-                width = 0.5.dp,
+                width = StaStroke.hair,
                 color = StaColors.outline.copy(alpha = 0.5f),
                 shape = RoundedCornerShape(StaRadius.lg),
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 13.dp, vertical = StaSpacing.md),
+            .padding(horizontal = StaSpacing.md, vertical = StaSpacing.md),
     ) {
         Icon(
             imageVector = item.icon,
             contentDescription = null,
-            modifier = Modifier.size(17.dp),
+            modifier = Modifier.size(StaIconSize.md),
             tint = StaColors.onBackground,
         )
         Spacer(modifier = Modifier.height(9.dp))

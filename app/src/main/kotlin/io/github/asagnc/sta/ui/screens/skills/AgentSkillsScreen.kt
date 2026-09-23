@@ -34,6 +34,7 @@ import top.yukonga.miuix.kmp.basic.InfiniteProgressIndicator
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.window.WindowDialog
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 private val CardHorizontalPadding = 12.dp
 private val CardBottomPadding = 12.dp
@@ -90,10 +91,10 @@ fun AgentSkillsScreen(
                             Box(
                                 modifier = Modifier
                                     .padding(end = StaSpacing.xs)
-                                    .size(24.dp),
+                                    .size(StaIconSize.xl),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                InfiniteProgressIndicator(size = 22.dp)
+                                InfiniteProgressIndicator(size = StaIconSize.xl)
                             }
                         } else {
                             PreferenceIcon(Icons.Rounded.FolderZip, enabled = !operationPending)

@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import io.github.asagnc.sta.ui.theme.StaColors
 import io.github.asagnc.sta.ui.theme.StaSpacing
 import top.yukonga.miuix.kmp.basic.Icon
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 @Composable
 internal fun PreferenceIcon(
@@ -20,7 +21,7 @@ internal fun PreferenceIcon(
         contentDescription = null,
         modifier = modifier
             .padding(end = StaSpacing.xs)
-            .size(StaSpacing.xxl),
+            .size(StaIconSize.xl),
         tint = if (enabled) StaColors.textPrimary else StaColors.textDisabled,
     )
 }

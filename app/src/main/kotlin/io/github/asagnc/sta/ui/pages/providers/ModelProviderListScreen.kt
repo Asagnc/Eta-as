@@ -88,7 +88,7 @@ internal fun ModelProviderListScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = StaSpacing.md)
-                    .padding(top = StaSpacing.md, bottom = StaRadius.sm),
+                    .padding(top = StaSpacing.md, bottom = StaSpacing.sm),
             )
         }
 

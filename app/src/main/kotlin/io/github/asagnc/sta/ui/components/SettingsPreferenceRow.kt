@@ -34,6 +34,7 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.basic.ArrowRight
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import io.github.asagnc.sta.ui.theme.StaColors
+import io.github.asagnc.sta.ui.theme.StaIconSize
 
 @Composable
 internal fun SettingsArrowPreference(
@@ -59,7 +60,7 @@ internal fun SettingsArrowPreference(
         Icon(
             imageVector = MiuixIcons.Basic.ArrowRight,
             contentDescription = null,
-            modifier = Modifier.size(8.dp, 14.dp).graphicsLayer {
+            modifier = Modifier.size(StaIconSize.xs, 14.dp).graphicsLayer {
                 scaleX = if (direction == LayoutDirection.Rtl) -1f else 1f
             },
             tint = if (enabled) StaColors.onBackground.copy(alpha = 0.3f)

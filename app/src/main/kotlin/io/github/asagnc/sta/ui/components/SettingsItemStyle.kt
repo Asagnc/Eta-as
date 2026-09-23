@@ -23,6 +23,7 @@ import top.yukonga.miuix.kmp.basic.HorizontalDivider
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaStroke
 
 internal object SettingsIconColors {
     val Blue = Color(0xFF0080FF)
@@ -103,7 +104,7 @@ internal fun SettingsPreferenceIcon(
 internal fun SettingsItemDivider() {
     HorizontalDivider(
         modifier = Modifier.padding(start = SettingsItemLayout.ContentStart, end = SettingsItemLayout.SidePadding),
-        thickness = 0.33.dp,
+        thickness = StaStroke.hair,
         color = StaColors.textPrimary.copy(alpha = 0.1f),
     )
 }
