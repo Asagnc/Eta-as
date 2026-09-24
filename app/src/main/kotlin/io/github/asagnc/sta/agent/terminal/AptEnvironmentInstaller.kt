@@ -48,7 +48,7 @@ internal sealed interface AptInstallResult {
     data class Failed(val stage: AptInstallStage, val code: String? = null, val message: String? = null) : AptInstallResult
 }
 
-/** 下载固定版本的 apt 系 rootfs（Debian / Ubuntu / Kali）；Android 内核、挂载与会话仍由 Sta 复用。 */
+/** 下载固定版本的 apt 系 rootfs（Debian）；Android 内核、挂载与会话仍由 Sta 复用。 */
 internal class AptEnvironmentInstaller(
     private val context: Context,
     private val distribution: LinuxDistribution,
@@ -201,8 +201,8 @@ internal class AptEnvironmentInstaller(
             "${'$'}sta_busybox" rm -rf "${'$'}sta_temporary"
             "${'$'}sta_busybox" mkdir -p "${'$'}sta_temporary" || exit 66
             "${'$'}sta_busybox" tar -xJf "${'$'}sta_archive" -C "${'$'}sta_temporary" || exit 67
-            # 归档顶层形状不一致：proot-distro 的制品带 "./" 前缀，解包后直接落在根；Ubuntu 官方 cloud
-            # 镜像的 root tar 没有顶层目录。这里统一成"根就是文件系统"：解包后确实只剩一个顶层目录时，
+            # 归档顶层形状不一致：proot-distro 的制品带 "./" 前缀，解包后直接落在根；也有制品的
+            # root tar 没有顶层目录。这里统一成"根就是文件系统"：解包后确实只剩一个顶层目录时，
             # 才把它提上来。
             sta_top_count=${'$'}("${'$'}sta_busybox" ls -A "${'$'}sta_temporary" | "${'$'}sta_busybox" wc -l)
             sta_top_name=${'$'}("${'$'}sta_busybox" ls -A "${'$'}sta_temporary")
@@ -224,7 +224,7 @@ internal class AptEnvironmentInstaller(
             "${'$'}sta_busybox" chmod 1777 "${'$'}sta_temporary/tmp"
             "${'$'}sta_busybox" rm -f "${'$'}sta_temporary/sdcard"
             "${'$'}sta_busybox" ln -s /storage/emulated/0 "${'$'}sta_temporary/sdcard"
-            # Ubuntu 云镜像把 /etc/resolv.conf 做成指向 /run/systemd/resolve/stub-resolv.conf 的符号链接，
+            # 有些 rootfs 把 /etc/resolv.conf 做成指向 /run/systemd/resolve/stub-resolv.conf 的符号链接，
             # 而 rootfs 里没有那个目录，直接写会跟着链接落到不存在的路径上，容器内 DNS 随之全废。
             "${'$'}sta_busybox" rm -f "${'$'}sta_temporary/etc/resolv.conf"
             cat > "${'$'}sta_temporary/etc/resolv.conf" <<'STA_RESOLV_EOF'

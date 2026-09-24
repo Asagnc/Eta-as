@@ -702,10 +702,6 @@
   <string name="linux_distribution_title">Linux 发行版</string>
   <string name="linux_distribution_debian">Debian</string>
   <string name="linux_distribution_debian_summary">软件兼容性更好的 glibc 环境</string>
-  <string name="linux_distribution_ubuntu">Ubuntu</string>
-  <string name="linux_distribution_ubuntu_summary">通用发行版，软件包较新</string>
-  <string name="linux_distribution_kali">Kali</string>
-  <string name="linux_distribution_kali_summary">面向安全测试的发行版</string>
   <string name="linux_install_base">安装基础环境</string>
   <string name="linux_install_base_tools">安装基础工具</string>
   <string name="linux_environment_uninstall">卸载环境</string>

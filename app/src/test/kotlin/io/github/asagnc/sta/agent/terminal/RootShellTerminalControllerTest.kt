@@ -279,13 +279,13 @@ class RootShellTerminalControllerTest {
                     offsetChars = 0,
                     maxChars = 8_000,
                     closeIfDone = false,
-                    environment = "ubuntu",
+                    environment = "debian",
                 ),
             )
             assertFalse(result.toString(), result.getBoolean("ok"))
             assertEquals("LINUX_ENVIRONMENT_NOT_READY", result.getString("code"))
-            assertEquals(TerminalEnvironment.UBUNTU, requestedEnvironment)
-            assertTrue(result.getString("message").contains("ubuntu"))
+            assertEquals(TerminalEnvironment.DEBIAN, requestedEnvironment)
+            assertTrue(result.getString("message").contains("debian"))
         } finally {
             controller.closeAll()
         }

@@ -171,7 +171,7 @@ class AgentToolCatalogTest {
             .getJSONObject("properties")
             .getJSONObject("environment")
 
-        assertEquals(listOf("android", "linux", "debian", "ubuntu", "kali"), environment.getJSONArray("enum").stringValues())
+        assertEquals(listOf("android", "linux", "debian"), environment.getJSONArray("enum").stringValues())
         assertTrue(terminal.getString("description").contains("environment=android"))
         assertTrue(terminal.getString("description").contains("environment=linux"))
     }

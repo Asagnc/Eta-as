@@ -111,7 +111,7 @@ internal object AgentPromptBuilder {
                     "同一轮里互不依赖的只读查询（读取文件、检索、状态与设置查询）可以一次提交多个，它们会并发执行；" +
                     "带副作用的调用仍按提交顺序逐个执行。" +
                         "Android 应用与当前身份可访问的设备文件使用 terminal 的 environment=android；" +
-                        "Linux 工具环境默认使用 environment=linux（当前选中的发行版），需要指定发行版时改用 environment=debian、ubuntu 或 kali；" +
+                        "Linux 工具环境默认使用 environment=linux（当前选中的发行版），需要指定发行版时改用 environment=debian；" +
                         "各发行版的 rootfs 相互独立、分别按需安装，只能使用已经安装的发行版。" +
                         "如果返回 LINUX_ENVIRONMENT_NOT_READY，" +
                         "准确告知用户先到设置安装对应的 Linux 工具环境，不要把 Android 缺少命令误报成设备不支持。" +

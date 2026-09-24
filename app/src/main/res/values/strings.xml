@@ -715,10 +715,6 @@
   <string name="linux_distribution_title">Linux distribution</string>
   <string name="linux_distribution_debian">Debian</string>
   <string name="linux_distribution_debian_summary">glibc environment with broader software compatibility</string>
-  <string name="linux_distribution_ubuntu">Ubuntu</string>
-  <string name="linux_distribution_ubuntu_summary">General purpose userland with newer packages</string>
-  <string name="linux_distribution_kali">Kali</string>
-  <string name="linux_distribution_kali_summary">Security testing distribution</string>
   <string name="linux_install_base">Install base</string>
   <string name="linux_install_base_tools">Install base tools</string>
   <string name="linux_environment_uninstall">Uninstall environment</string>

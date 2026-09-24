@@ -5,8 +5,6 @@ internal const val SELECTED_LINUX_WIRE_NAME = "linux"
 /** Sta 支持的 Linux 用户态发行版。内核仍由 Android 提供，发行版只替换 rootfs。 */
 internal enum class LinuxDistribution(val wireName: String) {
     DEBIAN("debian"),
-    UBUNTU("ubuntu"),
-    KALI("kali"),
 }
 
 internal enum class TerminalEnvironment(
@@ -15,8 +13,6 @@ internal enum class TerminalEnvironment(
 ) {
     ANDROID("android"),
     DEBIAN("debian", LinuxDistribution.DEBIAN),
-    UBUNTU("ubuntu", LinuxDistribution.UBUNTU),
-    KALI("kali", LinuxDistribution.KALI),
 }
 
 internal val TerminalEnvironment.isLinux: Boolean
@@ -25,6 +21,4 @@ internal val TerminalEnvironment.isLinux: Boolean
 internal val LinuxDistribution.terminalEnvironment: TerminalEnvironment
     get() = when (this) {
         LinuxDistribution.DEBIAN -> TerminalEnvironment.DEBIAN
-        LinuxDistribution.UBUNTU -> TerminalEnvironment.UBUNTU
-        LinuxDistribution.KALI -> TerminalEnvironment.KALI
     }

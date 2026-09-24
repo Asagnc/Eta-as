@@ -28,23 +28,6 @@ class AptEnvironmentInstallerTest {
         assertTrue(debian.preferredUrls.single().startsWith("https://gh-proxy.com/"))
         assertEquals(64, debian.sha256.length)
         assertEquals(35_409_704L, debian.sizeBytes)
-
-        val ubuntu = AptEnvironmentInstaller.artifactForAbis(LinuxDistribution.UBUNTU, listOf("arm64-v8a"))
-        requireNotNull(ubuntu)
-        assertEquals("26.04", ubuntu.version)
-        assertEquals(102_536_744L, ubuntu.sizeBytes)
-        assertTrue(ubuntu.url.contains("cloud-images.ubuntu.com/minimal/releases/resolute/"))
-        // 归档地址必须由模板拼出真实文件名，写成转义后的 $ 会变成字面量并导致 404
-        assertEquals("ubuntu-26.04-minimal-cloudimg-arm64-root.tar.xz", ubuntu.url.substringAfterLast("/"))
-        assertEquals("ubuntu-26.04-minimal-cloudimg-arm64-root.tar.xz",
-            ubuntu.preferredUrls.single().substringAfterLast("/"))
-
-        val kali = AptEnvironmentInstaller.artifactForAbis(LinuxDistribution.KALI, listOf("arm64-v8a"))
-        requireNotNull(kali)
-        assertEquals("2026.2", kali.version)
-        assertTrue(kali.url.contains("kali.download/nethunter-images/kali-2026.2/rootfs/"))
-        assertTrue(kali.preferredUrls.isEmpty())
-        assertEquals(137_313_840L, kali.sizeBytes)
     }
 
     @Test
