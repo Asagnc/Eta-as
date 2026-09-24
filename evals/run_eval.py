@@ -7,7 +7,7 @@
 `run_stats` 与归档事件衡量，两者共用同一份任务集。
 
 用法：
-    export ETA_EVAL_API_KEY=...           # 只从环境变量读取，脚本不落盘任何凭据
+    export STA_EVAL_API_KEY=...           # 只从环境变量读取，脚本不落盘任何凭据
     python3 evals/run_eval.py --provider-url https://example.com/v1 --model deepseek-v4-flash
     python3 evals/run_eval.py --dry-run   # 用本地桩模型跑通流程，不联网
 
@@ -52,7 +52,7 @@ def build_messages(task: dict) -> list[dict]:
         {
             "role": "system",
             "content": (
-                "你是运行在 Android 手机上的助手 Eta。只能通过声明的工具获取信息或执行操作，"
+                "你是运行在 Android 手机上的助手 Sta。只能通过声明的工具获取信息或执行操作，"
                 "不要凭记忆回答设备状态或文件内容。先选出最合适的工具，参数必须符合 Schema。"
             ),
         },
@@ -238,7 +238,7 @@ def apply_name_style(tools: list[dict], style: str) -> tuple[list[dict], dict[st
     renamed = []
     for tool in tools:
         canonical = tool["function"]["name"]
-        exposed = f"eta_{canonical}"
+        exposed = f"sta_{canonical}"
         mapping[exposed] = canonical
         renamed.append({"type": "function", "function": {**tool["function"], "name": exposed}})
     return renamed, mapping
@@ -386,7 +386,7 @@ def main() -> int:
         "--tool-name-style",
         choices=("plain", "prefixed"),
         default="plain",
-        help="prefixed 把工具名改成 eta_<name> 后再发，用于比较命名空间对选工具准确率的影响",
+        help="prefixed 把工具名改成 sta_<name> 后再发，用于比较命名空间对选工具准确率的影响",
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -396,12 +396,12 @@ def main() -> int:
         tasks = tasks[: args.limit]
     tools_snapshot = load_json(Path(args.tools))["tools"]
 
-    api_key = os.environ.get("ETA_EVAL_API_KEY", "")
+    api_key = os.environ.get("STA_EVAL_API_KEY", "")
     if not args.dry_run:
         if not args.provider_url or not args.model:
             parser.error("真实评测需要 --provider-url 与 --model")
         if not api_key:
-            parser.error("请通过环境变量 ETA_EVAL_API_KEY 提供密钥（脚本不会保存它）")
+            parser.error("请通过环境变量 STA_EVAL_API_KEY 提供密钥（脚本不会保存它）")
 
     records: list[dict] = []
     for index, task in enumerate(tasks):
