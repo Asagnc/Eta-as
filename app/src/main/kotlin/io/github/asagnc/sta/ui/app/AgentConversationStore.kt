@@ -245,7 +245,6 @@ internal object AgentConversationStore {
                 sortIndex = sortIndex,
                 type = TYPE_THINKING,
                 content = content,
-                elapsedSeconds = elapsedSeconds,
             )
 
             is ToolActivityMessageUi -> ConversationMessageEntity(
@@ -311,7 +310,6 @@ internal object AgentConversationStore {
                 id = id,
                 content = content,
                 isStreaming = false,
-                elapsedSeconds = elapsedSeconds,
                 collapsed = true,
             )
 

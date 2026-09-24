@@ -386,9 +386,6 @@
   <string name="shell_command">Shell 命令</string>
   <string name="reasoning_in_progress">正在思考…</string>
   <string name="reasoning_completed">思考已完成</string>
-  <plurals name="reasoning_completed_seconds">
-      <item quantity="other">本轮耗时 %d 秒</item>
-  </plurals>
   <string name="reasoning_collapse">收起思考过程</string>
   <string name="reasoning_expand">展开思考过程</string>
   <string name="state_direct_access_to_personal_data_387d7b">个人数据直达</string>

@@ -393,10 +393,6 @@
   <string name="shell_command">Shell command</string>
   <string name="reasoning_in_progress">Reasoning…</string>
   <string name="reasoning_completed">Reasoning completed</string>
-  <plurals name="reasoning_completed_seconds">
-    <item quantity="one">Round took %d second</item>
-    <item quantity="other">Round took %d seconds</item>
-  </plurals>
   <string name="reasoning_collapse">Collapse reasoning</string>
   <string name="reasoning_expand">Expand reasoning</string>
   <string name="state_direct_access_to_personal_data_387d7b">Direct access to personal data</string>

@@ -2328,13 +2328,7 @@ private fun ThinkingRow(
                 text = if (message.isStreaming) {
                     stringResource(R.string.reasoning_in_progress)
                 } else {
-                    message.elapsedSeconds?.takeIf { it > 0 }?.let { seconds ->
-                        pluralStringResource(
-                            R.plurals.reasoning_completed_seconds,
-                            seconds,
-                            seconds,
-                        )
-                    } ?: stringResource(R.string.reasoning_completed)
+                    stringResource(R.string.reasoning_completed)
                 },
                 style = MiuixTheme.textStyles.body2,
                 color = if (message.isStreaming) {

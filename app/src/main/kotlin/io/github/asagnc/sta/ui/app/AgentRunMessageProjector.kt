@@ -1,6 +1,5 @@
 package io.github.asagnc.sta.ui.app
 
-import android.os.SystemClock
 import io.github.asagnc.sta.agent.runtime.AgentEvent
 import io.github.asagnc.sta.ui.model.AgentChatMessageUi
 import io.github.asagnc.sta.ui.model.AgentMessageUi
@@ -11,10 +10,7 @@ import io.github.asagnc.sta.ui.model.ToolActivityMessageUi
 import io.github.asagnc.sta.ui.model.ToolActivityStatusUi
 import io.github.asagnc.sta.ui.model.UserMessageUi
 
-internal class AgentRunMessageProjector(
-    private val nowElapsedRealtime: () -> Long = { SystemClock.elapsedRealtime() },
-) {
-    private val thinkingStartedAt = mutableMapOf<String, Long>()
+internal class AgentRunMessageProjector {
 
     /** 回放从该 run 的空轨迹重建；仅重排有回放事件的补充输入，旧 handoff 独有的输入必须保留。 */
     fun resetForReplay(
@@ -142,7 +138,6 @@ internal class AgentRunMessageProjector(
             messages = messages,
         )
         val thinkingId = thinkingMessageId(runId, round, index)
-        val elapsedSeconds = elapsedSeconds(thinkingId)
         var updated = false
         val next = transitioned.map { message ->
             if (message is ThinkingMessageUi && message.id == thinkingId) {
@@ -150,7 +145,6 @@ internal class AgentRunMessageProjector(
                 message.copy(
                     content = message.content + delta,
                     isStreaming = true,
-                    elapsedSeconds = elapsedSeconds,
                     collapsed = true,
                 )
             } else {
@@ -163,13 +157,12 @@ internal class AgentRunMessageProjector(
             id = thinkingId,
             content = delta,
             isStreaming = true,
-            elapsedSeconds = elapsedSeconds,
             collapsed = true,
         )
     }
 
     /**
-     * 轮结束入口：本轮的流式思考块在这里收尾，elapsedSeconds 冻结在轮结束时刻。
+     * 轮结束入口：本轮的流式思考块在这里收尾。
      * 只有"本轮没有流式思考块、但模型回传了思考正文"时才补一条兜底卡片；
      * 两者都没有就原样返回，不补空卡片。
      */
@@ -196,7 +189,6 @@ internal class AgentRunMessageProjector(
                 id = thinkingId,
                 content = content,
                 isStreaming = false,
-                elapsedSeconds = elapsedSeconds(thinkingId),
                 collapsed = true,
             )
         )
@@ -425,24 +417,16 @@ internal class AgentRunMessageProjector(
             }
         }
 
+    /** 轮次结束的历史清理入口；思考计时已移除，当前无内部状态需清理。 */
     fun clearRun(runId: String) {
-        thinkingStartedAt.keys.removeAll { it.startsWith("$runId-thinking-") }
     }
 
     private fun ThinkingMessageUi.finished(authoritativeContent: String? = null): ThinkingMessageUi =
         copy(
             content = authoritativeContent ?: content,
             isStreaming = false,
-            elapsedSeconds = thinkingStartedAt[id]?.let { startedAt ->
-                ((nowElapsedRealtime() - startedAt) / 1000).toInt().coerceAtLeast(0)
-            } ?: elapsedSeconds,
             collapsed = true,
         )
-
-    private fun elapsedSeconds(thinkingId: String): Int {
-        val startedAt = thinkingStartedAt.getOrPut(thinkingId, nowElapsedRealtime)
-        return ((nowElapsedRealtime() - startedAt) / 1000).toInt().coerceAtLeast(0)
-    }
 
     private fun transitionVisibleBlock(
         runId: String,

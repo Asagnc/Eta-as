@@ -100,7 +100,6 @@ internal object FakeAgentUiStates {
                 id = "thinking-01",
                 content = "用户希望我查看当前屏幕，需要先调用 observe_screen 获取屏幕结构，再总结可见信息。",
                 isStreaming = false,
-                elapsedSeconds = 24,
                 collapsed = true,
             ),
             ToolActivityMessageUi(
