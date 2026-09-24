@@ -105,7 +105,6 @@ class AgentConversationStoreTest {
                     id = "thinking-1",
                     content = "需要先观察屏幕",
                     isStreaming = false,
-                    elapsedSeconds = 3,
                     collapsed = true,
                 ),
                 ToolActivityMessageUi(

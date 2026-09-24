@@ -17,7 +17,7 @@ import org.junit.Test
 class AgentRunMessageProjectorTest {
     @Test
     fun retryKeepsFailedAttemptSeparateAndReplayClearsItsNotice() {
-        val projector = AgentRunMessageProjector { 1_000L }
+        val projector = AgentRunMessageProjector()
         val partial = projector.appendTextDelta("retry-run", 2, 0, "半截", emptyList())
         val event = AgentEvent.ModelRetryScheduled(2, 1, 3, 2_000, "MODEL_TIMEOUT")
         val retrying = projector.scheduleModelRetry("retry-run", event, partial)
@@ -37,7 +37,7 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun runCompletionFinalizesUnclosedBlocksAndUnknownToolWithoutChangingOtherRuns() {
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 1_000L })
+        val projector = AgentRunMessageProjector()
         val runId = "run-final"
         val knownTools = listOf(
             ToolActivityMessageUi(
@@ -93,7 +93,7 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun replayResetRemovesOnlyRebuildableTraceAndExplicitlyReplayedSupplements() {
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 1_000L })
+        val projector = AgentRunMessageProjector()
         val runId = "run-replay"
         val user = UserMessageUi(
             id = "user-$runId",
@@ -139,7 +139,7 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun repeatedReplayRebuildsTextReasoningAndToolsWithoutAccumulatingContent() {
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 1_000L })
+        val projector = AgentRunMessageProjector()
         val runId = "run-repeat"
         val user = UserMessageUi(id = "user-$runId", content = "看屏幕")
         val toolStart = AgentEvent.ToolStarted(
@@ -178,35 +178,34 @@ class AgentRunMessageProjectorTest {
     }
 
     @Test
-    fun replayResetClearsOnlyThatRunsThinkingClockAndKeepsUnreplayedUserInputs() {
-        var now = 1_000L
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { now })
+    fun replayResetClearsOnlyThatRunsThinkingAndKeepsUnreplayedUserInputs() {
+        val projector = AgentRunMessageProjector()
         val supplement = UserMessageUi(id = "user-run-reset-supplement-1", content = "保留这条补充")
         var messages: List<AgentChatMessageUi> = listOf(supplement)
         messages = projector.appendReasoningDelta("run-reset", round = 1, index = 0, delta = "先前思考", messages)
         messages = projector.appendReasoningDelta("run-other", round = 1, index = 0, delta = "其他思考", messages)
-        now = 9_000L
 
         messages = projector.resetForReplay("run-reset", messages)
         messages = projector.appendReasoningDelta("run-reset", round = 1, index = 0, delta = "恢复思考", messages)
-        now = 11_000L
         messages = projector.finalizeThinking("run-reset", messages)
         messages = projector.finalizeThinking("run-other", messages)
 
         assertTrue(messages.contains(supplement))
-        assertEquals(2, messages.filterIsInstance<ThinkingMessageUi>().single { it.id.startsWith("run-reset-") }.elapsedSeconds)
-        assertEquals(10, messages.filterIsInstance<ThinkingMessageUi>().single { it.id.startsWith("run-other-") }.elapsedSeconds)
+        val resetThinking = messages.filterIsInstance<ThinkingMessageUi>().single { it.id.startsWith("run-reset-") }
+        assertEquals("恢复思考", resetThinking.content)
+        assertFalse(resetThinking.isStreaming)
+        val otherThinking = messages.filterIsInstance<ThinkingMessageUi>().single { it.id.startsWith("run-other-") }
+        assertEquals("其他思考", otherThinking.content)
+        assertFalse(otherThinking.isStreaming)
     }
 
     @Test
     fun projectsReasoningAndToolsByRoundAndToolCallId() {
-        var now = 1_000L
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { now })
+        val projector = AgentRunMessageProjector()
         val runId = "run-1"
         var messages: List<AgentChatMessageUi> = listOf(UserMessageUi(id = "user-$runId", content = "看屏幕"))
 
         messages = projector.appendReasoningDelta(runId, round = 1, index = 0, delta = "先观察", messages)
-        now = 4_000L
         messages = projector.startTool(
             runId,
             AgentEvent.ToolStarted(
@@ -230,7 +229,6 @@ class AgentRunMessageProjectorTest {
             messages
         )
 
-        now = 5_000L
         messages = projector.appendReasoningDelta(runId, round = 2, index = 0, delta = "再确认", messages)
         messages = projector.startTool(
             runId,
@@ -257,7 +255,6 @@ class AgentRunMessageProjectorTest {
 
         val firstThinking = messages[1] as ThinkingMessageUi
         assertFalse(firstThinking.isStreaming)
-        assertEquals(3, firstThinking.elapsedSeconds)
 
         val firstTool = messages[2] as ToolActivityMessageUi
         assertEquals(ToolActivityStatusUi.Success, firstTool.status)
@@ -271,7 +268,7 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun keepsAssistantTextSeparatedByRound() {
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 1_000L })
+        val projector = AgentRunMessageProjector()
         val runId = "run-text"
         var messages: List<AgentChatMessageUi> = listOf(
             UserMessageUi(id = "user-$runId", content = "分析一下"),
@@ -309,7 +306,7 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun keepsFallbackToolCallIdsDistinctAcrossRounds() {
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 1_000L })
+        val projector = AgentRunMessageProjector()
         val runId = "run-fallback"
         var messages: List<AgentChatMessageUi> = listOf(UserMessageUi(id = "user-$runId", content = "操作手机"))
 
@@ -356,7 +353,7 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun toolActivityFollowsAssistantTextStreamedInSameRound() {
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 1_000L })
+        val projector = AgentRunMessageProjector()
         val runId = "run-order"
         var messages: List<AgentChatMessageUi> = listOf(
             UserMessageUi(id = "user-$runId", content = "搜一下")
@@ -386,7 +383,7 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun finalizingTextTrimsTrailingWhitespace() {
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 1_000L })
+        val projector = AgentRunMessageProjector()
         val runId = "run-trim"
         var messages: List<AgentChatMessageUi> = listOf(
             UserMessageUi(id = "user-$runId", content = "你好")
@@ -402,7 +399,7 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun interruptedToolBecomesUnknownInsteadOfFailed() {
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 1_000L })
+        val projector = AgentRunMessageProjector()
         val runId = "run-interrupted"
         val running = projector.startTool(
             runId,
@@ -424,7 +421,7 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun keepsInterleavedReasoningTextAndHostedToolInEventOrder() {
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 1_000L })
+        val projector = AgentRunMessageProjector()
         val runId = "run-interleaved"
         var messages: List<AgentChatMessageUi> = listOf(
             UserMessageUi(id = "user-$runId", content = "搜索最新消息"),
@@ -494,7 +491,7 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun compactionResultMergesIntoExistingMarkerInsteadOfAppending() {
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 1_000L })
+        val projector = AgentRunMessageProjector()
         val runId = "run-compact"
         val started = SystemNoticeMessageUi(
             id = "assistant-$runId-compaction-op-1",
@@ -548,17 +545,14 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun roundEndFinalizesStreamedThinkingAndSkipsEmptyFallback() {
-        var now = 1_000L
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { now })
+        val projector = AgentRunMessageProjector()
         val runId = "run-round-end"
         // 工具轮：模型只输出思考 + 工具调用，没有 TEXT 块，轮结束时思考块仍是流式状态。
         val messages = projector.appendReasoningDelta(runId, 1, 0, "先想", emptyList())
-        now = 41_000L
         val finalized = projector.ensureCompletedThinking(runId, round = 1, content = "", messages = messages)
         assertEquals(1, finalized.size)
         val thinking = finalized.filterIsInstance<ThinkingMessageUi>().single()
         assertFalse(thinking.isStreaming)
-        assertEquals(40, thinking.elapsedSeconds ?: -1)
         // 没有流式块、也没有回传正文时，不补空卡片。
         assertEquals(
             emptyList<AgentChatMessageUi>(),
@@ -568,7 +562,7 @@ class AgentRunMessageProjectorTest {
 
     @Test
     fun roundEndFallbackThinkingUsesReasoningContentAndKeepsStreamedContent() {
-        val projector = AgentRunMessageProjector(nowElapsedRealtime = { 5_000L })
+        val projector = AgentRunMessageProjector()
         val runId = "run-round-fallback"
         val assistant = AgentMessageUi(id = "assistant-$runId-1-0", content = "答案", isStreaming = true)
         val withFallback = projector.ensureCompletedThinking(
