@@ -1065,7 +1065,7 @@ private fun EmptyChatState(
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(bottom = 56.dp),
+                .padding(bottom = StaSpacing.xlarge * 2),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (isCharacterConversation) {

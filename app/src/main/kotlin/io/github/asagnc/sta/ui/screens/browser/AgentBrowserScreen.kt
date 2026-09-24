@@ -660,7 +660,7 @@ private fun BrowserEmptyState(modifier: Modifier = Modifier) {
         modifier = modifier
             .consumeTouches()
             .background(StaColors.surfaceRaised)
-            .padding(28.dp),
+            .padding(StaSpacing.xlarge),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -694,7 +694,7 @@ private fun BrowserLoadingState(
         modifier = modifier
             .consumeTouches()
             .background(StaColors.surfaceRaised)
-            .padding(28.dp),
+            .padding(StaSpacing.xlarge),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -722,7 +722,7 @@ private fun BrowserFailedState(
         modifier = modifier
             .consumeTouches()
             .background(StaColors.surfaceRaised)
-            .padding(28.dp),
+            .padding(StaSpacing.xlarge),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

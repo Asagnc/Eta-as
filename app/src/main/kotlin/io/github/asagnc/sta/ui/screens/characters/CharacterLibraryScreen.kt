@@ -94,7 +94,7 @@ internal fun CharacterLibraryScreen(
             store.busy && store.characters.isEmpty() -> {
                 item(key = "loading") {
                     Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = StaSpacing.massive),
                         contentAlignment = Alignment.Center,
                     ) {
                         InfiniteProgressIndicator(size = StaSize.s28)

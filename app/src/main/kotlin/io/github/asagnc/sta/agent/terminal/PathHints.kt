@@ -62,7 +62,10 @@ internal object PathHints {
         val lines = output.lines().map { it.trim() }.filter { it.isNotEmpty() }
         val head = lines.firstOrNull()
         val hasNearest = head != null && head.startsWith("NEAREST=")
-        val nearest = if (hasNearest) head?.removePrefix("NEAREST=")?.takeIf { it.isNotBlank() } else null
+        val nearest = head
+            ?.takeIf { hasNearest }
+            ?.removePrefix("NEAREST=")
+            ?.takeIf { it.isNotBlank() }
         return Probe(nearest = nearest, entries = if (hasNearest) lines.drop(1) else lines)
     }
 

@@ -11,7 +11,7 @@ import io.github.asagnc.sta.core.ModuleConfig
 import io.github.asagnc.sta.core.ModuleLogger
 import io.github.asagnc.sta.core.safeLogType
 import io.github.asagnc.sta.hook.aimemory.ColorOsMemoryHooks
-import io.github.asagnc.sta.hook.system.SystemServerHooks
+import io.github.asagnc.sta.hook.system.AccessibilityProtectionHooks
 
 class ModuleMain : XposedModule() {
 
@@ -42,7 +42,7 @@ class ModuleMain : XposedModule() {
     }
 
     override fun onSystemServerStarting(param: SystemServerStartingParam) {
-        recordInstallation(SystemServerHooks.install(this, logger, param.classLoader))
+        recordInstallation(AccessibilityProtectionHooks.install(this, logger, param.classLoader))
     }
 
     // Sta 只适配 ColorOS 记忆。小爱（XiaoAI）与小布（Breeno）的适配已整体移除：

@@ -89,7 +89,10 @@ internal object AgentSubAgentSummary {
                     val inline = inlineOf(line)
                     if (inline.isNotEmpty()) sections.getValue(label).add(inline)
                 } else if (current != null) {
-                    sections.getValue(current!!).add(line)
+                    // current 是 var 且被 lambda 捕获，Kotlin 无法做智能转换；
+                    // 取一次局部快照后收敛为非空类型，避免 `!!`。
+                    val section = current
+                    sections.getValue(section).add(line)
                 }
             }
 
