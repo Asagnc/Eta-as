@@ -2,7 +2,7 @@
 
 **简体中文** | [English](README_EN.md)
 
-<p><img src="https://img.shields.io/badge/minSdk-36-3DDC84?logo=android&amp;logoColor=white" alt="minSdk 36"> <img src="https://img.shields.io/badge/Kotlin-2.4.10-7F52FF?logo=kotlin&amp;logoColor=white" alt="Kotlin 2.4.10"> <img src="https://img.shields.io/badge/AGP-9.3.2-3DDC84?logo=android&amp;logoColor=white" alt="AGP 9.3.2"> <img src="https://img.shields.io/badge/Linux-Debian%20%7C%20Ubuntu%20%7C%20Kali-1677FF" alt="Linux distributions"></p>
+<p><img src="https://img.shields.io/badge/minSdk-36-3DDC84?logo=android&amp;logoColor=white" alt="minSdk 36"> <img src="https://img.shields.io/badge/Kotlin-2.4.10-7F52FF?logo=kotlin&amp;logoColor=white" alt="Kotlin 2.4.10"> <img src="https://img.shields.io/badge/AGP-9.3.2-3DDC84?logo=android&amp;logoColor=white" alt="AGP 9.3.2"> <img src="https://img.shields.io/badge/Linux-Debian-1677FF" alt="Linux distributions"></p>
 
 **面向 Android 的第三方系统级 AI 助手**
 
