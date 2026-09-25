@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       build_number:
-        description: "发版构建号（versionName 里 sta-asN 的 N）。留空则用 GitHub run number —— 日常验证构建走这条。"
+        description: "本次构建序号（versionName 里 sta-asN 的 N）。留空则用 GitHub run number。"
         required: false
         type: string
 
@@ -119,10 +119,11 @@ jobs:
           STA_RELEASE_KEY_ALIAS: ${{ secrets.STA_RELEASE_KEY_ALIAS }}
           STA_RELEASE_KEY_PASSWORD: ${{ secrets.STA_RELEASE_KEY_PASSWORD }}
         run: |
+          build_date="$(TZ=Asia/Shanghai date +%Y%m%d)"
           if [[ "${{ steps.signing.outputs.available }}" == "true" ]]; then
-            ./gradlew --no-daemon --build-cache -PstaBuildNumber="${{ github.event.inputs.build_number || github.run_number }}" :app:assembleRelease
+            ./gradlew --no-daemon --build-cache -PstaBuildDate="$build_date" -PstaBuildNumber="${{ github.event.inputs.build_number || github.run_number }}" :app:assembleRelease
           else
-            ./gradlew --no-daemon --build-cache -PstaBuildNumber="${{ github.event.inputs.build_number || github.run_number }}" :app:assembleDebug
+            ./gradlew --no-daemon --build-cache -PstaBuildDate="$build_date" -PstaBuildNumber="${{ github.event.inputs.build_number || github.run_number }}" :app:assembleDebug
           fi
 
       - name: 验证并整理 APK
@@ -148,10 +149,9 @@ jobs:
           fi
 
           mkdir -p "$output_dir"
-          # 用发布证书重签，显式固定为 V3：
-          # apksig 按 APK 的 minSdkVersion 挑选"有验证价值"的方案（实测 minSdk 21
-          # 的包默认签出 V1+V2+V3，minSdk 34 的包只签 V3）。V1 服务 API<24、
-          # V2 服务 API 24-27，对 minSdk 34 的 Sta 都没有验证场景；V4 是服务于
+          # 用发布证书重签，显式固定为 V3：signingConfigs.release 已固定 V3，
+          # 这里再钉一次，发布包方案不依赖 AGP 的默认选择。V1 服务 API<24、
+          # V2 服务 API 24-27，对 minSdk 36 的 Sta 都没有验证场景；V4 是服务于
           # 增量安装的独立 .idsig 文件、不嵌入 APK。
           zipalign_path="$(find "$ANDROID_HOME/build-tools" \
             -type f -name zipalign | sort -V | tail -n 1)"

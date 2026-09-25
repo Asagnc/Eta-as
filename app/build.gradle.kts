@@ -1,3 +1,7 @@
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -32,17 +36,29 @@ android {
         // 只跑 Android 16（API 36）及以上：不维护低版本兼容分支，也不适配低端设备。
         minSdk = 36
         targetSdk = 36
-        // versionCode 规则：yyyyMMdd + 两位当日序号（01 起），发版时手动递增。
-        // Sta 是独立产品（applicationId io.github.asagnc.sta），有自己的日期码基数：
-        // 首版 2026092301 > 分叉时继承来的 2026091202，保证升级不被应用市场/系统拒绝。
+        // versionCode 规则：yyyyMMdd + 两位当日序号（01 起），日期部分取构建当天。
+        // 日期由 CI 和 scripts/build-release-local.sh 按北京时间（Asia/Shanghai）算好后用
+        // -PstaBuildDate 传入：configuration cache 会把配置阶段取到的时间一起缓存，
+        // 光靠 LocalDate.now() 在命中缓存时会停在上次配置的那天。
+        // staVersionCodeFloor 是已发布 versionCode 的下界（见 gradle.properties）：
+        // 它承接分叉时继承来的 2026091202，保证升级不被系统/应用市场拒绝；
+        // 同一天第二次发版需要把 versionCode 推进到下一个序号时，改这个下界即可。
         // versionName 是本产品的构建序号：CI 用 GitHub run number（前缀 as），
-        // 本地备用出包用 staBuildPrefix=ac 的独立序号（见 tools/build-release-local.sh），
+        // 本地备用出包用 scripts/build-release-local.sh 维护的 ac 序号，
         // 两类版本名不会互相顶替：sta-as1 / sta-ac1。
         val buildNumber = providers.gradleProperty("staBuildNumber").orNull?.takeIf { it.isNotBlank() }
         val buildPrefix = providers.gradleProperty("staBuildPrefix").orNull
             ?.takeIf { it.matches(Regex("[a-z]{1,4}")) }
             ?: "as"
-        versionCode = 2026092301
+        val versionCodeFloor = providers.gradleProperty("staVersionCodeFloor").orNull?.toIntOrNull()
+            ?: error("gradle.properties 缺少 staVersionCodeFloor（已发布 versionCode 的下界）")
+        val suppliedBuildDate = providers.gradleProperty("staBuildDate").orNull?.takeIf { it.matches(Regex("\\d{8}")) }
+        if (suppliedBuildDate == null) {
+            logger.warn("未提供 -PstaBuildDate，versionCode 按构建机当天日期计算；configuration cache 命中时会沿用上次的日期。")
+        }
+        val buildDate = suppliedBuildDate
+            ?: LocalDate.now(ZoneId.of("Asia/Shanghai")).format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+        versionCode = maxOf(buildDate.toInt() * 100 + 1, versionCodeFloor)
         versionName = "sta-$buildPrefix${buildNumber ?: 1}"
     }
 
@@ -53,9 +69,13 @@ android {
                 storePassword = releaseStorePassword
                 keyAlias = releaseKeyAlias
                 keyPassword = releaseKeyPassword
-                // 签名方案不在这里配置：AGP 9 只会产出单一方案（实测给 V3），
-                // 最终由 CI 的 apksigner 重签步骤统一固定为 V2+V3，
-                // 见 .github/workflows/android-release.yml。
+                // 签名方案固定为 V3：minSdk 36 意味着只有 API 36+ 的设备会安装，
+                // V1（API<24）与 V2（API 24-27）没有验证场景；V4 服务于增量安装，
+                // 是独立的 .idsig 文件、不嵌入 APK。不显式指定时 AGP 会按 minSdk
+                // 自行选择方案，可能与 CI 使用的方案不一致。
+                enableV1Signing = false
+                enableV2Signing = false
+                enableV3Signing = true
             }
         }
     }
