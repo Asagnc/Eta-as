@@ -7,16 +7,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 载荷的跨版本契约：这些字符串落在 DB 列与外部归档里，会被更老的代码读回来，也会被
- * 读出来改完再写回去（见 AgentContinuationBuilder）。契约一旦破掉，表现是「用户升级跑过一次、
- * 降级回去会话内容就少了」，而且不会有任何报错。
+ * handoff 载荷的解析契约：这些字符串落在 DB 列里，历史数据必须一直能读回来。
+ * 这里锁的是「老形态仍然可读」，不包含跨版本字段保留——项目未发布、单用户、整库重建，
+ * 不需要为「旧代码读新载荷」付出复杂度。
  */
 class AgentUiHandoffPayloadTest {
     @Test
-    fun unknownFieldsFromNewerVersionSurviveARewrite() {
+    fun readsCurrentShape() {
         val raw = JSONObject()
             .put("type", "agent_ui_handoff")
-            .put("version", 99)
+            .put("version", 2)
             .put("conversationId", "c1")
             .put(
                 "supplements",
@@ -24,18 +24,13 @@ class AgentUiHandoffPayloadTest {
                     JSONObject().put("index", 1).put("text", "补充").put("createdAt", 5L)
                 )
             )
-            .put("futureField", "别弄丢我")
             .toString()
 
         val parsed = AgentUiHandoffPayload.from(raw)
 
         assertEquals("c1", parsed.conversationId)
         assertEquals(1, parsed.supplements.size)
-        // 改一下再写回去，是新版本才认识的字段最容易丢的时刻。
-        val rewritten = JSONObject(parsed.copy(conversationId = "c2").toJson())
-        assertEquals("c2", rewritten.optString("conversationId"))
-        assertEquals("别弄丢我", rewritten.optString("futureField"))
-        assertEquals(1, rewritten.optJSONArray("supplements")?.length())
+        assertEquals(1, JSONObject(parsed.toJson()).optJSONArray("supplements")?.length())
     }
 
     @Test
