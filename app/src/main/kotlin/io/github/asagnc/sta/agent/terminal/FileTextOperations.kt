@@ -336,30 +336,12 @@ internal object FileTextOperations {
                 is ReplaceOutcome.NotFound -> failures += EditFailure(
                     request.path,
                     "EDIT_NOT_FOUND",
-                    buildString {
-                        append("没有匹配 old_text 的文本（文件共 ${outcome.totalLines} 行）")
-                        val snippet = nearestSnippet(original, request.oldText)
-                        if (snippet.isBlank()) {
-                            append("；文件为空，或 old_text 与任何一行都没有公共前缀，请用 read_file 核对")
-                        } else {
-                            append("。最接近的原文（L 开头是行号）：\n")
-                            append(snippet)
-                            val difference = describeFirstDifference(original, request.oldText)
-                            if (difference.isNotBlank()) append("\n").append(difference)
-                            append("\n请按上面的原文修正 old_text 后重试")
-                        }
-                    },
+                    notFoundMessage(original, request.oldText, outcome.totalLines),
                 )
                 is ReplaceOutcome.Ambiguous -> failures += EditFailure(
                     request.path,
                     "EDIT_NOT_UNIQUE",
-                    buildString {
-                        append("old_text 命中 ${outcome.lines.size} 处（行 ${outcome.lines.joinToString("、")}）。")
-                        append("二选一：① 在 old_text 里带上相邻行，让它在文件中只出现一次；")
-                        append("② 若这 ${outcome.lines.size} 处都该改，就显式传 replace_all=true（会把 ${outcome.lines.size} 处全部替换）。")
-                        append("各命中处上下文（> 为命中行）：\n")
-                        append(ambiguitySnippet(original, outcome.lines))
-                    },
+                    ambiguousMessage(original, outcome.lines),
                 )
                 is ReplaceOutcome.Applied -> planned[request.path] = PlannedEdit(
                     request = request,
@@ -372,6 +354,53 @@ internal object FileTextOperations {
         // 有一条失败就整批作废：调用方只看 plan 也不该看到"可以写"的条目。
         if (failures.isNotEmpty()) return EditPlan(plan = emptyList(), failures = failures)
         return EditPlan(plan = planned.values.toList(), failures = failures)
+    }
+
+    /**
+     * old_text 未命中时的说明：给出最接近的原文与首处差异，调用方据此修正后重试。
+     *
+     * 单文件的两条通道与批量规划此前各写了一份，措辞已经开始漂移；同一类失败在模型看来
+     * 必须是同一句话，所以文案收在这里，调用方只负责把它放进结果。
+     */
+    fun notFoundMessage(original: String, oldText: String, totalLines: Int): String = buildString {
+        append("没有匹配 old_text 的文本（文件共 $totalLines 行）")
+        val snippet = nearestSnippet(original, oldText)
+        if (snippet.isBlank()) {
+            append("；文件为空，或 old_text 与任何一行都没有公共前缀，请用 read_file 核对")
+        } else {
+            append("。最接近的原文（L 开头是行号）：\n")
+            append(snippet)
+            val difference = describeFirstDifference(original, oldText)
+            if (difference.isNotBlank()) append("\n").append(difference)
+            append("\n请按上面的原文修正 old_text 后重试")
+        }
+    }
+
+    /**
+     * diff 预览进模型前的裁剪。
+     *
+     * diff 是模型可见载荷，长 diff 会把真正的上下文挤掉；裁剪时必须带上原文长度——只写
+     * `...[truncated]` 的话，调用方既不知道被砍了多少，也没法判断还要不要继续读。
+     * 两条通道共用这里，避免一个裁一个不裁。
+     */
+    fun diffPreviewForPayload(original: String, updated: String, maxChars: Int = 16_000): String {
+        val preview = diffPreview(original, updated)
+        return if (preview.length <= maxChars) {
+            preview
+        } else {
+            preview.take(maxChars) + "\n...[truncated: 已保留前 $maxChars 字符，原文共 ${preview.length} 字符]"
+        }
+    }
+
+    /**
+     * old_text 多处命中时的说明：给出命中行号与两种收窄方式（补上下文 / replace_all）。
+     */
+    fun ambiguousMessage(original: String, lines: List<Int>): String = buildString {
+        append("old_text 命中 ${lines.size} 处（行 ${lines.joinToString("、")}）。")
+        append("二选一：① 在 old_text 里带上相邻行，让它在文件中只出现一次；")
+        append("② 若这 ${lines.size} 处都该改，就显式传 replace_all=true（会把 ${lines.size} 处全部替换）。")
+        append("各命中处上下文（> 为命中行）：\n")
+        append(ambiguitySnippet(original, lines))
     }
 
     /**

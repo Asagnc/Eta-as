@@ -992,27 +992,11 @@ internal class RootShellTerminalController(
         return when (val outcome = FileTextOperations.replace(original, oldText, newText, replaceAll)) {
             is FileTextOperations.ReplaceOutcome.NotFound -> errorJson(
                 "EDIT_NOT_FOUND",
-                buildString {
-                    append("没有匹配 old_text 的文本（文件共 ${outcome.totalLines} 行）")
-                    val snippet = FileTextOperations.nearestSnippet(original, oldText)
-                    if (snippet.isBlank()) {
-                        append("；文件为空，或 old_text 与任何一行都没有公共前缀，请用 read_file 核对")
-                    } else {
-                        append("。最接近的原文（L 开头是行号）：\n")
-                        append(snippet)
-                        val difference = FileTextOperations.describeFirstDifference(original, oldText)
-                        if (difference.isNotBlank()) append("\n").append(difference)
-                        append("\n请按上面的原文修正 old_text 后重试")
-                    }
-                },
+                FileTextOperations.notFoundMessage(original, oldText, outcome.totalLines),
             )
             is FileTextOperations.ReplaceOutcome.Ambiguous -> errorJson(
                 "EDIT_NOT_UNIQUE",
-                buildString {
-                    append("old_text 命中 ${outcome.lines.size} 处（行 ${outcome.lines.joinToString("、")}）；")
-                    append("请补足上下文使其唯一，或设置 replace_all=true。各命中处上下文（> 为命中行）：\n")
-                    append(FileTextOperations.ambiguitySnippet(original, outcome.lines))
-                },
+                FileTextOperations.ambiguousMessage(original, outcome.lines),
             )
             is FileTextOperations.ReplaceOutcome.Applied -> {
                 val bytes = outcome.content.toByteArray(Charsets.UTF_8)
@@ -1046,7 +1030,7 @@ internal class RootShellTerminalController(
                         .put("first_line", outcome.firstLine)
                         .put("bytes_written", bytes.size)
                         .put("verified", true)
-                        .put("diff", FileTextOperations.diffPreview(original, outcome.content).truncateForJson())
+                        .put("diff", FileTextOperations.diffPreviewForPayload(original, outcome.content))
                         .toString()
                 }
             }

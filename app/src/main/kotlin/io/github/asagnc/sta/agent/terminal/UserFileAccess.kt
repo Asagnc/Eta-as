@@ -159,34 +159,10 @@ internal object UserFileAccess {
         when (val outcome = FileTextOperations.replace(original, oldText, newText, replaceAll)) {
             is FileTextOperations.ReplaceOutcome.NotFound -> JSONObject().put("ok", false)
                 .put("code", "EDIT_NOT_FOUND")
-                .put(
-                    "message",
-                    buildString {
-                        append("没有匹配 old_text 的文本（文件共 ${outcome.totalLines} 行）")
-                        val snippet = FileTextOperations.nearestSnippet(original, oldText)
-                        if (snippet.isBlank()) {
-                            append("；文件为空，或 old_text 与任何一行都没有公共前缀，请用 read_file 核对")
-                        } else {
-                            append("。最接近的原文（L 开头是行号）：\n")
-                            append(snippet)
-                            val difference = FileTextOperations.describeFirstDifference(original, oldText)
-                            if (difference.isNotBlank()) append("\n").append(difference)
-                            append("\n请按上面的原文修正 old_text 后重试")
-                        }
-                    },
-                )
+                .put("message", FileTextOperations.notFoundMessage(original, oldText, outcome.totalLines))
             is FileTextOperations.ReplaceOutcome.Ambiguous -> JSONObject().put("ok", false)
                 .put("code", "EDIT_NOT_UNIQUE")
-                .put(
-                    "message",
-                    buildString {
-                        append("old_text 命中 ${outcome.lines.size} 处（行 ${outcome.lines.joinToString("、")}）。")
-                        append("二选一：① 在 old_text 里带上相邻行，让它在文件中只出现一次；")
-                        append("② 若这 ${outcome.lines.size} 处都该改，就显式传 replace_all=true（会把 ${outcome.lines.size} 处全部替换）。")
-                        append("各命中处上下文（> 为命中行）：\n")
-                        append(FileTextOperations.ambiguitySnippet(original, outcome.lines))
-                    },
-                )
+                .put("message", FileTextOperations.ambiguousMessage(original, outcome.lines))
             is FileTextOperations.ReplaceOutcome.Applied -> {
                 val bytes = outcome.content.toByteArray()
                 require(bytes.size <= FileToolLimits.MAX_WRITE_BYTES) { "替换后内容过大" }
@@ -196,7 +172,7 @@ internal object UserFileAccess {
                     .put("first_line", outcome.firstLine)
                     .put("bytes_written", bytes.size)
                     .put("verified", true)
-                    .put("diff", FileTextOperations.diffPreview(original, outcome.content))
+                    .put("diff", FileTextOperations.diffPreviewForPayload(original, outcome.content))
             }
         }
     }
