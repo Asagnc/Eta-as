@@ -143,7 +143,7 @@ provider API key 以明文保存在 App 私有的 `databases/sta.db` 中，而 A
 
 Linux 用户态当前是 Debian，模型与终端统一通过 `environment=linux` 使用它。基础环境安装与基础工具安装是两个独立步骤：安装器先下载固定版本、大小和 SHA-256 的 rootfs，在临时目录解压，运行检查成功后才写入基础完成标记；PRoot 的流式解包校验归档路径和链接，支持取消与失败清理；用户随后安装只含通用命令的基础工具集。Python profile 只安装 uv，随后由 uv 把最新正式版 Python 安装到 `/opt/sta/python` 并把全局命令链接到 `/usr/local/bin`。Node.js profile 安装上游最新正式版 ARM64/x64 制品；SSH 使用发行版的最新稳定包。App 侧只读取安装器完成标记，不再重复检查 rootfs 内的符号链接、二进制或执行权限。中国大陆网络下，Debian 主仓库与安全更新均使用 USTC 镜像，只保留 Debian 官方主仓库与安全仓库作为失败出口；APT 还启用重试并关闭 HTTP pipelining。
 
-APK 分析作为可选档案显示。JADX、Apktool、smali 与 baksmali 使用当前最新正式版的固定官方 Release URL、大小和 SHA-256，下载完整校验后才进入 App 可写的 cache staging；不能把下载或解包暂存目录放进由 Root 创建的 Linux 管理目录。GitHub 制品先尝试一个 HTTPS 下载入口，再回到官方地址，但仍只接受与官方清单 SHA-256 完全一致的字节。JADX 只解出 CLI 脚本、运行库与许可证，成功验证全部命令后再原子切换当前版本。档案安装 `openjdk-25-jdk-headless`，但不安装全局 Gradle、Android SDK 或 NDK。Google 的 Linux SDK 与 NDK 主机工具只提供 x86_64 构建，手机 ARM64 chroot 无法组成官方支持的完整编译链；`apktool build` 因而稳定拒绝，解码、代码查看和独立 Smali 汇编/反汇编不受影响。
+APK 分析作为可选档案显示。JADX、Apktool、smali、baksmali 与 aapt2 使用当前最新正式版的固定官方 Release URL、大小和 SHA-256，下载完整校验后才进入 App 可写的 cache staging；不能把下载或解包暂存目录放进由 Root 创建的 Linux 管理目录。GitHub 制品先尝试一个 HTTPS 下载入口，再回到官方地址，但仍只接受与官方清单 SHA-256 完全一致的字节；aapt2 来自 Google Maven，不经镜像前缀。JADX 只解出 CLI 脚本、运行库与许可证，成功验证全部命令后再原子切换当前版本。档案安装 `openjdk-25-jdk-headless` 与 `qemu-user-static`，但不安装全局 Gradle、Android SDK 或 NDK。Google 的 Linux SDK 与 NDK 主机工具只提供 x86_64 构建，ARM64 环境因此以 `qemu-user-static` 转译官方 x86-64 `aapt2`：`aapt2-qemu` wrapper 固定使用 `-L /usr/lib/x86_64-linux-gnu`（x86-64 加载器与动态库所在目录，缺失会导致加载器找不到 libc 直接失败），并链接到 `/usr/local/bin/aapt2` 覆盖发行版自带的旧包。`apktool build` 因此可用，解码、代码查看和独立 Smali 汇编/反汇编不受影响。发行版自带的 `aapt`/`android-libaapt` 版本陈旧（`2.19-debian`）且非 Google 发布，不参与资源编译。
 
 ## 后台执行生命周期
 

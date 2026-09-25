@@ -47,10 +47,11 @@ internal fun linuxApkAnalysisReady(rootfs: File): Boolean {
 
 internal fun linuxApkJavaInstallCommand(distribution: LinuxDistribution): String =
     when (distribution) {
-        LinuxDistribution.DEBIAN -> "/usr/local/bin/sta-apt install openjdk-25-jdk-headless"
+        LinuxDistribution.DEBIAN ->
+            "/usr/local/bin/sta-apt install openjdk-25-jdk-headless qemu-user-static"
     }
 
-/** 为当前 Linux 发行版安装 Java 分析工具；APK 资源回编译仍需 ARM64 AAPT2 支持。 */
+/** 为当前 Linux 发行版安装 Java 分析与资源编译工具链；官方 aapt2 以 x86-64 发布，经 qemu-user 转译运行。 */
 internal class LinuxApkAnalysisInstaller(
     private val context: Context,
     private val distribution: LinuxDistribution,
@@ -160,10 +161,12 @@ internal class LinuxApkAnalysisInstaller(
         artifacts.getValue(SMALI_ARTIFACT).copyTo(File(libraryDir, "smali.jar"), overwrite = true)
         artifacts.getValue(BAKSMALI_ARTIFACT).copyTo(File(libraryDir, "baksmali.jar"), overwrite = true)
         val binDir = File(staging, "bin").apply { check(mkdirs()) }
+        check(extractAapt2(artifacts.getValue(AAPT2_ARTIFACT), File(binDir, "aapt2")))
         File(binDir, "java").writeText(JAVA_WRAPPER)
         File(binDir, "apktool").writeText(APKTOOL_WRAPPER)
         File(binDir, "smali").writeText(javaJarWrapper("smali.jar"))
         File(binDir, "baksmali").writeText(javaJarWrapper("baksmali.jar"))
+        File(binDir, "aapt2-qemu").writeText(AAPT2_WRAPPER)
         true
     } catch (cancellation: CancellationException) {
         throw cancellation
@@ -207,6 +210,26 @@ internal class LinuxApkAnalysisInstaller(
         return extracted == targets.keys
     }
 
+    /** 官方 aapt2 以 x86-64 发布，这里只从制品 jar 中取出该二进制，执行交给 aapt2-qemu wrapper。 */
+    private fun extractAapt2(archive: File, target: File): Boolean {
+        val extracted = runCatching {
+            ZipInputStream(archive.inputStream().buffered()).use { zip ->
+                while (true) {
+                    val entry = zip.nextEntry ?: break
+                    if (entry.name == "aapt2" && !entry.isDirectory) {
+                        target.parentFile?.mkdirs()
+                        target.outputStream().buffered().use { output -> zip.copyTo(output) }
+                        return@use true
+                    }
+                    zip.closeEntry()
+                }
+                false
+            }
+        }.getOrDefault(false)
+        check(extracted && target.isFile)
+        return extracted
+    }
+
     private suspend fun installJava(rootfs: File): Boolean {
         val result = InstallerShellRunner.run(
             command = linuxApkJavaInstallCommand(distribution),
@@ -241,10 +264,12 @@ internal class LinuxApkAnalysisInstaller(
               ${shellQuote(File(installing, "bin/java").absolutePath)} \
               ${shellQuote(File(installing, "bin/apktool").absolutePath)} \
               ${shellQuote(File(installing, "bin/smali").absolutePath)} \
-              ${shellQuote(File(installing, "bin/baksmali").absolutePath)} || exit 72
+              ${shellQuote(File(installing, "bin/baksmali").absolutePath)} \
+              ${shellQuote(File(installing, "bin/aapt2").absolutePath)} \
+              ${shellQuote(File(installing, "bin/aapt2-qemu").absolutePath)} || exit 72
             sta_link_commands() {
               "${'$'}sta_busybox" mkdir -p ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)} || return 1
-              for sta_command in java jadx apktool smali baksmali; do
+              for sta_command in java jadx apktool smali baksmali aapt2; do
                 "${'$'}sta_busybox" rm -f ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)}/"${'$'}sta_command"
               done
               "${'$'}sta_busybox" ln -s ../../../opt/sta/apk-analysis/current/bin/java \
@@ -255,6 +280,8 @@ internal class LinuxApkAnalysisInstaller(
                 "${'$'}sta_busybox" ln -s ../../../opt/sta/apk-analysis/current/bin/"${'$'}sta_command" \
                   ${shellQuote(File(rootfs, "usr/local/bin").absolutePath)}/"${'$'}sta_command" || return 1
               done
+              "${'$'}sta_busybox" ln -s ../../../opt/sta/apk-analysis/current/bin/aapt2-qemu \
+                ${shellQuote(File(rootfs, "usr/local/bin/aapt2").absolutePath)} || return 1
             }
             sta_restore_previous() {
               "${'$'}sta_busybox" rm -rf ${shellQuote(current.absolutePath)}
@@ -296,11 +323,18 @@ internal class LinuxApkAnalysisInstaller(
             apktool --version >/dev/null 2>&1 || exit 83
             smali --version >/dev/null 2>&1 || exit 84
             baksmali --version >/dev/null 2>&1 || exit 85
+            rm -rf /tmp/sta-aapt2-verify && mkdir -p /tmp/sta-aapt2-verify/res/values || exit 87
+            printf '<resources><string name="sta">ok</string></resources>' \
+              > /tmp/sta-aapt2-verify/res/values/strings.xml || exit 87
+            aapt2 compile --dir /tmp/sta-aapt2-verify/res -o /tmp/sta-aapt2-verify/out.zip || exit 88
+            [ -s /tmp/sta-aapt2-verify/out.zip ] || exit 89
+            rm -rf /tmp/sta-aapt2-verify
             cat > /${LinuxEnvironmentPaths.APK_ANALYSIS_MARKER} <<'STA_APK_ANALYSIS_EOF'
             profile=${LinuxEnvironmentPaths.APK_ANALYSIS_REVISION}
             jadx=$JADX_VERSION
             apktool=$APKTOOL_VERSION
             smali=$SMALI_VERSION
+            aapt2=$AAPT2_VERSION
             STA_APK_ANALYSIS_EOF
             chmod 0644 /${LinuxEnvironmentPaths.APK_ANALYSIS_MARKER} || exit 86
         """.trimIndent()
@@ -363,14 +397,26 @@ internal class LinuxApkAnalysisInstaller(
         if (current.exists() && !current.renameTo(previous)) return false
         try {
             if (!staging.renameTo(current)) throw java.io.IOException("无法激活工具目录")
-            listOf("jadx/bin/jadx", "bin/java", "bin/apktool", "bin/smali", "bin/baksmali").forEach {
+            listOf(
+                "jadx/bin/jadx",
+                "bin/java",
+                "bin/apktool",
+                "bin/smali",
+                "bin/baksmali",
+                "bin/aapt2",
+                "bin/aapt2-qemu",
+            ).forEach {
                 if (!File(current, it).setExecutable(true, false)) throw java.io.IOException("无法设置工具权限")
             }
             val localBin = File(rootfs, "usr/local/bin").apply { mkdirs() }
-            listOf("java", "jadx", "apktool", "smali", "baksmali").forEach { name ->
+            listOf("java", "jadx", "apktool", "smali", "baksmali", "aapt2").forEach { name ->
                 val path = File(localBin, name).toPath()
                 java.nio.file.Files.deleteIfExists(path)
-                val relative = if (name == "jadx") "jadx/bin/jadx" else "bin/$name"
+                val relative = when (name) {
+                    "jadx" -> "jadx/bin/jadx"
+                    "aapt2" -> "bin/aapt2-qemu"
+                    else -> "bin/$name"
+                }
                 java.nio.file.Files.createSymbolicLink(path, java.nio.file.Path.of("../../../opt/sta/apk-analysis/current/$relative"))
             }
             File(rootfs, LinuxEnvironmentPaths.APK_ANALYSIS_MARKER).delete()
@@ -387,6 +433,7 @@ internal class LinuxApkAnalysisInstaller(
         private const val JADX_VERSION = "1.5.6"
         private const val APKTOOL_VERSION = "3.0.3"
         private const val SMALI_VERSION = "3.0.10"
+        private const val AAPT2_VERSION = "9.4.1-15978811"
         private const val MAX_JADX_EXTRACTED_BYTES = 128L * 1024L * 1024L
         internal const val MIN_AVAILABLE_BYTES = 768L * 1024L * 1024L
 
@@ -431,11 +478,20 @@ internal class LinuxApkAnalysisInstaller(
             sha256 = "37ae4a41a8886e15c20b8362fa4250f96bbdb55e1a608199ad8b5dff068b588f",
             sizeBytes = 4_447_943L,
         )
+        internal val AAPT2_ARTIFACT = googleMavenArtifact(
+            id = "aapt2",
+            version = AAPT2_VERSION,
+            fileName = "aapt2-$AAPT2_VERSION-linux.jar",
+            groupPath = "com/android/tools/build/aapt2",
+            sha256 = "f5bebd466ecf14d341fd465f2756a16d86052f29eb4532003d5ff7bcffd08de5",
+            sizeBytes = 2_385_035L,
+        )
         internal val ARTIFACTS = listOf(
             JADX_ARTIFACT,
             APKTOOL_ARTIFACT,
             SMALI_ARTIFACT,
             BAKSMALI_ARTIFACT,
+            AAPT2_ARTIFACT,
         )
 
         private fun githubReleaseArtifact(
@@ -459,14 +515,35 @@ internal class LinuxApkAnalysisInstaller(
             )
         }
 
+        /** Google Maven 只发布 x86-64 aapt2；ARM64 环境经 qemu-user 转译执行，不使用镜像前缀。 */
+        private fun googleMavenArtifact(
+            id: String,
+            version: String,
+            fileName: String,
+            groupPath: String,
+            sha256: String,
+            sizeBytes: Long,
+        ): VerifiedArtifact = VerifiedArtifact(
+            id = id,
+            version = version,
+            fileName = fileName,
+            url = "https://dl.google.com/android/maven2/$groupPath/$version/$fileName",
+            sha256 = sha256,
+            sizeBytes = sizeBytes,
+        )
+
+        /**
+         * 官方 aapt2 是 x86-64 动态可执行文件，在 ARM64 rootfs 内经 qemu-user 转译运行。
+         * `-L` 必须指向 x86-64 加载器与动态库所在目录，否则加载器找不到 libc 会直接失败。
+         */
+        internal val AAPT2_WRAPPER = """
+            #!/bin/sh
+            exec /usr/bin/qemu-x86_64-static -L /usr/lib/x86_64-linux-gnu \
+              /opt/sta/apk-analysis/current/bin/aapt2 "${'$'}@"
+        """.trimIndent() + "\n"
+
         internal val APKTOOL_WRAPPER = """
             #!/bin/sh
-            case "${'$'}{1:-}" in
-              b|build)
-                echo "APKTOOL_BUILD_UNAVAILABLE: Sta APK 分析档案暂不包含 ARM64 AAPT2，仅支持解码与检查。" >&2
-                exit 64
-                ;;
-            esac
             exec java -jar /opt/sta/apk-analysis/current/lib/apktool.jar "${'$'}@"
         """.trimIndent() + "\n"
 

@@ -706,7 +706,7 @@
   <string name="linux_environment_uninstall_confirm">将删除该发行版的 rootfs 与全部已安装工具，该环境下正在运行的后台任务会失效。此操作不可撤销。</string>
   <string name="linux_environment_uninstall_done">环境已卸载</string>
   <string name="linux_environment_uninstall_failed">卸载失败，请重试</string>
-  <string name="linux_apk_tools_ready">JADX、Apktool、smali 与 baksmali 已就绪；Apktool 暂不支持回编译</string>
+  <string name="linux_apk_tools_ready">JADX、Apktool、smali、baksmali 与官方 aapt2 已就绪；Apktool 支持回编译</string>
   <string name="linux_apk_tools_summary">安装正式版 OpenJDK 25，以及最新正式版 JADX、Apktool、smali 与 baksmali；需预留 768 MB</string>
   <string name="linux_python_tools">Python / uv 环境</string>
   <string name="linux_python_tools_summary">安装最新正式版 uv；Python 版本和项目环境由 uv 按需下载与管理</string>

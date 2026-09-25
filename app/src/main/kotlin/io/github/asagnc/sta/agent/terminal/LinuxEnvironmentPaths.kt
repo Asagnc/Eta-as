@@ -18,7 +18,8 @@ internal object LinuxEnvironmentPaths {
     const val SECURITY_TOOLS_MARKER = ".sta-security-tools-ready"
     const val CTF_TOOLS_MARKER = ".sta-ctf-tools-ready"
     const val TOOLSET_REVISION = 1
-    const val APK_ANALYSIS_REVISION = 1
+    // revision 2：补装官方 aapt2（x86-64 制品经 qemu-user 转译）并去除 apktool build 拦截，已就绪环境需重走安装。
+    const val APK_ANALYSIS_REVISION = 2
     const val PYTHON_TOOLS_REVISION = 1
     // revision 2：Debian 规格补装 libatomic1，已就绪环境需重走安装补齐依赖。
     const val NODE_TOOLS_REVISION = 2

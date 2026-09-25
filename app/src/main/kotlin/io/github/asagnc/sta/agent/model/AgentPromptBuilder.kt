@@ -122,7 +122,7 @@ internal object AgentPromptBuilder {
                         "用户提到共享文件、手机目录或要处理设备上的文件时，先 ls /workspace/mounts/ 确认已有共享，再读写对应子目录。" +
                         "分析 APK 时优先在 linux 环境使用 jadx、apktool、smali 或 baksmali；若命令不存在，" +
                         "准确告知用户在 Linux 工具环境页面安装“APK 分析”，不要自行下载不受校验的工具。" +
-                        "当前 Apktool 只支持解码与检查，不支持 build/回编译；不要绕过该限制或宣称已经生成可安装 APK。" +
+                        "Apktool 可解码与回编译（build）；回编译依赖已随档案安装的官方 aapt2，首次运行需经 qemu 转译，速度慢于原生。" +
                         (if (rootAvailable) {
                             "用户说‘执行命令 xxx’且未指定环境时，首轮调用 terminal，action=open_and_exec，environment=android，command=xxx；Android 可使用 root 身份，Linux 身份由已选择的后端决定；"
                         } else {

@@ -23,22 +23,32 @@ class LinuxApkAnalysisInstallerTest {
     fun artifactManifestPinsOfficialHttpsDownloadsAndIntegrityMetadata() {
         val artifacts = LinuxApkAnalysisInstaller.ARTIFACTS
 
-        assertEquals(listOf("jadx", "apktool", "smali", "baksmali"), artifacts.map { it.id })
-        assertTrue(artifacts.all { artifact -> artifact.url.startsWith("https://github.com/") })
-        assertTrue(artifacts.all { artifact -> artifact.preferredUrls.size == 1 })
+        assertEquals(listOf("jadx", "apktool", "smali", "baksmali", "aapt2"), artifacts.map { it.id })
+        assertTrue(artifacts.all { artifact -> artifact.url.startsWith("https://") })
+        val githubArtifacts = artifacts.filter { artifact -> artifact.id != "aapt2" }
+        assertEquals(4, githubArtifacts.size)
+        assertTrue(githubArtifacts.all { artifact -> artifact.preferredUrls.size == 1 })
         assertTrue(
-            artifacts.all { artifact ->
+            githubArtifacts.all { artifact ->
                 artifact.preferredUrls.single().startsWith("https://gh-proxy.com/")
             },
         )
         assertTrue(
-            artifacts.all { artifact ->
+            githubArtifacts.all { artifact ->
                 artifact.preferredUrls.all { preferred -> preferred.endsWith(artifact.url) }
             },
         )
+        // Google Maven 制品不经镜像前缀，且只以 x86-64 发布，由 qemu-user 转译执行。
+        val aapt2 = artifacts.single { artifact -> artifact.id == "aapt2" }
+        assertTrue(aapt2.preferredUrls.isEmpty())
+        assertEquals(
+            "https://dl.google.com/android/maven2/com/android/tools/build/aapt2/" +
+                "9.4.1-15978811/aapt2-9.4.1-15978811-linux.jar",
+            aapt2.url,
+        )
         assertTrue(artifacts.all { artifact -> artifact.sha256.matches(Regex("[0-9a-f]{64}")) })
         assertTrue(artifacts.all { artifact -> artifact.sizeBytes > 1_000_000L })
-        assertEquals(97_957_320L, artifacts.sumOf { artifact -> artifact.sizeBytes })
+        assertEquals(100_342_355L, artifacts.sumOf { artifact -> artifact.sizeBytes })
         assertTrue(LinuxApkAnalysisInstaller.MIN_AVAILABLE_BYTES > artifacts.sumOf { it.sizeBytes } * 2)
     }
 
@@ -64,13 +74,31 @@ class LinuxApkAnalysisInstallerTest {
     }
 
     @Test
-    fun apktoolWrapperRejectsBuildWithoutArm64Aapt2() {
+    fun apktoolWrapperBuildsThroughOfficialAapt2() {
         val wrapper = LinuxApkAnalysisInstaller.APKTOOL_WRAPPER
 
-        assertTrue(wrapper.contains("b|build"))
-        assertTrue(wrapper.contains("APKTOOL_BUILD_UNAVAILABLE"))
-        assertTrue(wrapper.contains("exit 64"))
+        // build 不再被拦截：apktool 直接调用 java，aapt2 由档案提供的官方版本承担。
+        assertFalse(wrapper.contains("APKTOOL_BUILD_UNAVAILABLE"))
+        assertFalse(wrapper.contains("exit 64"))
         assertTrue(wrapper.contains("exec java -jar"))
+    }
+
+    @Test
+    fun aapt2WrapperRunsOfficialBinaryThroughQemuUser() {
+        val wrapper = LinuxApkAnalysisInstaller.AAPT2_WRAPPER
+
+        assertTrue(wrapper.contains("/usr/bin/qemu-x86_64-static"))
+        // -L 必须指向 x86-64 动态库目录，否则加载器找不到 libc 直接失败。
+        assertTrue(wrapper.contains("-L /usr/lib/x86_64-linux-gnu"))
+        assertTrue(wrapper.contains("/opt/sta/apk-analysis/current/bin/aapt2"))
+    }
+
+    @Test
+    fun aapt2ArtifactPinsOfficialGoogleMavenRelease() {
+        val artifact = LinuxApkAnalysisInstaller.AAPT2_ARTIFACT
+
+        assertTrue(artifact.url.startsWith("https://dl.google.com/android/maven2/"))
+        assertTrue(artifact.fileName == "aapt2-9.4.1-15978811-linux.jar")
     }
 
     @Test
@@ -83,7 +111,7 @@ class LinuxApkAnalysisInstallerTest {
     @Test
     fun javaRuntimeUsesSelectedDistributionStablePackage() {
         assertEquals(
-            "/usr/local/bin/sta-apt install openjdk-25-jdk-headless",
+            "/usr/local/bin/sta-apt install openjdk-25-jdk-headless qemu-user-static",
             linuxApkJavaInstallCommand(LinuxDistribution.DEBIAN),
         )
     }
