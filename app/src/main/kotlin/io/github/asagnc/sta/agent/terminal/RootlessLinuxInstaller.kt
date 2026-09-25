@@ -9,6 +9,7 @@ import kotlinx.coroutines.ensureActive
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.tukaani.xz.XZInputStream
 import kotlin.coroutines.coroutineContext
+import io.github.asagnc.sta.core.deleteTreeSafely
 
 internal class RootlessInstallFailure(val code: String, override val message: String) : IOException(message)
 
@@ -113,7 +114,7 @@ internal object RootlessLinuxInstaller {
             if (!staging.parentFile!!.mkdirs() && !staging.parentFile!!.isDirectory) throw RootlessInstallFailure("INSTALL_DIRECTORY_UNAVAILABLE", "无法创建环境目录，请检查内部存储")
             val available = staging.parentFile!!.usableSpace
             if (available in 1 until 512L * 1024 * 1024) throw RootlessInstallFailure("INSUFFICIENT_STORAGE", "安装 Linux 至少需要 512 MB 可用内部存储，请清理后重试")
-            if (staging.exists() && !staging.deleteRecursively()) throw RootlessInstallFailure("STAGING_CLEANUP_FAILED", "无法清理未完成安装，请重启 Sta 后重试")
+            if (staging.exists() && !deleteTreeSafely(staging)) throw RootlessInstallFailure("STAGING_CLEANUP_FAILED", "无法清理未完成安装，请重启 Sta 后重试")
             extract(archive, staging, xz = true, stripComponents = 1)
             listOf("proc", "sys", "dev", "dev/shm", "workspace", "storage/emulated/0", "tmp", "usr/local/bin", "root").forEach { File(staging, it).mkdirs() }
             File(staging, "etc/resolv.conf").apply {
@@ -134,7 +135,7 @@ internal object RootlessLinuxInstaller {
             if (!staging.renameTo(rootfs)) throw RootlessInstallFailure("ENVIRONMENT_ACTIVATION_FAILED", "无法启用新环境，请检查内部存储空间后重试")
             return true
         } finally {
-            if (staging.exists()) staging.deleteRecursively()
+            if (staging.exists()) deleteTreeSafely(staging)
         }
     }
 }

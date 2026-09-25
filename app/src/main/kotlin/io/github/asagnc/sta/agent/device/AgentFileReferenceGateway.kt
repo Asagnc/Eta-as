@@ -17,6 +17,7 @@ import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.UUID
+import io.github.asagnc.sta.core.deleteTreeSafely
 
 internal class AgentFileReferenceGateway(
     private val resolveDocumentPath: (Uri) -> String? = { null },
@@ -223,7 +224,7 @@ internal class AgentFileReferenceGateway(
             } catch (_: RuntimeException) {
                 Resolution.Failure(Error.ImportFailed)
             } finally {
-                if (!completed) importDirectory.deleteRecursively()
+                if (!completed) deleteTreeSafely(importDirectory)
             }
         }
 

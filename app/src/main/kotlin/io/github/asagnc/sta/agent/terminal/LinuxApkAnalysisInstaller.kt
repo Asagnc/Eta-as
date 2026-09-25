@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
+import io.github.asagnc.sta.core.deleteTreeSafely
 
 internal enum class ApkAnalysisInstallStage {
     CHECKING,
@@ -152,7 +153,7 @@ internal class LinuxApkAnalysisInstaller(
         staging: File,
         artifacts: Map<VerifiedArtifact, File>,
     ): Boolean = try {
-        staging.deleteRecursively()
+        deleteTreeSafely(staging)
         check(staging.mkdirs())
         val jadxArchive = artifacts.getValue(JADX_ARTIFACT)
         check(extractJadx(jadxArchive, staging))
@@ -174,7 +175,7 @@ internal class LinuxApkAnalysisInstaller(
         AndroidAgentLogger.warn(
             "APK analysis profile action=prepare outcome=failed errorType=${throwable.safeLogType()}",
         )
-        staging.deleteRecursively()
+        deleteTreeSafely(staging)
         false
     }
 
@@ -357,7 +358,7 @@ internal class LinuxApkAnalysisInstaller(
         val current = File(profileRoot, "current")
         val previous = File(profileRoot, "previous")
         if (LinuxEnvironmentPaths.backendOf(rootfs.absolutePath) == LinuxExecutionBackend.PROOT) {
-            current.deleteRecursively()
+            deleteTreeSafely(current)
             File(rootfs, LinuxEnvironmentPaths.APK_ANALYSIS_MARKER).delete()
             if (previous.exists()) previous.renameTo(current)
             return
@@ -378,7 +379,7 @@ internal class LinuxApkAnalysisInstaller(
         artifacts.forEach(File::delete)
         val previous = File(rootfs, "opt/sta/apk-analysis/previous")
         if (LinuxEnvironmentPaths.backendOf(rootfs.absolutePath) == LinuxExecutionBackend.PROOT) {
-            previous.deleteRecursively()
+            deleteTreeSafely(previous)
             return
         }
         val command = """
@@ -393,7 +394,7 @@ internal class LinuxApkAnalysisInstaller(
         val profileRoot = File(rootfs, "opt/sta/apk-analysis").apply { mkdirs() }
         val current = File(profileRoot, "current")
         val previous = File(profileRoot, "previous")
-        if (previous.exists() && !previous.deleteRecursively()) return false
+        if (previous.exists() && !deleteTreeSafely(previous)) return false
         if (current.exists() && !current.renameTo(previous)) return false
         try {
             if (!staging.renameTo(current)) throw java.io.IOException("无法激活工具目录")
@@ -422,7 +423,7 @@ internal class LinuxApkAnalysisInstaller(
             File(rootfs, LinuxEnvironmentPaths.APK_ANALYSIS_MARKER).delete()
             return true
         } catch (_: java.io.IOException) {
-            current.deleteRecursively()
+            deleteTreeSafely(current)
             if (previous.exists()) previous.renameTo(current)
             return false
         }

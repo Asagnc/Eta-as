@@ -309,6 +309,7 @@ internal class DetachedTaskSupervisor(
             val launcher = "if command -v setsid >/dev/null 2>&1; then exec setsid -w sh -c ${shellQuote(script)}; else exec sh -c ${shellQuote(script)}; fi"
             val process = try {
                 ProcessBuilder("sh", "-c", launcher).apply {
+                    ShellEnvironmentPolicy.sanitize(environment())
                     environment()[STA_PROCESS_OWNER_ENV] = token
                     if (environment == TerminalEnvironment.ANDROID) environment()["HOME"] = workspace
                     redirectInput(File("/dev/null"))
@@ -393,7 +394,7 @@ internal class DetachedTaskSupervisor(
             TerminalEnvironment.ANDROID -> oneShotSupervisor.buildAndroidPayload(identity, script)
             else -> {
                 val rootfs = rootfsPath(environment)
-                    ?: return OneShotShellResult(-1, ByteArray(0), "Linux rootfs 未配置".toByteArray())
+                    ?: return OneShotShellResult(-1, ByteArray(0), "Linux rootfs 未配置".toByteArray(), launchError = "LINUX_ROOTFS_MISSING")
                 oneShotSupervisor.buildLinuxPayload(rootfs, script, linuxSharedMountsProvider())
             }
         }
@@ -403,9 +404,10 @@ internal class DetachedTaskSupervisor(
             } else {
                 ProcessBuilder("sh", "-c", payload)
             }
+            ShellEnvironmentPolicy.sanitize(builder.environment())
             builder.redirectErrorStream(true).start()
         }.getOrElse {
-            return OneShotShellResult(-1, ByteArray(0), (it.message ?: "无法启动进程").toByteArray())
+            return OneShotShellResult(-1, ByteArray(0), (it.message ?: "无法启动进程").toByteArray(), launchError = "PROCESS_START_FAILED")
         }
         val output = ByteArrayOutputCollector()
         val reader = thread(name = "agent-daemon-launch-reader", isDaemon = true) {
@@ -415,7 +417,7 @@ internal class DetachedTaskSupervisor(
         if (!finished) {
             runCatching { process.destroyForcibly() }
             runCatching { reader.join(500) }
-            return OneShotShellResult(-2, output.bytes(), "命令执行超时".toByteArray())
+            return OneShotShellResult(-2, output.bytes(), "命令执行超时".toByteArray(), timedOut = true)
         }
         runCatching { reader.join(500) }
         return OneShotShellResult(process.exitValue(), output.bytes(), ByteArray(0))

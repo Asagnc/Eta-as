@@ -10,6 +10,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import io.github.asagnc.sta.core.deleteTreeSafely
 
 internal enum class AptEnvironmentState {
     NOT_INSTALLED,
@@ -300,7 +301,7 @@ internal class AptEnvironmentInstaller(
             val rootfs = rootfsDir()
             if (!rootfs.exists()) return@withContext true
             if (LinuxEnvironmentPaths.backendOf(rootfs.absolutePath) == LinuxExecutionBackend.PROOT) {
-                return@withContext rootfs.deleteRecursively()
+                return@withContext deleteTreeSafely(rootfs)
             }
             val result = InstallerShellRunner.run(
                 command = "rm -rf ${shellQuote(rootfs.absolutePath)}",

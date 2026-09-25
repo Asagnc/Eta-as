@@ -6,6 +6,7 @@ import io.github.asagnc.sta.core.AndroidAgentLogger
 import java.io.File
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.ensureActive
+import io.github.asagnc.sta.core.deleteTreeSafely
 
 internal enum class ManagedLinuxTool {
     UV,
@@ -75,10 +76,10 @@ internal class PinnedLinuxToolInstaller(
         val target = File(versions, artifact.version)
         val staging = File(rootfs, "opt/sta/$name.installing")
         try {
-            if (staging.exists() && !staging.deleteRecursively()) return false
+            if (staging.exists() && !deleteTreeSafely(staging)) return false
             RootlessLinuxInstaller.extract(archive, staging, xz = tool == ManagedLinuxTool.NODE, stripComponents = 1)
             require(versions.mkdirs() || versions.isDirectory)
-            if (target.exists() && !target.deleteRecursively()) return false
+            if (target.exists() && !deleteTreeSafely(target)) return false
             if (!staging.renameTo(target)) return false
             val localBin = File(rootfs, "usr/local/bin").apply { mkdirs() }
             when (tool) {
@@ -93,7 +94,7 @@ internal class PinnedLinuxToolInstaller(
             }
             return true
         } finally {
-            if (staging.exists()) staging.deleteRecursively()
+            if (staging.exists()) deleteTreeSafely(staging)
         }
     }
 

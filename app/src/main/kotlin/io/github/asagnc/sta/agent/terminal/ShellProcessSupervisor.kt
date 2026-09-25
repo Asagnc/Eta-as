@@ -85,6 +85,8 @@ internal class ShellProcessSupervisor(
             } else {
                 ProcessBuilder("sh", "-c", launcher)
             }
+            // 先剔除继承来的凭据，再放 HOME 这类我们自己定的值：顺序反了会把刚设的也一起洗。
+            ShellEnvironmentPolicy.sanitize(builder.environment())
             if (identity == "user" && environment == TerminalEnvironment.ANDROID) {
                 builder.environment()["HOME"] = TerminalRuntime.userWorkspacePath
             }
@@ -486,6 +488,7 @@ internal class ShellProcessSupervisor(
             } else {
                 ProcessBuilder("sh", "-c", guardedCommand)
             }
+            ShellEnvironmentPolicy.sanitize(builder.environment())
             builder
                 .redirectOutput(File("/dev/null"))
                 .redirectError(File("/dev/null"))
@@ -523,6 +526,13 @@ internal data class OneShotShellResult(
     val exitCode: Int,
     val output: ByteArray,
     val stderr: ByteArray,
+    /**
+     * 是否因超时被回收。与 exitCode 正交上报：退出码只说进程怎么结束，超时说的是谁结束了它。
+     * 这两件事以前都塞在 exitCode 的哨兵值（-2）里，调用方想区分只能靠约定。
+     */
+    val timedOut: Boolean = false,
+    /** 非空表示进程根本没起来，与「命令跑了但失败」是两件事。 */
+    val launchError: String? = null,
 )
 
 /**
@@ -595,7 +605,7 @@ internal fun runOneShotShell(
             stderrThread.join(500)
             stdinThread.join(500)
             processSupervisor.reapProcess(process)
-            return OneShotShellResult(-2, output.bytes(), "命令执行超时".toByteArray())
+            return OneShotShellResult(-2, output.bytes(), "命令执行超时".toByteArray(), timedOut = true)
         }
 
         outputThread.join(500)

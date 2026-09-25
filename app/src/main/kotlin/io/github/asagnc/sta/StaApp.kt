@@ -116,14 +116,22 @@ class StaApp : Application(), XposedServiceHelper.OnServiceListener {
 
         private fun dispatchTo(listener: ServiceStateListener, service: XposedService?) {
             if (Looper.myLooper() == Looper.getMainLooper()) {
-                listener.onServiceStateChanged(service)
+                notifyListener(listener, service)
             } else {
                 mainHandler.post {
                     if (listeners.contains(listener)) {
-                        listener.onServiceStateChanged(service)
+                        notifyListener(listener, service)
                     }
                 }
             }
+        }
+
+        /**
+         * 分发逐个隔离：一个订阅者抛异常，不能让后面的订阅者收不到通知，
+         * 也不能让异常顺着 post 逃到主线程的 Handler 上。
+         */
+        private fun notifyListener(listener: ServiceStateListener, service: XposedService?) {
+            runCatching { listener.onServiceStateChanged(service) }
         }
     }
 }

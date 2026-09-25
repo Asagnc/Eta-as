@@ -227,45 +227,6 @@ class AgentAccessibilityService : AccessibilityService() {
             }
         } ?: PackageWindowVisibility.UNKNOWN
 
-    /**
-     * BACK 只表示系统接收了退出动作；浮窗通常还会执行退出动画。
-     * 等待目标包窗口真正消失并稳定两个采样周期，避免下一步截图抢在 removeView 之前执行。
-     */
-    fun awaitPackageWindowGone(
-        packageName: String,
-        timeoutMillis: Long = 1_000L,
-        minimumWaitMillis: Long = 160L,
-        stableMillis: Long = 80L,
-    ): Boolean {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            return false
-        }
-        val startedAt = SystemClock.elapsedRealtime()
-        val deadline = startedAt + timeoutMillis.coerceIn(200L, 2_000L)
-        var absentSince = 0L
-        do {
-            val now = SystemClock.elapsedRealtime()
-            when (packageWindowVisibility(packageName)) {
-                PackageWindowVisibility.VISIBLE,
-                PackageWindowVisibility.UNKNOWN -> absentSince = 0L
-                PackageWindowVisibility.GONE -> {
-                    if (absentSince == 0L) absentSince = now
-                    if (
-                        now - startedAt >= minimumWaitMillis &&
-                        now - absentSince >= stableMillis
-                    ) {
-                        return true
-                    }
-                }
-            }
-            val remainingMillis = deadline - SystemClock.elapsedRealtime()
-            if (remainingMillis > 0L) {
-                awaitWindowChanged(remainingMillis.coerceAtMost(WINDOW_POLL_FALLBACK_MS))
-            }
-        } while (SystemClock.elapsedRealtime() < deadline)
-        return false
-    }
-
     private fun signalWindowChanged() {
         windowChangeLock.lock()
         try {
@@ -1017,8 +978,6 @@ class AgentAccessibilityService : AccessibilityService() {
         }
     }
 
-    fun globalAction(name: String): Boolean = globalActionResult(name).ok
-
     fun copyToClipboard(text: String): NodeActionResult =
         runNodeActionOnMainSync {
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -1036,11 +995,6 @@ class AgentAccessibilityService : AccessibilityService() {
             text = clip.getItemAt(0).coerceToText(this)?.toString().orEmpty(),
         )
     } ?: ClipboardReadResult.failure(code = "SERVICE_TIMEOUT")
-
-    fun statusJson(): JSONObject =
-        JSONObject()
-            .put("available", true)
-            .put("package", currentPackageName().orEmpty())
 
     /**
      * 截取当前屏幕，排除 TYPE_ACCESSIBILITY_OVERLAY 浮层（glow/orb/bubble/resultCard/GestureIndicator）。
