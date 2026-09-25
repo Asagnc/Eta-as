@@ -2319,6 +2319,15 @@ internal class AgentLocalTools(
             if (result.exitCode == 0) result.stdout
             else "[exit ${result.exitCode}] ${result.stderr.ifBlank { result.stdout }}"
         }
+        // 上限保护：worktree 是一次完整检出，放任累积会惄惄吃掉用户存储。
+        // 先按 git 的登记信息回收超额的旧 worktree，再建新的；回收失败不阻断本次派发。
+        runCatching {
+            val listed = shell(AgentWorktreeManager.listManagedWorktreesCommand(repoPath))
+            val recycling = AgentWorktreeManager.worktreesToRecycle(repoPath, listed)
+            if (recycling.isNotEmpty()) {
+                AgentWorktreeManager.cleanupCommands(repoPath, recycling).forEach { command -> shell(command) }
+            }
+        }
         val token = AgentWorktreeManager.sanitizeToken("$role-${System.currentTimeMillis()}")
         val worktreePath = AgentWorktreeManager.worktreePath(repoPath, token)
         val workspace = SubAgentWorkspace(repoPath = repoPath, worktreePath = worktreePath)

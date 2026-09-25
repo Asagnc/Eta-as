@@ -90,6 +90,22 @@ internal object AgentWorktreeManager {
             .toList()
 
     /**
+     * 本次该回收哪些 worktree。
+     *
+     * 调用方马上就要新建一个，所以这里保留最新的 [limit] - 1 个，其余交给调用方回收。
+     * `git worktree list --porcelain` 按登记顺序输出，也就是创建顺序，因此 dropLast 留下的正是
+     * 最近几次。抽成纯函数是为了能用单测把「谁先被回收」这条规则固定下来。
+     */
+    fun worktreesToRecycle(
+        repoRoot: String,
+        porcelainOutput: String,
+        limit: Int = MAX_LIVE_WORKTREES,
+    ): List<String> {
+        val managed = parseManagedWorktrees(repoRoot, porcelainOutput)
+        return managed.dropLast((limit - 1).coerceAtLeast(0))
+    }
+
+    /**
      * 把被 gitignore 的本地配置复制进 worktree。`cp -n` 不覆盖已存在文件，
      * 重复调用幂等；源文件不存在时 `|| true` 让流程继续（没有它也能跑，只是构建会报缺 SDK）。
      */

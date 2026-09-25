@@ -95,6 +95,7 @@ import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowListPopup
 import io.github.asagnc.sta.ui.theme.StaType
+import io.github.asagnc.sta.ui.theme.StaMotion
 
 private val SendButtonVisualSize = ChatInputActionIconSize
 private val SendIconSize = StaIconSize.md
@@ -201,7 +202,7 @@ internal fun AgentChatInputBar(
         AnimatedVisibility(
             visible = isEditingMessage,
             enter = fadeIn(tween(160)),
-            exit = fadeOut(tween(100)) + shrinkVertically(tween(140)),
+            exit = fadeOut(tween(100)) + shrinkVertically(tween(StaMotion.fast)),
         ) {
             Text(
                 text = if (preserveFollowingMessages) {
@@ -374,7 +375,7 @@ internal fun AgentChatInputBar(
                                     transitionSpec = {
                                         (fadeIn(tween(130)) + scaleIn(tween(160), initialScale = 0.72f))
                                             .togetherWith(
-                                                fadeOut(tween(90)) +
+                                                fadeOut(tween(StaMotion.instant)) +
                                                     scaleOut(tween(110), targetScale = 0.72f)
                                             )
                                     },

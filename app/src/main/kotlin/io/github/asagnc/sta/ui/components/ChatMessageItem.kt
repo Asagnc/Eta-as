@@ -4,7 +4,6 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -200,6 +199,7 @@ import io.github.asagnc.sta.ui.theme.StaCompactTypeScale
 import io.github.asagnc.sta.ui.theme.StaAnswerTypeScale
 import io.github.asagnc.sta.ui.theme.StaTypeScale
 import io.github.asagnc.sta.ui.theme.StaType
+import io.github.asagnc.sta.ui.theme.StaMotion
 
 @Composable
 internal fun rememberDataUrlBitmap(dataUrl: String) = remember(dataUrl) {
@@ -232,7 +232,7 @@ fun AITypingIndicator(modifier: Modifier = Modifier) {
                 initialValue = 0.3f,
                 targetValue = 1f,
                 animationSpec = infiniteRepeatable(
-                    animation = tween(600, delayMillis = delay, easing = FastOutSlowInEasing),
+                    animation = tween(600, delayMillis = delay, easing = StaMotion.standard),
                     repeatMode = RepeatMode.Reverse
                 ),
                 label = "alpha"
@@ -262,7 +262,7 @@ private fun rememberActivePulse(
         initialValue = 0.58f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(820, easing = FastOutSlowInEasing),
+            animation = tween(820, easing = StaMotion.standard),
             repeatMode = RepeatMode.Reverse,
         ),
         label = "${label}_alpha",
@@ -2555,7 +2555,7 @@ private fun ToolActivityInline(
                     transitionSpec = {
                         (fadeIn(tween(150)) + scaleIn(tween(170), initialScale = 0.86f))
                             .togetherWith(
-                                fadeOut(tween(90)) + scaleOut(tween(110), targetScale = 0.86f)
+                                fadeOut(tween(StaMotion.instant)) + scaleOut(tween(110), targetScale = 0.86f)
                             )
                     },
                     label = "tool_status",
