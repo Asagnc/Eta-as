@@ -466,6 +466,8 @@ internal class AgentLoop(
             planSnapshot?.invoke(),
             recallEntries = recallSnapshot,
         )
+        // 统计的是真正发出去的那份视图：attach 写进去的时间与计划也算在内。
+        runStats?.updateRequestComposition(AgentContextBudget.compositionOf(result.messages, roundTools))
         return result.messages
     }
 

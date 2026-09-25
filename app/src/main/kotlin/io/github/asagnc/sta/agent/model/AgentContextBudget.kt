@@ -5,6 +5,22 @@ import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.ceil
 
+/**
+ * 一次请求的 token 构成（估算），用来回答「token 花在哪」。
+ *
+ * 分段口径与 [AgentContextBudget.rawEstimate] 一致，各段之和就等于它。分段的依据是
+ * **缓存复用性**：[system] 与 [tools] 每轮重发但内容稳定，命中提示缓存时按折扣价计费；
+ * [toolResults] 与 [history] 才是随轮次增长、按全价计费的部分。
+ */
+internal data class AgentRequestComposition(
+    val system: Int,
+    val tools: Int,
+    val toolResults: Int,
+    val history: Int,
+) {
+    val total: Int get() = system + tools + toolResults + history
+}
+
 /** usage 只校准同一模型的请求估算，不把累计计费用量当作窗口占用。 */
 internal class AgentContextBudget(
     private val window: Int?,
@@ -120,6 +136,27 @@ internal class AgentContextBudget(
                 tokens += messageTokens(message)
             }
             return tokens
+        }
+
+        fun compositionOf(messages: JSONArray, tools: JSONArray = JSONArray()): AgentRequestComposition {
+            var system = 0
+            var toolResults = 0
+            var history = 0
+            for (index in 0 until messages.length()) {
+                val message = messages.optJSONObject(index) ?: continue
+                val tokens = messageTokens(message)
+                when (message.optString("role")) {
+                    "system", "developer" -> system += tokens
+                    "tool" -> toolResults += tokens
+                    else -> history += tokens
+                }
+            }
+            return AgentRequestComposition(
+                system = system,
+                tools = textTokens(tools.toString()) + 16,
+                toolResults = toolResults,
+                history = history,
+            )
         }
 
         /**

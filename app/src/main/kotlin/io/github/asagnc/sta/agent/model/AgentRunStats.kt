@@ -32,6 +32,10 @@ internal class AgentRunStats {
     private val contextTokens = AtomicInteger()
     private val prunedToolResults = AtomicInteger()
     private val contextNotices = AtomicInteger()
+    private val requestSystemTokens = AtomicInteger()
+    private val requestToolsTokens = AtomicInteger()
+    private val requestToolResultTokens = AtomicInteger()
+    private val requestHistoryTokens = AtomicInteger()
 
     val isEmpty: Boolean
         get() = rounds.get() == 0 && buckets.isEmpty()
@@ -61,6 +65,20 @@ internal class AgentRunStats {
      */
     fun updatePrunedToolResults(count: Int) {
         prunedToolResults.set(count)
+    }
+
+    /**
+     * 最近一次请求视图的 token 构成（估算）。
+     *
+     * 同样是覆盖而不是累加：要看的是「现在这一发请求长什么样」，累加只会得到一个跟轮数
+     * 绑定的噪音值。它与 [recordUsage] 的服务端真实用量互补——那个说明实际花了多少，
+     * 这个说明钱花在哪。
+     */
+    fun updateRequestComposition(composition: AgentRequestComposition) {
+        requestSystemTokens.set(composition.system)
+        requestToolsTokens.set(composition.tools)
+        requestToolResultTokens.set(composition.toolResults)
+        requestHistoryTokens.set(composition.history)
     }
 
     /** 上下文占用提示实际触发的次数；策略是否值得保留要看它。 */
@@ -136,6 +154,14 @@ internal class AgentRunStats {
                     .put("reasoning", reasoningTokens.get())
                     .put("context", contextTokens.get()),
             )
+            .put(
+                "request_composition",
+                JSONObject()
+                    .put("system", requestSystemTokens.get())
+                    .put("tools", requestToolsTokens.get())
+                    .put("history", requestHistoryTokens.get())
+                    .put("tool_results", requestToolResultTokens.get()),
+            )
     }
 
     fun summaryText(): String = buildString {
@@ -156,8 +182,23 @@ internal class AgentRunStats {
         append("token：输入 ").append(inputTokens.get())
             .append("、输出 ").append(outputTokens.get())
             .append("、缓存命中 ").append(cachedTokens.get())
-            .append("、思考 ").append(reasoningTokens.get())
+        val totalInput = inputTokens.get()
+        if (totalInput > 0) {
+            val cached = cachedTokens.get()
+            append("（").append(cached * 100 / totalInput).append("% 命中，未命中 ")
+                .append(totalInput - cached).append("）")
+        }
+        append("、思考 ").append(reasoningTokens.get())
             .append("，最近上下文 ").append(contextTokens.get()).append("。")
+        val requestTotal = requestSystemTokens.get() + requestToolsTokens.get() +
+            requestToolResultTokens.get() + requestHistoryTokens.get()
+        if (requestTotal > 0) {
+            append("\n本轮请求构成（估算）：system ").append(requestSystemTokens.get())
+                .append("、工具定义 ").append(requestToolsTokens.get())
+                .append("、历史 ").append(requestHistoryTokens.get())
+                .append("、工具结果 ").append(requestToolResultTokens.get())
+                .append("，合计 ").append(requestTotal).append("。")
+        }
         val sorted = buckets.entries
             .sortedWith(compareByDescending<Map.Entry<String, Bucket>> { it.value.calls.get() }.thenBy { it.key })
             .take(MAX_LISTED_TOOLS)
