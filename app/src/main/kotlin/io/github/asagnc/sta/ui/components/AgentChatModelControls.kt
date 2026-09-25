@@ -71,6 +71,7 @@ import top.yukonga.miuix.kmp.basic.rememberTooltipState
 import top.yukonga.miuix.kmp.overlay.OverlayListPopup
 import top.yukonga.miuix.kmp.squircle.squircleSurface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import io.github.asagnc.sta.ui.theme.StaMotion
 
 @Composable
 internal fun AgentModelPickerButton(
@@ -186,7 +187,7 @@ private fun ModelProviderGroupHeader(
 ) {
     val arrowRotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
-        animationSpec = tween(durationMillis = 160),
+        animationSpec = tween(durationMillis = StaMotion.fast),
         label = "model_provider_arrow",
     )
     Row(

@@ -177,8 +177,8 @@ internal fun AgentChatInputBar(
     ) {
         AnimatedVisibility(
             visible = pendingFileReferences.isNotEmpty(),
-            enter = fadeIn(tween(160)),
-            exit = fadeOut(tween(100)) + shrinkVertically(tween(160)),
+            enter = fadeIn(tween(StaMotion.fast)),
+            exit = fadeOut(tween(StaMotion.instant)) + shrinkVertically(tween(StaMotion.fast)),
         ) {
             PendingFileReferenceStrip(
                 references = pendingFileReferences,
@@ -189,8 +189,8 @@ internal fun AgentChatInputBar(
 
         AnimatedVisibility(
             visible = pendingImages.isNotEmpty(),
-            enter = fadeIn(tween(160)),
-            exit = fadeOut(tween(100)) + shrinkVertically(tween(160)),
+            enter = fadeIn(tween(StaMotion.fast)),
+            exit = fadeOut(tween(StaMotion.instant)) + shrinkVertically(tween(StaMotion.fast)),
         ) {
             PendingImageStrip(
                 images = pendingImages,
@@ -201,8 +201,8 @@ internal fun AgentChatInputBar(
 
         AnimatedVisibility(
             visible = isEditingMessage,
-            enter = fadeIn(tween(160)),
-            exit = fadeOut(tween(100)) + shrinkVertically(tween(StaMotion.fast)),
+            enter = fadeIn(tween(StaMotion.fast)),
+            exit = fadeOut(tween(StaMotion.instant)) + shrinkVertically(tween(StaMotion.fast)),
         ) {
             Text(
                 text = if (preserveFollowingMessages) {
@@ -360,7 +360,7 @@ internal fun AgentChatInputBar(
                                     canSend -> StaColors.accent
                                     else -> StaColors.surfaceRaisedHigh
                                 },
-                                animationSpec = tween(durationMillis = 160),
+                                animationSpec = tween(durationMillis = StaMotion.fast),
                                 label = "send_button_color",
                             )
                             Box(
@@ -373,10 +373,10 @@ internal fun AgentChatInputBar(
                                 AnimatedContent(
                                     targetState = isStreaming,
                                     transitionSpec = {
-                                        (fadeIn(tween(130)) + scaleIn(tween(160), initialScale = 0.72f))
+                                        (fadeIn(tween(StaMotion.fast)) + scaleIn(tween(StaMotion.fast), initialScale = 0.72f))
                                             .togetherWith(
                                                 fadeOut(tween(StaMotion.instant)) +
-                                                    scaleOut(tween(110), targetScale = 0.72f)
+                                                    scaleOut(tween(StaMotion.instant), targetScale = 0.72f)
                                             )
                                     },
                                     label = "send_stop_icon",
@@ -437,7 +437,7 @@ private fun ThinkingEffortChip(
         } else {
             StaColors.textSecondary
         },
-        animationSpec = tween(durationMillis = 160),
+        animationSpec = tween(durationMillis = StaMotion.fast),
         label = "thinking_content",
     )
     Box(modifier = modifier) {

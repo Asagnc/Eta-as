@@ -121,6 +121,7 @@ import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.utils.scrollEndHaptic
+import io.github.asagnc.sta.ui.theme.StaMotion
 
 /**
  * 聊天主体：消息流 + 底部输入框。
@@ -665,7 +666,7 @@ internal fun AgentConversationMessages(
                 key = { it.key },
             ) { entry ->
                 val itemModifier = Modifier.animateItem(
-                    fadeInSpec = tween(durationMillis = 180),
+                    fadeInSpec = tween(durationMillis = StaMotion.base),
                     placementSpec = null,
                     // 历史轮次被编辑、删除或重新生成时必须立即退出；退出动画会让已从
                     // 状态中裁掉的旧消息继续绘制，并与同位置的新流式消息短暂重叠。
@@ -739,8 +740,8 @@ internal fun AgentConversationMessages(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = bottomInset + StaSpacing.md),
-            enter = fadeIn(tween(160)) + scaleIn(tween(180), initialScale = 0.82f),
-            exit = fadeOut(tween(100)) + scaleOut(tween(120), targetScale = 0.86f),
+            enter = fadeIn(tween(StaMotion.fast)) + scaleIn(tween(StaMotion.base), initialScale = 0.82f),
+            exit = fadeOut(tween(StaMotion.instant)) + scaleOut(tween(StaMotion.instant), targetScale = 0.86f),
         ) {
             IconButton(
                 onClick = {
@@ -1093,7 +1094,7 @@ private fun EmptyChatState(
             AnimatedVisibility(
                 visible = showSuggestions && !isCharacterConversation,
                 enter = fadeIn(
-                    animationSpec = tween(durationMillis = 220)
+                    animationSpec = tween(durationMillis = StaMotion.base)
                 ) + slideInVertically(
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioNoBouncy,
@@ -1102,9 +1103,9 @@ private fun EmptyChatState(
                     initialOffsetY = { it / 3 },
                 ),
                 exit = fadeOut(
-                    animationSpec = tween(durationMillis = 130)
+                    animationSpec = tween(durationMillis = StaMotion.fast)
                 ) + slideOutVertically(
-                    animationSpec = tween(durationMillis = 180),
+                    animationSpec = tween(durationMillis = StaMotion.base),
                     targetOffsetY = { it / 4 },
                 ),
             ) {
