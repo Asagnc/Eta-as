@@ -302,7 +302,7 @@ internal class AgentSubAgentRunner(
                     endedAt = System.currentTimeMillis(),
                     status = if (ok) TRACE_STATUS_OK else errorCode.ifBlank { TRACE_STATUS_FAILED },
                     summary = content,
-                    content = buildTrace(role, request, messages, content, errorCode),
+                    content = buildTrace(role, request, messages, content, errorCode, peerFindings),
                 ),
             )
         }
@@ -346,11 +346,19 @@ internal class AgentSubAgentRunner(
         messages: JSONArray,
         summary: String,
         errorCode: String,
+        peerFindings: String,
     ): String = buildString {
         append("role: ").append(role).append('\n')
         append("brief: ").append(request.brief).append('\n')
         if (request.context.isNotBlank()) append("context: ").append(request.context).append('\n')
         append("error: ").append(errorCode.ifBlank { "-" }).append('\n')
+        // 同伴发现要单独落一段：它来自并行角色而不是本节点的检索，抽查时要能把
+        // “这句结论是同伴给的还是自己查的”分开看，否则追责到错误的来源。
+        if (peerFindings.isNotBlank()) {
+            append("\n--- 信箱：开工前读到的同伴发现 ---\n")
+            append(peerFindings.take(SUB_AGENT_TRACE_CHARS))
+            append('\n')
+        }
         append("\n--- summary ---\n").append(summary).append('\n')
         append("\n--- messages ---\n")
         append(messages.toString().take(SUB_AGENT_TRACE_CHARS))
