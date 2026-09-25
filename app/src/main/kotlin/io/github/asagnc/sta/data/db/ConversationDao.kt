@@ -29,10 +29,6 @@ internal interface ConversationDao : ChunkedTextDao {
     )
     suspend fun conversationMetadataPage(limit: Int, offset: Int): List<ConversationMetadata>
 
-    @Transaction
-    suspend fun conversationsPage(limit: Int, offset: Int): List<ConversationMetadata> =
-        conversationMetadataPage(limit, offset).map { restoreMetadata(it) }
-
     suspend fun restoreMetadata(row: ConversationMetadata) = row.copy(
         appliedRuntimeRunIdsJson = restoreText("conversations", row.id, "runs", row.appliedRuntimeRunIdsJson),
         roleplayJson = restoreText("conversations", row.id, "roleplay", row.roleplayJson),
@@ -169,22 +165,6 @@ internal interface ConversationDao : ChunkedTextDao {
 
     @Query("SELECT COUNT(*) FROM conversations")
     suspend fun conversationCount(): Int
-
-    /** 可见气泡数；thinking/工具行不算消息。 */
-    @Query("SELECT COUNT(*) FROM conversation_messages WHERE type IN ('user', 'assistant')")
-    suspend fun totalMessageCount(): Int
-
-    @Query(
-        "SELECT type, input_tokens, output_tokens, cached_tokens " +
-            "FROM conversation_messages WHERE type IN ('assistant', 'context_compacted')"
-    )
-    suspend fun usageContentRows(): List<UsageContentRow>
-
-    @Query(
-        "SELECT date(created_at / 1000, 'unixepoch', 'localtime') AS day, COUNT(*) AS count " +
-            "FROM conversations WHERE created_at >= :startAt GROUP BY day"
-    )
-    suspend fun conversationCountPerDay(startAt: Long): List<ConversationDayCount>
 
     @Transaction
     suspend fun replaceAll(

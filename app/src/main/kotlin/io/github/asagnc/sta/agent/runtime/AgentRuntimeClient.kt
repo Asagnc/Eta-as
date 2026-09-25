@@ -130,13 +130,6 @@ internal class AgentRuntimeClient(
         }
     }
 
-    fun drainCompletedRuns(): List<AgentRuntimeWire.CompletedRun> {
-        return when (val query = queryCompletedRuns()) {
-            is CompletedRunsQuery.Known -> query.runs
-            CompletedRunsQuery.Unavailable -> emptyList()
-        }
-    }
-
     fun queryCompletedRuns(): CompletedRunsQuery {
         val resultLatch = CountDownLatch(1)
         val resultRef = AtomicReference<List<AgentRuntimeWire.CompletedRun>>(emptyList())

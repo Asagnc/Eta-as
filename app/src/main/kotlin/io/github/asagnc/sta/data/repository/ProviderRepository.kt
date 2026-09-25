@@ -86,20 +86,6 @@ internal object ProviderRepository {
         repairSelection()
     }
 
-    suspend fun copyProvider(id: String): ProviderSetting? {
-        val source = providerById(id) ?: return null
-        val nextOrder = (allProviders().maxOfOrNull { it.sortOrder } ?: -1) + 1
-        val copy = source.deepCopy(
-            id = newId(),
-            name = "${source.name} 副本",
-            sortOrder = nextOrder,
-            builtIn = false,
-        )
-        replaceProvider(copy)
-        repairSelection()
-        return copy
-    }
-
     suspend fun resetBuiltIn(id: String) {
         val builtIn = BuiltinProviders.providerById(id) ?: return
         val current = providerById(id)

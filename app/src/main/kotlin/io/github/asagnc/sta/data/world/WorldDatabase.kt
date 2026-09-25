@@ -66,10 +66,6 @@ internal interface WorldKnowledgeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: WorldKnowledgeEntity)
 
-    /** 同签名是否已存在（去重）。 */
-    @Query("SELECT COUNT(*) FROM world_knowledge WHERE kind = :kind AND signature = :signature")
-    suspend fun countBySignature(kind: String, signature: String): Int
-
     /** 按签名取最近一条，用于"同类问题先查历史"。 */
     @Query(
         "SELECT * FROM world_knowledge WHERE kind = :kind AND signature = :signature " +
@@ -215,10 +211,6 @@ internal interface WorldTraceDao {
     @Query("SELECT * FROM world_trace WHERE parent_id = :parentId ORDER BY started_at ASC")
     suspend fun children(parentId: String): List<WorldTraceEntity>
 
-    /** 按 run 取记录。 */
-    @Query("SELECT * FROM world_trace WHERE run_id = :runId ORDER BY started_at ASC")
-    suspend fun byRun(runId: String): List<WorldTraceEntity>
-
     /** 最近若干次委派，用于回答「上一次排查到底看了什么」。 */
     @Query("SELECT * FROM world_trace ORDER BY started_at DESC LIMIT :limit")
     suspend fun recent(limit: Int): List<WorldTraceEntity>
@@ -318,9 +310,6 @@ internal interface WorldEntityDao {
 
     @Query("SELECT * FROM world_entity WHERE kind = :kind AND name = :name LIMIT 1")
     suspend fun find(kind: String, name: String): WorldEntityRow?
-
-    @Query("SELECT * FROM world_entity WHERE kind = :kind AND name IN (:names)")
-    suspend fun findMany(kind: String, names: List<String>): List<WorldEntityRow>
 
     @Query("SELECT * FROM world_entity ORDER BY updated_at DESC LIMIT :limit")
     suspend fun recent(limit: Int): List<WorldEntityRow>

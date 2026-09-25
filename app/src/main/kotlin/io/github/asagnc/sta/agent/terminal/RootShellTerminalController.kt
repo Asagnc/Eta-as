@@ -32,7 +32,6 @@ internal class RootShellTerminalController(
         /** 随包分发的 ripgrep：jniLibs/arm64-v8a/librg.so，安装时解到 nativeLibraryDir。 */
         const val RIPGREP_LIBRARY_NAME = "librg.so"
         const val USER_STORAGE = "/storage/emulated/0"
-        const val DEFAULT_TIMEOUT_SECONDS = 30
         // 编译、下载这类命令经常超过三分钟；更久的后台服务应交给 daemon 任务，那条路径不受这里约束。
         const val MAX_TIMEOUT_SECONDS = 600
         const val MAX_COMMAND_CHARS = 4_000

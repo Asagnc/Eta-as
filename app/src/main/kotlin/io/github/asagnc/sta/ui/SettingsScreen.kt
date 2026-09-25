@@ -599,13 +599,6 @@ private fun putBooleanSync(
 ): Boolean =
     runCatching { prefs.edit().putBoolean(key, value).commit() }.getOrDefault(false)
 
-private fun putStringSync(
-    prefs: SharedPreferences,
-    key: String,
-    value: String
-): Boolean =
-    runCatching { prefs.edit().putString(key, value).commit() }.getOrDefault(false)
-
 private fun isAgentAccessibilityEnabled(context: Context): Boolean {
     val expected = ComponentName(
         context,

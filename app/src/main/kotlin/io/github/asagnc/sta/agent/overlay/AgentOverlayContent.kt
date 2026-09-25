@@ -99,8 +99,6 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import io.github.asagnc.sta.ui.theme.StaType
 
-private const val SupplementExitDelayMs = 380L
-
 @Composable
 private fun phaseAccent(phase: AgentOverlayPhase): Color = when (phase) {
     AgentOverlayPhase.RUNNING -> StaColors.accent

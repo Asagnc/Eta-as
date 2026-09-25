@@ -1,6 +1,7 @@
 package io.github.asagnc.sta.agent.browser
 
 import io.github.asagnc.sta.agent.model.AgentBrowserToolCatalog
+import io.github.asagnc.sta.agent.model.BROWSER_TOOL_NAME
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.MutableContextWrapper
@@ -93,7 +94,7 @@ internal data class BrowserToolResult(
 // 共享 WebView 必须跨工具调用存活；Activity 容器只在浏览器页面可见时持有，并在 dispose 时解绑。
 @SuppressLint("StaticFieldLeak")
 internal object AgentBrowserSession {
-    private const val TOOL_NAME = "browser_use"
+    private const val TOOL_NAME = BROWSER_TOOL_NAME
     private const val DEFAULT_TEXT_CHARS = 8_000
     private const val MAX_TEXT_CHARS = 12_000
 

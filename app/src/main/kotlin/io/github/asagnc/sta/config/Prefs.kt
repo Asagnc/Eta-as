@@ -98,13 +98,6 @@ internal object Prefs {
         remote = prefs
     }
 
-    /** Hook 进程监听框架下发的配置变化；listener 必须由调用方在进程生命周期内强引用。 */
-    fun registerRemoteListener(listener: SharedPreferences.OnSharedPreferenceChangeListener): Boolean {
-        val preferences = remote ?: return false
-        preferences.registerOnSharedPreferenceChangeListener(listener)
-        return true
-    }
-
     /**
      * 读取布尔开关。remote 不可用（框架未注入或调用失败）时回退各功能自己的默认值；
      * 默认值与设置页展示保持一致。

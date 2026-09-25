@@ -11,11 +11,6 @@ import kotlinx.coroutines.sync.withLock
 internal object ModelRepository {
     private val mutationMutex = Mutex()
 
-    fun modelsByProviderFlow(providerId: String): Flow<List<Model>> =
-        allModelsByProviderFlow(providerId).map { models ->
-            models.filter { it.isEnabled }.sortedBy { it.sortOrder }
-        }
-
     fun allModelsByProviderFlow(providerId: String): Flow<List<Model>> =
         ProviderRepository.providersFlow().map { providers ->
             providers.firstOrNull { it.id == providerId }
@@ -159,19 +154,6 @@ internal object ModelRepository {
                 },
             )
         }
-
-    suspend fun reorderModels(providerId: String, ids: List<String>) {
-        mutationMutex.withLock {
-            val models = currentModels(providerId)
-            val byId = models.associateBy { it.id }
-            val orderedIds = ids.toSet()
-            val reordered = ids.mapNotNull { byId[it] } + models.filterNot { it.id in orderedIds }
-            ProviderRepository.replaceModels(
-                providerId,
-                reordered.mapIndexed { index, model -> model.copy(sortOrder = index) },
-            )
-        }
-    }
 
     fun newId(): String = UUID.randomUUID().toString()
 

@@ -91,19 +91,6 @@ internal interface RuntimeRunDao : ChunkedTextDao {
     }
 
     @Transaction
-    suspend fun replaceRuntimeResults(results: List<RuntimeResultEntity>) {
-        val retainedRunIds = results.mapTo(mutableSetOf()) { it.runId }
-        val removedRunIds = runtimeResults()
-            .map { it.runId }
-            .filterNot { it in retainedRunIds }
-        deleteRuntimeResults()
-        if (results.isNotEmpty()) {
-            insertRuntimeResults(results)
-        }
-        removedRunIds.forEach { runId -> deleteInFlightRun(runId) }
-    }
-
-    @Transaction
     @Query("SELECT * FROM runtime_archive_runs ORDER BY created_at ASC")
     suspend fun archivedRunRows(): List<RuntimeArchiveRunWithEvents>
 
@@ -143,9 +130,6 @@ internal interface RuntimeRunDao : ChunkedTextDao {
     @Query("DELETE FROM runtime_archive_events WHERE archive_run_id = :archiveRunId")
     suspend fun deleteArchivedEvents(archiveRunId: String)
 
-    @Query("DELETE FROM runtime_archive_runs WHERE archive_run_id = :archiveRunId")
-    suspend fun deleteArchivedRunByArchiveId(archiveRunId: String)
-
     @Query("DELETE FROM runtime_archive_runs WHERE run_id = :runId OR handoff_id = :runId")
     suspend fun deleteArchivedRun(runId: String)
 
@@ -164,18 +148,6 @@ internal interface RuntimeRunDao : ChunkedTextDao {
         upsertArchivedRun(run)
         if (events.isNotEmpty()) {
             insertArchivedEvents(events)
-        }
-    }
-
-    @Transaction
-    suspend fun replaceArchivedRuns(runs: List<RuntimeArchiveRunWithEventsSeed>) {
-        deleteAllArchivedEvents()
-        deleteAllArchivedRuns()
-        runs.forEach { seed ->
-            upsertArchivedRun(seed.run)
-            if (seed.events.isNotEmpty()) {
-                insertArchivedEvents(seed.events)
-            }
         }
     }
 

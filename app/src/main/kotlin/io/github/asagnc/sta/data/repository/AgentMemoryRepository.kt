@@ -342,8 +342,6 @@ internal object AgentMemoryRepository {
         return store.replaceAll(content)
     }
 
-    fun enabledFlow(): Flow<Boolean> = SettingsDataStore.memoryEnabledFlow()
-
     suspend fun isEnabled(): Boolean = SettingsDataStore.settings().memoryEnabled
 
     suspend fun setEnabled(enabled: Boolean) = SettingsDataStore.setMemoryEnabled(enabled)

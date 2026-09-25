@@ -245,51 +245,11 @@ internal object SettingsDataStore {
         this[APPEARANCE_INTERFACE_SCALE] = settings.interfaceScale
     }
 
-    suspend fun launchCount(): Int {
-        ensureInitialized()
-        return dataStore.data
-            .catch { cause -> if (cause is IOException) emit(emptyPreferences()) else throw cause }
-            .map { prefs -> prefs[APP_LAUNCH_COUNT] ?: 0 }
-            .first()
-    }
-
     suspend fun incrementLaunchCount() {
         ensureInitialized()
         dataStore.edit { prefs ->
             prefs[APP_LAUNCH_COUNT] = (prefs[APP_LAUNCH_COUNT] ?: 0) + 1
         }
-    }
-
-    suspend fun modelUsageJson(): String {
-        ensureInitialized()
-        return dataStore.data
-            .catch { cause -> if (cause is IOException) emit(emptyPreferences()) else throw cause }
-            .map { prefs -> prefs[MODEL_USAGE_JSON].orEmpty() }
-            .first()
-    }
-
-    suspend fun addModelUsage(json: String) {
-        ensureInitialized()
-        dataStore.edit { prefs ->
-            prefs.putOrRemove(MODEL_USAGE_JSON, json.takeIf { it.isNotBlank() })
-        }
-    }
-
-    suspend fun retiredUsage(): RetiredUsage {
-        ensureInitialized()
-        return dataStore.data
-            .catch { cause -> if (cause is IOException) emit(emptyPreferences()) else throw cause }
-            .map { prefs ->
-                RetiredUsage(
-                    inputTokens = prefs[RETIRED_INPUT_TOKENS] ?: 0L,
-                    outputTokens = prefs[RETIRED_OUTPUT_TOKENS] ?: 0L,
-                    cachedTokens = prefs[RETIRED_CACHED_TOKENS] ?: 0L,
-                    conversations = prefs[RETIRED_CONVERSATIONS] ?: 0,
-                    messages = prefs[RETIRED_MESSAGES] ?: 0,
-                    heatmap = decodeHeatmap(prefs[RETIRED_HEATMAP_JSON]),
-                )
-            }
-            .first()
     }
 
     /** 清空会话时把即将丢失的历史累计（token、会话/消息数、热力图）合并保留下来。 */

@@ -18,16 +18,6 @@ data class ActiveRunSummaryUi(
 )
 
 @Immutable
-data class RunSummaryUi(
-    val runId: String,
-    val status: RunStatusUi,
-    val title: String,
-    val timeLabel: String,
-    val toolCount: Int,
-    val durationLabel: String,
-)
-
-@Immutable
 enum class RunStatusUi {
     Running,
     Success,

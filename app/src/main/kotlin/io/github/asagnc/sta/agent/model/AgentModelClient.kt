@@ -30,59 +30,6 @@ internal object AgentModelClient {
     }
     private val traceFormatter = AgentTraceFormatter()
 
-    fun loadConfig(): ModelConfig {
-        val runtimeJson = Prefs.getString(Prefs.Keys.AGENT_RUNTIME_CONFIG_JSON)
-        if (runtimeJson.isNotBlank()) {
-            runCatching {
-                json.decodeFromString<ModelConfig>(runtimeJson)
-            }.getOrNull()?.let { runtime ->
-                val thinkingAllowed = Prefs.isEnabled(Prefs.Keys.AGENT_THINKING_ENABLED)
-                val effort = if (thinkingAllowed) {
-                    runtime.effectiveReasoningEffort
-                } else {
-                    ReasoningEffort.OFF
-                }
-                return runtime.copy(
-                    terminalTools = Prefs.isEnabled(Prefs.Keys.AGENT_TERMINAL_TOOLS),
-                    browserTools = Prefs.isEnabled(Prefs.Keys.AGENT_BROWSER_TOOLS),
-                    deviceDirectTools = Prefs.isEnabled(Prefs.Keys.AGENT_DEVICE_DIRECT_TOOLS),
-                    deviceSensitiveReadTools =
-                        Prefs.isEnabled(Prefs.Keys.AGENT_DEVICE_SENSITIVE_READ_TOOLS),
-                    deviceSensitiveActionTools =
-                        Prefs.isEnabled(Prefs.Keys.AGENT_DEVICE_SENSITIVE_ACTION_TOOLS),
-                    thinkingEnabled = effort.enablesReasoning,
-                    reasoningEffort = effort,
-                )
-            }
-        }
-        return ModelConfig(
-            providerId = "builtin-openai",
-            providerName = "OpenAI",
-            providerType = ProviderTypes.OPENAI_COMPATIBLE,
-            providerSourceType = ProviderSourceRegistry.resolve(
-                providerId = "builtin-openai",
-                baseUrl = "https://api.openai.com/v1",
-                providerType = ProviderTypes.OPENAI_COMPATIBLE,
-            ),
-            baseUrl = "https://api.openai.com/v1",
-            apiKey = "",
-            model = "gpt-5.5",
-            modelDisplayName = "GPT-5.5",
-            systemPrompt = BuiltinProviders.DEFAULT_SYSTEM_PROMPT,
-            terminalTools = Prefs.isEnabled(Prefs.Keys.AGENT_TERMINAL_TOOLS),
-            browserTools = Prefs.isEnabled(Prefs.Keys.AGENT_BROWSER_TOOLS),
-            deviceDirectTools = Prefs.isEnabled(Prefs.Keys.AGENT_DEVICE_DIRECT_TOOLS),
-            deviceSensitiveReadTools =
-                Prefs.isEnabled(Prefs.Keys.AGENT_DEVICE_SENSITIVE_READ_TOOLS),
-            deviceSensitiveActionTools =
-                Prefs.isEnabled(Prefs.Keys.AGENT_DEVICE_SENSITIVE_ACTION_TOOLS),
-            thinkingEnabled = Prefs.isEnabled(Prefs.Keys.AGENT_THINKING_ENABLED),
-            reasoningEffort = ReasoningEffort.fromLegacy(
-                Prefs.isEnabled(Prefs.Keys.AGENT_THINKING_ENABLED)
-            ),
-        )
-    }
-
     fun complete(
         config: ModelConfig,
         prompt: String,

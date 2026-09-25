@@ -591,7 +591,6 @@ internal class AgentTraceFormatter {
     }
 
     private companion object {
-        const val BROWSER_TOOL_NAME = "browser_use"
 
         /** 失败详情（展开卡片最多显示 10 行）的展示上限：行数与字符数各留一道闸。 */
         private const val MAX_FAILURE_DETAIL_LINES = 12

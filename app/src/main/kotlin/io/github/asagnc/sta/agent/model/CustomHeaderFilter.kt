@@ -78,17 +78,4 @@ internal object CustomHeaderFilter {
         }
     }
 
-    /**
-     * 为日志输出脱敏敏感 header。
-     */
-    fun redactForLog(headers: List<CustomHeader>): List<Pair<String, String>> =
-        sanitize(headers).map { header ->
-            val nameLower = header.name.lowercase()
-            val value = if (nameLower in SENSITIVE_NAMES) {
-                "***"
-            } else {
-                header.value
-            }
-            header.name to value
-        }
 }

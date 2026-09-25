@@ -98,28 +98,6 @@ internal object HookSupport {
         return null
     }
 
-    fun getFieldValue(target: Any, name: String): Any? {
-        val field = findField(target.javaClass, name) ?: return null
-        return try {
-            field.get(target)
-        } catch (_: IllegalAccessException) {
-            null
-        } catch (_: IllegalArgumentException) {
-            null
-        }
-    }
-
-    fun invokeNoArgs(target: Any, name: String): Any? {
-        val method = findMethod(target.javaClass, name) ?: return null
-        return try {
-            method.invoke(target)
-        } catch (_: ReflectiveOperationException) {
-            null
-        } catch (_: IllegalArgumentException) {
-            null
-        }
-    }
-
     fun deoptimize(
         module: XposedModule,
         logger: ModuleLogger,
@@ -132,21 +110,6 @@ internal object HookSupport {
         } catch (exception: Exception) {
             logger.warn("Deopt 失败: $description, type=${exception.safeLogType()}")
         }
-    }
-
-    fun extractPackageName(componentOrPackage: String?): String? {
-        if (componentOrPackage.isNullOrBlank()) return null
-        return ComponentName.unflattenFromString(componentOrPackage)?.packageName
-            ?: componentOrPackage.substringBefore('/', componentOrPackage)
-    }
-
-    fun isPackageInstalled(context: Context, packageName: String): Boolean = try {
-        context.packageManager.getPackageInfo(packageName, 0)
-        true
-    } catch (_: PackageManager.NameNotFoundException) {
-        false
-    } catch (_: SecurityException) {
-        false
     }
 
     fun resolvesActivity(context: Context, intent: Intent): Boolean =

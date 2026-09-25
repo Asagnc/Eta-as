@@ -147,7 +147,7 @@ internal class AgentSubAgentRunner(
             if (mailboxEnabled) addAll(MAILBOX_TOOL_NAMES)
             if (webRead) add(BROWSER_TOOL_NAME)
         }
-        val tools = restrictedTools(allowedTools)
+        val tools = subAgentTools(parentTools, allowedTools, mailboxEnabled)
         // 开工前先读同伴已有的发现：不读的话，并行的意义就只剩下"各查一遍再汇总"。
         // 游标从 0 开始，拿到的是这一轮 run 到此刻为止的全部留言。
         val peerFindings = if (mailboxEnabled) {
@@ -404,17 +404,6 @@ internal class AgentSubAgentRunner(
         )
     }
 
-    private fun restrictedTools(allowed: Set<String>): JSONArray = JSONArray().also { result ->
-        for (index in 0 until parentTools.length()) {
-            val tool = parentTools.getJSONObject(index)
-            val name = tool.getJSONObject("function").getString("name")
-            if (name !in allowed) continue
-            // 浏览器工具的 schema 按只读能力裁剪：模型看得见的能力应当就是它真能用的，
-            // 写动作不出现在枚举里，就不会“先试一次再被拒”。参数层还有一道拦截。
-            result.put(if (name == BROWSER_TOOL_NAME) restrictBrowserTool(tool) else tool)
-        }
-    }
-
     /** 返回第一个越权的浏览器动作名；没有越权（或不是浏览器调用）时返回 null。 */
     private fun blockedBrowserAction(name: String, argumentsJson: String): String? {
         if (name != BROWSER_TOOL_NAME) return null
@@ -439,19 +428,6 @@ internal class AgentSubAgentRunner(
                 "需要点击、输入、执行 JS 或下载时，把这一步交回主智能体。",
         )
         .toString()
-
-    /** 裁剪浏览器工具 schema：动作枚举只留只读子集，说明里点明子智能体的能力范围。 */
-    private fun restrictBrowserTool(tool: JSONObject): JSONObject {
-        val clone = runCatching { JSONObject(tool.toString()) }.getOrNull() ?: return tool
-        val function = clone.optJSONObject("function") ?: return clone
-        val properties = function.optJSONObject("parameters")?.optJSONObject("properties")
-        properties?.optJSONObject("action")?.let { action ->
-            action.put("enum", JSONArray().apply { READ_ONLY_BROWSER_ACTIONS.forEach { put(it) } })
-            action.put("description", "本次唯一执行的浏览器动作（子智能体只有只读动作）。")
-        }
-        function.put("description", function.optString("description") + BROWSER_READ_ONLY_NOTE)
-        return clone
-    }
 
     private fun systemMessage(role: String, context: String, worktree: String = ""): JSONObject = JSONObject()
         .put("role", "system")
@@ -518,6 +494,44 @@ internal class AgentSubAgentRunner(
     }
 }
 
+/**
+ * 子智能体最终拿到的工具表：先从主 loop 的工具表按 [allowed] 过滤（父表是能力投影的产物，
+ * 表里没有的名字就是这次真的用不了），再补上信箱工具。
+ *
+ * 提取成顶层函数是为了让「模型看得见的工具」这个唯一组装点能被测试直接断言。
+ * 补信箱必须发生在这里而不是 [AgentToolCatalog]：mailbox_post 只对子智能体有意义，
+ * 放进主循环的工具表会让主智能体看见一个它自己执行不了的工具。曾漏掉这一步，
+ * 后果是模型永远看不到这个工具——信箱只被读、从来没有被写过。
+ */
+internal fun subAgentTools(
+    parentTools: JSONArray,
+    allowed: Set<String>,
+    mailboxEnabled: Boolean,
+): JSONArray = JSONArray().also { result ->
+    for (index in 0 until parentTools.length()) {
+        val tool = parentTools.getJSONObject(index)
+        val name = tool.getJSONObject("function").getString("name")
+        if (name !in allowed) continue
+        // 浏览器工具的 schema 按只读能力裁剪：模型看得见的能力应当就是它真能用的，
+        // 写动作不出现在枚举里，就不会“先试一次再被拒”。参数层还有一道拦截。
+        result.put(if (name == BROWSER_TOOL_NAME) restrictBrowserTool(tool) else tool)
+    }
+    if (mailboxEnabled) AgentSubAgentToolCatalog.appendMailboxTo(result)
+}
+
+/** 裁剪浏览器工具 schema：动作枚举只留只读子集，说明里点明子智能体的能力范围。 */
+private fun restrictBrowserTool(tool: JSONObject): JSONObject {
+    val clone = runCatching { JSONObject(tool.toString()) }.getOrNull() ?: return tool
+    val function = clone.optJSONObject("function") ?: return clone
+    val properties = function.optJSONObject("parameters")?.optJSONObject("properties")
+    properties?.optJSONObject("action")?.let { action ->
+        action.put("enum", JSONArray().apply { READ_ONLY_BROWSER_ACTIONS.forEach { put(it) } })
+        action.put("description", "本次唯一执行的浏览器动作（子智能体只有只读动作）。")
+    }
+    function.put("description", function.optString("description") + BROWSER_READ_ONLY_NOTE)
+    return clone
+}
+
 /** worktree 改动统计。 */
 internal data class DiffStat(val changedFiles: Int, val stat: String)
 
@@ -534,7 +548,6 @@ internal val READ_ONLY_TOOL_NAMES =
 internal val WRITE_TOOL_NAMES = setOf("write_file", "edit_file", "edit_files", "terminal")
 
 /** 子智能体唯一能用的浏览器工具名。 */
-internal const val BROWSER_TOOL_NAME = "browser_use"
 
 /**
  * 子智能体允许的浏览器只读动作。

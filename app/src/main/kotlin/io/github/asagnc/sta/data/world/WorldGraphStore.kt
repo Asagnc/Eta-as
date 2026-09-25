@@ -31,9 +31,6 @@ internal object WorldGraphStore {
     /** 保留的边数上限。 */
     const val KEEP_EDGES = 8000
 
-    /** 保留的社区数上限。 */
-    const val KEEP_COMMUNITIES = 200
-
     /**
      * 建边时参考的既有观测数量上限。
      *
@@ -155,12 +152,6 @@ internal object WorldGraphStore {
     fun edgeId(srcId: String, dstId: String, layer: WorldEdgeBuilder.Layer): String =
         "${minOf(srcId, dstId)}|${maxOf(srcId, dstId)}|${layer.value}"
 
-    /** 实体总数，供排查与对账。 */
-    fun entityCount(context: Context?): Int = countOf(context) { it.entityDao().count() }
-
-    /** 边总数。 */
-    fun edgeCount(context: Context?): Int = countOf(context) { it.edgeDao().count() }
-
     /** 图中某个节点连出去的所有边（含作为 dst 的）。 */
     fun edgesTouching(context: Context?, nodeId: String): List<WorldEdgeRow> {
         if (context == null || nodeId.isBlank()) return emptyList()
@@ -187,9 +178,6 @@ internal object WorldGraphStore {
     internal fun closeForTests() {
         WorldDatabaseProvider.closeForTests()
     }
-
-    /** 随机 id，供社区等无自然键的行使用。 */
-    internal fun randomId(): String = UUID.randomUUID().toString()
 
     /**
      * 把坐标未知的历史观测回填成当前工作区根。

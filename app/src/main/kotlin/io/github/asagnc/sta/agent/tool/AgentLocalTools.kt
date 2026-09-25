@@ -2608,7 +2608,7 @@ internal class AgentLocalTools(
         val isSystemApp: Boolean = false
     )
 
-    private companion object {
+    internal companion object {
         /** 一次检索最多返回多少条：上限防止模型一次把整个库拉进上下文。 */
         const val MAX_WORLD_RECALL_LIMIT = 20
 
@@ -2628,7 +2628,7 @@ internal class AgentLocalTools(
             "media_control",
             "set_volume",
         )
-        val DEVICE_SENSITIVE_READ_TOOL_NAMES = setOf(
+        internal val DEVICE_SENSITIVE_READ_TOOL_NAMES = setOf(
             "get_setting",
             "wifi_credentials",
             "recent_notifications",
@@ -2712,7 +2712,6 @@ private const val SKILL_BODY_SPLIT_HINT_CHARS = 12_000
 private const val DEFAULT_FILE_WORKSPACE = "/data/local/tmp/sta"
 private const val DEFAULT_FIND_LIMIT = 80
 private const val MAX_FIND_LIMIT = 200
-private const val FIND_TIMEOUT_SECONDS = 20
 private val FORBIDDEN_SHELL_CHARS = setOf('\'', '"', ';', '|', '&', '$', '`', '>', '<', '\n')
 
 /** BusyBox grep -E 报正则错误时的特征文本。 */

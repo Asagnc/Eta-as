@@ -105,14 +105,6 @@ internal object AgentWorktreeManager {
     fun diffStatCommand(worktreePath: String): String =
         "git -C ${shellQuote(worktreePath)} --no-pager diff --stat HEAD"
 
-    /** 完整补丁；只有主智能体明确要看细节时才取。 */
-    fun diffCommand(worktreePath: String): String =
-        "git -C ${shellQuote(worktreePath)} --no-pager diff HEAD"
-
-    /** 变更文件清单，一行一个，便于主智能体按文件决定合并策略。 */
-    fun changedFilesCommand(worktreePath: String): String =
-        "git -C ${shellQuote(worktreePath)} --no-pager diff --name-only HEAD"
-
     /** 回收：先删 worktree 注册信息，再删目录（`--force` 处理"有未提交改动"的情况）。 */
     fun removeCommands(repoRoot: String, worktreePath: String): List<String> = listOf(
         "git -C ${shellQuote(repoRoot)} worktree remove --force ${shellQuote(worktreePath)}",

@@ -41,9 +41,6 @@ internal interface ProviderDao {
     suspend fun providerByModelId(modelId: String): ProviderWithModels?
 
     @Query("SELECT * FROM provider_models WHERE provider_id = :providerId ORDER BY sort_order ASC")
-    fun modelsFlow(providerId: String): Flow<List<ProviderModelEntity>>
-
-    @Query("SELECT * FROM provider_models WHERE provider_id = :providerId ORDER BY sort_order ASC")
     suspend fun models(providerId: String): List<ProviderModelEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

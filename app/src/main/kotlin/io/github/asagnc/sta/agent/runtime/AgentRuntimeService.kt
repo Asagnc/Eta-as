@@ -890,16 +890,6 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
             }
         }
 
-    @Suppress("unused")
-    private fun handleDrag(dx: Float, dy: Float) {
-        val lp = orbParams ?: return
-        val wm = windowManager ?: return
-        val view = orbView ?: return
-        lp.x += dx.toInt()
-        lp.y += dy.toInt()
-        runCatching { wm.updateViewLayout(view, lp) }
-    }
-
     private fun orbLayoutParams(): WindowManager.LayoutParams =
         WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -1088,10 +1078,7 @@ internal class AgentRuntimeService : Service(), LifecycleOwner, SavedStateRegist
 
     private companion object {
         const val ACTION_KEEP_ALIVE = "io.github.asagnc.sta.agent.runtime.KEEP_ALIVE"
-        const val HIDE_DELAY_MS = 2_500L
-        const val RESULT_REVIEW_DELAY_MS = 120_000L
         const val RESULT_CARD_HEIGHT_RATIO = 0.5f
-        const val MAX_ARCHIVED_USER_IMAGE_PREVIEWS = 4
     }
 
     private data class CompletedRunContext(
