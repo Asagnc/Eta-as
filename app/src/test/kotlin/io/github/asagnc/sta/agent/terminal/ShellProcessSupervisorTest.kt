@@ -49,7 +49,9 @@ class ShellProcessSupervisorTest {
         assertTrue(payload.contains("unshare -m --propagation private"))
         assertTrue(payload.contains("mount -t proc"))
         assertTrue(payload.contains("sta_mount_required /data/local/tmp"))
-        assertTrue(payload.contains("sta_mount_required /data/local/tmp/sta"))
+        // 沙箱根路径经 shellQuote 后带转义引号，按无引号片段断言；默认视图可写。
+        assertTrue(payload.contains("/data/local/tmp/sta"))
+        assertTrue(payload.contains("\$sta_rootfs/workspace\" bind"))
         assertTrue(payload.contains("sta_rootfs/workspace"))
         assertTrue(payload.contains("chroot"))
         assertTrue(payload.contains(LinuxEnvironmentPaths.READY_MARKER))
@@ -62,6 +64,41 @@ class ShellProcessSupervisorTest {
             command = "python3 --version",
         )
         assertTrue(debianPayload.contains("/usr/bin/env -i"))
+    }
+
+    @Test
+    fun linuxPayloadMountsTheSandboxRootReadOnlyForRestrictedViews() {
+        val supervisor = ShellProcessSupervisor()
+
+        val readOnly = supervisor.buildLinuxPayload(
+            rootfsPath = "/data/user/0/io.github.asagnc.sta/files/terminal/debian/rootfs",
+            command = "ls",
+            sandbox = LinuxSandboxView("/data/local/tmp/sta", rootReadOnly = true),
+        )
+
+        // 只读视图整棵以 rbind,ro 挂入：写权限由内核拒绝，与模型手上有什么工具无关。
+        assertTrue(readOnly.contains("\$sta_rootfs/workspace\" rbind,ro"))
+        // Android 形态是同一份数据的另一个入口，必须一起只读，否则换个路径写法就绕过去了。
+        assertTrue(readOnly.contains("\$sta_rootfs/data/local/tmp\" rbind,ro"))
+    }
+
+    @Test
+    fun linuxPayloadRemountsWritableSubtreesInsideAReadOnlyRoot() {
+        val supervisor = ShellProcessSupervisor()
+
+        val worktree = supervisor.buildLinuxPayload(
+            rootfsPath = "/data/user/0/io.github.asagnc.sta/files/terminal/debian/rootfs",
+            command = "ls",
+            sandbox = LinuxSandboxView(
+                rootPath = "/data/local/tmp/sta",
+                rootReadOnly = true,
+                writableSubPaths = listOf("/data/local/tmp/sta/sta-worktree-a"),
+            ),
+        )
+
+        // 仓库不可改、自己的 worktree 可写：可写子智能体的隔离形状由挂载决定。
+        assertTrue(worktree.contains("\$sta_rootfs/workspace\" rbind,ro"))
+        assertTrue(worktree.contains("\$sta_rootfs/data/local/tmp/sta/sta-worktree-a\" rbind"))
     }
 
     @Test

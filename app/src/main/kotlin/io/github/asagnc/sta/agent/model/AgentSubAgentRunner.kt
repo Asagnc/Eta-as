@@ -3,6 +3,7 @@ package io.github.asagnc.sta.agent.model
 import io.github.asagnc.sta.agent.runtime.AgentEvent
 import io.github.asagnc.sta.agent.runtime.AgentRunCancelledException
 import io.github.asagnc.sta.agent.runtime.AgentRunController
+import io.github.asagnc.sta.agent.terminal.LinuxSandboxView
 import java.util.concurrent.Executors
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.atomic.AtomicInteger
@@ -24,7 +25,7 @@ internal class AgentSubAgentRunner(
     private val runController: AgentRunController,
     private val onEvent: (AgentEvent) -> Unit,
     private val parentTools: JSONArray,
-    private val toolExecutorFor: (Set<String>, SubAgentWorkspace?) -> AgentModelClient.ToolExecutor,
+    private val toolExecutorFor: (Set<String>, SubAgentWorkspace?, LinuxSandboxView) -> AgentModelClient.ToolExecutor,
     private val modelRetry: AgentModelRetry = AgentModelRetry(),
     private val maxRounds: Int = MAX_SUB_AGENT_ROUNDS,
     private val tokenBudget: Int = SUB_AGENT_TOKEN_BUDGET,
@@ -138,6 +139,17 @@ internal class AgentSubAgentRunner(
 
         val workspace = request.workspace
         val writable = workspace != null
+        // 资源视图与工具名单是两件事：名单决定模型看得见哪些入口，视图决定它能碰到哪些树。
+        // 缺一不可——只放名单，换条路径就绕过去了；只给视图，模型手里没有能干活的工作据。
+        val sandbox = when {
+            workspace == null -> LinuxSandboxView(WORKSPACE_IN_SANDBOX, rootReadOnly = true)
+            else -> LinuxSandboxView(
+                WORKSPACE_IN_SANDBOX,
+                rootReadOnly = true,
+                // worktree 与仓库同级，作为子树重挂成可写；仓库仍然改不了。
+                writableSubPaths = listOf(workspace.worktreePath),
+            )
+        }
         val mailboxRunId = request.mailboxRunId.trim()
         val mailboxEnabled = mailboxRunId.isNotEmpty() && mailbox != null
         val webRead = request.allowWebRead
@@ -146,6 +158,8 @@ internal class AgentSubAgentRunner(
             if (writable) addAll(WRITE_TOOL_NAMES)
             if (mailboxEnabled) addAll(MAILBOX_TOOL_NAMES)
             if (webRead) add(BROWSER_TOOL_NAME)
+            // 代码执行进两档名单：危害范围由资源视图定，不再靠「不发这个工具」假设它安全。
+            add(CODE_EXECUTION_TOOL_NAME)
         }
         val tools = subAgentTools(parentTools, allowedTools, mailboxEnabled)
         // 开工前先读同伴已有的发现：不读的话，并行的意义就只剩下"各查一遍再汇总"。
@@ -158,7 +172,7 @@ internal class AgentSubAgentRunner(
         val messages = JSONArray()
             .put(systemMessage(role, request.context + peerFindings, workspace?.worktreePath.orEmpty()))
             .put(AgentConversationCodec.userTextMessage(request.brief))
-        val executor = toolExecutorFor(allowedTools, workspace)
+        val executor = toolExecutorFor(allowedTools, workspace, sandbox)
         val wrappedExecutor = AgentModelClient.ToolExecutor { call ->
             val blockedAction = if (webRead) blockedBrowserAction(call.name, call.argumentsJson) else null
             when {
@@ -542,6 +556,12 @@ private fun restrictBrowserTool(tool: JSONObject): JSONObject {
 
 /** worktree 改动统计。 */
 internal data class DiffStat(val changedFiles: Int, val stat: String)
+
+/** 子智能体沙箱里的工作区根：宿主工作区以只读挂到这里，可写子树另行重挂。 */
+private const val WORKSPACE_IN_SANDBOX = "/workspace"
+
+/** 代码执行工具名；子智能体两档都可以用它，写权限由挂载约束。 */
+private const val CODE_EXECUTION_TOOL_NAME = AgentCodeExecutionToolCatalog.RUN_CODE
 
 /**
  * 子智能体允许使用的工具：只检索、不写文件、不碰设备。

@@ -29,6 +29,7 @@ import io.github.asagnc.sta.agent.skill.SkillCompatibilityChecker
 import io.github.asagnc.sta.agent.skill.SkillContext
 import io.github.asagnc.sta.agent.skill.SkillRuntime
 import io.github.asagnc.sta.agent.skill.PublicGitHubSkillSource
+import io.github.asagnc.sta.agent.terminal.LinuxSandboxView
 import io.github.asagnc.sta.agent.tool.AgentLocalTools
 import io.github.asagnc.sta.agent.tool.AgentToolRequirements
 import io.github.asagnc.sta.agent.tool.AgentToolCapabilities
@@ -168,7 +169,7 @@ internal class AgentRuntimeRunExecutor(
             val runStats = AgentRunStats()
             // 子智能体只拿到文件检索类工具，且不允许递归派生；它复用主 run 的工具执行器，
             // 所以这里用可空引用延迟绑定，避免与 AgentLocalTools 构造顺序互相依赖。
-            var toolExecutorRef: AgentModelClient.ToolExecutor? = null
+            var toolExecutorRef: RoutingToolExecutor? = null
             val subAgentRunner = AgentSubAgentRunner(
                 config = effectiveConfig,
                 provider = ProviderClientFactory.getClient(request.config),
@@ -240,7 +241,7 @@ internal class AgentRuntimeRunExecutor(
                             .toString()
                     }
                 },
-                toolExecutorFor = { allowed, workspace ->
+                toolExecutorFor = { allowed, workspace, sandbox ->
                     AgentModelClient.ToolExecutor { call ->
                         val delegate = toolExecutorRef
                         when {
@@ -252,7 +253,7 @@ internal class AgentRuntimeRunExecutor(
                                     .toString(),
                             )
 
-                            workspace == null -> delegate.execute(call)
+                            workspace == null -> delegate.executeWithSandbox(call, sandbox)
 
                             else -> {
                                 // 带写权限时必须把参数收进它的 worktree：模型天然会写相对路径，
@@ -262,7 +263,10 @@ internal class AgentRuntimeRunExecutor(
                                         AgentSubAgentToolScope.scope(call.name, call.argumentsJson, workspace)
                                 ) {
                                     is AgentSubAgentToolScope.Scoped.Ok ->
-                                        delegate.execute(call.copy(argumentsJson = scoped.argumentsJson))
+                                        delegate.executeWithSandbox(
+                                            call.copy(argumentsJson = scoped.argumentsJson),
+                                            sandbox,
+                                        )
 
                                     is AgentSubAgentToolScope.Scoped.Rejected -> AgentModelClient.ToolResult(
                                         JSONObject()

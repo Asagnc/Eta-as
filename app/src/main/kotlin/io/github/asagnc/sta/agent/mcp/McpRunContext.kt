@@ -2,6 +2,8 @@ package io.github.asagnc.sta.agent.mcp
 
 import android.util.Base64
 import io.github.asagnc.sta.agent.model.AgentModelClient
+import io.github.asagnc.sta.agent.terminal.LinuxSandboxView
+import io.github.asagnc.sta.agent.tool.AgentLocalTools
 import io.github.asagnc.sta.data.model.McpProtocolMode
 import io.github.asagnc.sta.data.model.McpServerSetting
 import io.github.asagnc.sta.data.model.McpToolDefinition
@@ -281,11 +283,27 @@ internal class McpToolExecutor(
 }
 
 internal class RoutingToolExecutor(
-    private val local: AgentModelClient.ToolExecutor,
+    private val local: AgentLocalTools,
     private val mcp: McpToolExecutor,
 ) : AgentModelClient.ToolExecutor, AutoCloseable {
     override fun execute(toolCall: AgentModelClient.ToolCall): AgentModelClient.ToolResult =
         if (mcp.contains(toolCall.name)) mcp.execute(toolCall) else local.execute(toolCall)
+
+    /**
+     * 用指定资源视图执行一次调用。
+     *
+     * MCP 工具不碰工作区，视图对它们无意义；受限子智能体的调用要经过本类才到得了
+     * 本地工具，视图必须在这一层转交，否则子智能体拿到的是主智能体的可写视图。
+     */
+    fun executeWithSandbox(
+        toolCall: AgentModelClient.ToolCall,
+        sandbox: LinuxSandboxView,
+    ): AgentModelClient.ToolResult =
+        if (mcp.contains(toolCall.name)) {
+            mcp.execute(toolCall)
+        } else {
+            local.executeWithSandbox(toolCall, sandbox)
+        }
 
     override fun close() {
         runCatching { mcp.close() }

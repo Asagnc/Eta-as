@@ -69,6 +69,7 @@ internal class RootShellTerminalController(
         cwd: String?,
         environment: TerminalEnvironment,
         timeoutSeconds: Int,
+        sandbox: LinuxSandboxView = LinuxSandboxView.WORKSPACE_WRITABLE,
     ): RawCommandResult = runCommandRaw(
         command = command,
         cwd = cwd,
@@ -76,6 +77,7 @@ internal class RootShellTerminalController(
         identity = defaultIdentity(environment),
         environment = environment,
         mergeStderr = false,
+        sandbox = sandbox,
     )
 
     fun runCommand(command: String, cwd: String?, timeoutSeconds: Int): String {
@@ -1813,6 +1815,7 @@ internal class RootShellTerminalController(
         identity: String,
         environment: TerminalEnvironment,
         mergeStderr: Boolean,
+        sandbox: LinuxSandboxView = LinuxSandboxView.WORKSPACE_WRITABLE,
     ): RawCommandResult {
         val trimmed = command.trim()
         if (trimmed.isBlank()) {
@@ -1841,6 +1844,7 @@ internal class RootShellTerminalController(
             command = fullCommand,
             timeoutSeconds = timeoutSeconds.coerceIn(1, MAX_TIMEOUT_SECONDS).toLong(),
             environment = environment,
+            sandbox = sandbox,
         )
         val output = if (mergeStderr && result.stderr.isNotBlank()) {
             result.output + "\n[stderr]\n" + result.stderr
@@ -1859,6 +1863,7 @@ internal class RootShellTerminalController(
         command: String,
         timeoutSeconds: Long,
         environment: TerminalEnvironment,
+        sandbox: LinuxSandboxView = LinuxSandboxView.WORKSPACE_WRITABLE,
     ): ShellTextResult {
         val result = runProcess(
             identity = identity,
@@ -1866,6 +1871,7 @@ internal class RootShellTerminalController(
             timeoutSeconds = timeoutSeconds,
             stdin = null,
             environment = environment,
+            sandbox = sandbox,
         )
         return ShellTextResult(
             exitCode = result.exitCode,
@@ -1921,6 +1927,7 @@ internal class RootShellTerminalController(
         timeoutSeconds: Long,
         stdin: ByteArray?,
         environment: TerminalEnvironment,
+        sandbox: LinuxSandboxView = LinuxSandboxView.WORKSPACE_WRITABLE,
     ): OneShotShellResult =
         runOneShotShell(
             processSupervisor = processSupervisor,
@@ -1931,6 +1938,7 @@ internal class RootShellTerminalController(
             environment = environment,
             linuxRootfsPath = rootfsPathFor(environment),
             linuxSharedMounts = sharedMountsFor(environment),
+            sandbox = sandbox,
         )
 
     /**

@@ -53,6 +53,7 @@ import io.github.asagnc.sta.agent.terminal.FileTextOperations
 import io.github.asagnc.sta.agent.terminal.FileToolLimits
 import io.github.asagnc.sta.agent.terminal.LinuxDistribution
 import io.github.asagnc.sta.agent.terminal.LinuxEnvironmentPaths
+import io.github.asagnc.sta.agent.terminal.LinuxSandboxView
 import io.github.asagnc.sta.agent.terminal.terminalEnvironment
 import io.github.asagnc.sta.agent.terminal.RootShellTerminalController
 import io.github.asagnc.sta.agent.terminal.shellQuote
@@ -144,7 +145,45 @@ internal class AgentLocalTools(
     runAvailableSkillIds: Set<String> = emptySet(),
     pendingSkillConflict: PendingSkillConflictCapability? = null,
     private val rootAvailable: () -> Boolean = { RootAccess.isGranted },
+    /**
+     * 本次运行的沙箱资源视图，缺省是整棵工作区可写（主智能体与用户终端）。
+     *
+     * 子智能体与主智能体共用同一个工具实例，所以视图必须在调用时给定
+     * （见 [executeWithSandbox]），实例字段只作缺省值。
+     */
+    private val sandbox: LinuxSandboxView = LinuxSandboxView.WORKSPACE_WRITABLE,
 ) : AgentModelClient.ToolExecutor, AutoCloseable {
+
+    /**
+     * 本次调用的资源视图覆盖。
+     *
+     * 工具实例与主智能体共享，视图只能按调用传：存在字段上会让并发的子智能体
+     * 互相看到对方的视图。工具执行是同步的且在调用自己的线程上，线程局部能准确
+     * 对应到发起调用的一方。
+     */
+    private val sandboxOverride = ThreadLocal<LinuxSandboxView?>()
+
+    /** 本次调用实际生效的视图。 */
+    private val activeSandbox: LinuxSandboxView
+        get() = sandboxOverride.get() ?: sandbox
+
+    /**
+     * 用指定资源视图执行一次调用。
+     *
+     * 受限子智能体借它把自己的视图带进同一次调用：需要执行命令的工具（`run_code`）
+     * 于是只能在本视图允许的范围内读写，约束由挂载强制，不依赖工具名单是否周全。
+     */
+    internal fun executeWithSandbox(
+        toolCall: AgentModelClient.ToolCall,
+        sandbox: LinuxSandboxView,
+    ): AgentModelClient.ToolResult {
+        sandboxOverride.set(sandbox)
+        return try {
+            execute(toolCall)
+        } finally {
+            sandboxOverride.remove()
+        }
+    }
 
     private val closed = AtomicBoolean(false)
     private val deviceController = RootShellDeviceController(logger, screenshotExcludedPackages, rootAvailable)
@@ -187,13 +226,18 @@ internal class AgentLocalTools(
      * worktree 生命周期靠它执行；环境跟用户选的一致，别写死某个发行版——
      * 用户没装 Debian 时写死会让写入模式直接不可用。
      */
-    internal fun runLinuxCommandRaw(command: String, timeoutSeconds: Int): RawCommandResult {
+    internal fun runLinuxCommandRaw(
+        command: String,
+        timeoutSeconds: Int,
+        sandbox: LinuxSandboxView = activeSandbox,
+    ): RawCommandResult {
         val environment = LinuxEnvironmentSettingsRepository.current(context).terminalEnvironment
         val result = terminalController.execRaw(
             command = command,
             cwd = null,
             environment = environment,
             timeoutSeconds = timeoutSeconds,
+            sandbox = sandbox,
         )
         return RawCommandResult(
             exitCode = result.exitCode,
@@ -221,7 +265,7 @@ internal class AgentLocalTools(
                 "cd $CODE_WORKSPACE_DIR && python3 - <<'$CODE_HEREDOC_TAG'\n$code\n$CODE_HEREDOC_TAG"
             else -> throw InvalidToolArgumentException("language 只能是 python 或 shell")
         }
-        val result = runLinuxCommandRaw(command, timeoutSeconds)
+        val result = runLinuxCommandRaw(command, timeoutSeconds, activeSandbox)
         if (language == "python" && result.exitCode == SHELL_COMMAND_NOT_FOUND) {
             return errorResult(
                 code = "PYTHON_UNAVAILABLE",

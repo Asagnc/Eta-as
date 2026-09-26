@@ -6,6 +6,37 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
+/** Android 侧工作区根：Linux 沙箱里映射为 `/workspace`。 */
+private const val ANDROID_WORKSPACE_ROOT = "/data/local/tmp/sta"
+
+/**
+ * 沙箱资源视图：这次启动看得到哪棵树、那棵树能不能写。
+ *
+ * [rootPath] 挂进沙箱的 `/workspace`，[writableSubPaths] 是其中仍然可写的子树。
+ * 整根先按只读递归挂载，再把子树重挂成可写，写权限由内核强制——不靠
+ * 「有没有放行某个工具」这类假设，任何工具都绕不过挂载。
+ */
+internal data class LinuxSandboxView(
+    val rootPath: String,
+    /**
+     * 整棵树是否只读。
+     *
+     * 与 [writableSubPaths] 分开表达：「整棵只读 + 放行自己的 worktree」是最常见的一档
+     * （仓库不可改、隔离工作区可写），不能由子树是否为空反推。
+     */
+    val rootReadOnly: Boolean = false,
+    val writableSubPaths: List<String> = emptyList(),
+) {
+    init {
+        require(rootPath.startsWith("/")) { "沙箱根必须是绝对路径：$rootPath" }
+    }
+
+    companion object {
+        /** 整棵工作区可写：终端、环境安装与 worktree 管理都用这个视图。 */
+        val WORKSPACE_WRITABLE = LinuxSandboxView(ANDROID_WORKSPACE_ROOT)
+    }
+}
+
 /** 负责 Shell 进程的启动接纳、所有权识别、进程树终止与回收。 */
 internal class ShellProcessSupervisor(
     private val allowTreeFallback: Boolean = !isAndroidRuntime(),
@@ -44,6 +75,7 @@ internal class ShellProcessSupervisor(
         environment: TerminalEnvironment = TerminalEnvironment.ANDROID,
         linuxRootfsPath: String? = null,
         linuxSharedMounts: List<SharedFolderMount> = emptyList(),
+        sandbox: LinuxSandboxView = LinuxSandboxView.WORKSPACE_WRITABLE,
         pty: Boolean = false,
         ptyCols: Int = DEFAULT_PTY_COLS,
         ptyRows: Int = DEFAULT_PTY_ROWS,
@@ -68,6 +100,7 @@ internal class ShellProcessSupervisor(
                 environment = environment,
                 linuxRootfsPath = linuxRootfsPath,
                 linuxSharedMounts = linuxSharedMounts,
+                sandbox = sandbox,
                 pty = pty,
                 ptyCols = ptyCols,
                 ptyRows = ptyRows,
@@ -176,6 +209,7 @@ internal class ShellProcessSupervisor(
         environment: TerminalEnvironment,
         linuxRootfsPath: String?,
         linuxSharedMounts: List<SharedFolderMount> = emptyList(),
+        sandbox: LinuxSandboxView = LinuxSandboxView.WORKSPACE_WRITABLE,
         pty: Boolean = false,
         ptyCols: Int = DEFAULT_PTY_COLS,
         ptyRows: Int = DEFAULT_PTY_ROWS,
@@ -194,6 +228,7 @@ internal class ShellProcessSupervisor(
                 },
                 command = managedCommand,
                 sharedMounts = linuxSharedMounts,
+                sandbox = sandbox,
                 termType = if (pty) PTY_TERM_TYPE else "dumb",
             )
         }
@@ -295,6 +330,7 @@ internal class ShellProcessSupervisor(
         command: String?,
         sharedMounts: List<SharedFolderMount> = emptyList(),
         termType: String = "dumb",
+        sandbox: LinuxSandboxView = LinuxSandboxView.WORKSPACE_WRITABLE,
     ): String {
         if (LinuxEnvironmentPaths.backendOf(rootfsPath) == LinuxExecutionBackend.PROOT) {
             return ProotCommandBuilder.payload(rootfsPath, command, sharedMounts, termType)
@@ -302,6 +338,15 @@ internal class ShellProcessSupervisor(
         val rootfs = shellQuote(rootfsPath)
         val mode = if (command == null) "session" else "command"
         val payload = shellQuote(command.orEmpty())
+        val sandboxRoot = shellQuote(sandbox.rootPath)
+        val mountOptions = if (sandbox.rootReadOnly) "rbind,ro" else "bind"
+        // Android 形态与 Linux 形态是同一份数据的两个入口：只读视图两处都得只读，
+        // 否则换个路径写法就绕过了 /workspace 上的约束。
+        val androidOptions = if (sandbox.rootReadOnly) "rbind,ro" else "bind"
+        // 只读视图下把可写子树重挂回可写：路径来自内部构造，不含空白与引号。
+        val writableRemounts = sandbox.writableSubPaths.joinToString("\n") { path ->
+            "sta_mount_required $path \"${'$'}sta_rootfs$path\" rbind"
+        }
         // name 经 SharedFolderMounts 校验只含 [A-Za-z0-9._-]，可安全拼进双引号路径。
         val mountsBlock = sharedMounts.joinToString("\n") { mount ->
             "sta_mount_optional ${shellQuote(mount.sourcePath)} " +
@@ -342,9 +387,15 @@ internal class ShellProcessSupervisor(
               sta_mount_optional /storage/emulated/0 "${'$'}sta_rootfs/storage/emulated/0" bind
             fi
             [ -d /data/local/tmp ] || exit 125
-            sta_mount_required /data/local/tmp "${'$'}sta_rootfs/data/local/tmp" bind
-            "${'$'}sta_busybox" mkdir -p /data/local/tmp/sta || exit 125
-            sta_mount_required /data/local/tmp/sta "${'$'}sta_rootfs/workspace" bind
+            sta_mount_required /data/local/tmp "${'$'}sta_rootfs/data/local/tmp" $androidOptions
+            # 沙箱根按资源视图挂载：只读视图整棵 rbind,ro，可写子树随后重挂回可写。
+            if [ -d $sandboxRoot ]; then
+              sta_mount_required $sandboxRoot "${'$'}sta_rootfs/workspace" $mountOptions
+            else
+              "${'$'}sta_busybox" mkdir -p $sandboxRoot 2>/dev/null || true
+              sta_mount_required $sandboxRoot "${'$'}sta_rootfs/workspace" $mountOptions
+            fi
+            $writableRemounts
         """.trimIndent()
         val innerScriptTail = """
             if [ "${'$'}sta_mode" = command ]; then
@@ -576,6 +627,7 @@ internal fun runOneShotShell(
     environment: TerminalEnvironment = TerminalEnvironment.ANDROID,
     linuxRootfsPath: String? = null,
     linuxSharedMounts: List<SharedFolderMount> = emptyList(),
+    sandbox: LinuxSandboxView = LinuxSandboxView.WORKSPACE_WRITABLE,
 ): OneShotShellResult {
     val process = processSupervisor.startShellProcess(
         identity = identity,
@@ -584,6 +636,7 @@ internal fun runOneShotShell(
         environment = environment,
         linuxRootfsPath = linuxRootfsPath,
         linuxSharedMounts = linuxSharedMounts,
+        sandbox = sandbox,
     ) ?: return OneShotShellResult(
         if (processSupervisor.isClosing) -3 else -1,
         ByteArray(0),
