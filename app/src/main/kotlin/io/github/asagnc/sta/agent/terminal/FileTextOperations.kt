@@ -406,10 +406,11 @@ internal object FileTextOperations {
     /**
      * 批量读取的分节拼接：每个文件占一段，段头带路径与总行数，段内行号沿用真实行号。
      *
-     * 总字符预算在文件之间共享（不像单文件读取那样每个文件各自 16k），单文件超出剩余预算时
-     * 只给头部若干行并标记 [FileSection.truncated]，由调用方按 next_start_line 续读——
-     * 一次读五个文件本该是一轮，但把五个文件的全文都塞进一轮就等于用上下文换往返，
-     * 这里的取舍是宁可少给几行。
+     * 总字符预算在文件之间**按剩余段数分摊**：每段的限额是「剩余预算 ÷ 剩余段数」。
+     * 不分摊的话前面的文件会吃光整个预算，后面的段只能拿到 0 行——实测模型因此认为
+     * 批量读取坏了（“read seems to have returned 0 lines... odd”），用完两次就转回
+     * 逐个读文件，往返反而更多。单文件超出自己的份额时只给头部若干行并标记
+     * [FileSection.truncated]，由调用方按 next_start_line 续读。
      */
     data class FileSection(
         val path: String,
@@ -427,18 +428,26 @@ internal object FileTextOperations {
     ): Pair<String, List<FileSection>> {
         val builder = StringBuilder()
         val emitted = mutableListOf<FileSection>()
-        for ((path, slice) in sections) {
+        sections.forEachIndexed { index, (path, slice) ->
+            val remainingSections = (sections.size - index).coerceAtLeast(1)
             val lines = if (slice.text.isEmpty()) emptyList() else slice.text.split('\n')
             val header = "=== $path（共 ${slice.totalLines} 行）===\n"
+            // 段头是定位信息，只要总预算还容得下就必须给：模型靠它知道这一段是哪个文件。
             if (builder.length + header.length > budget) {
                 emitted += FileSection(path, "", slice.totalLines, 0, 0, true, 1)
-                continue
+                return@forEachIndexed
             }
             builder.append(header)
+            // 内容限额 = 当前长度 + 剩余预算 ÷ 剩余段数：保证排在后面的文件也拿到份额，
+            // 而不是被前面的文件吃光（那会让后面读到 0 行）。
+            val contentLimit = builder.length + (budget - builder.length) / remainingSections
             var written = 0
             for (line in lines) {
                 val rendered = "$line\n"
-                if (builder.length + rendered.length > budget) break
+                // 首行只受总预算约束：分摊额可能连一行都放不下，那样这一段会读到 0 行，
+                // 调用方拿不到任何内容、也无法从行号判断该续读哪里。
+                val ceiling = if (written == 0) budget else contentLimit
+                if (builder.length + rendered.length > ceiling) break
                 builder.append(rendered)
                 written++
             }

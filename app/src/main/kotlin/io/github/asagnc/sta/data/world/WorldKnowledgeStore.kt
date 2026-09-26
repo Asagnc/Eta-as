@@ -268,14 +268,24 @@ internal object WorldKnowledgeStore {
         return try {
             runBlocking(Dispatchers.IO) {
                 WorldDatabaseProvider.get(context).knowledgeDao()
-                    .recentByKind(KIND_FINDING, nowMs, limit)
-            }.map { entity -> entity.toRecalled(readContent) }
+                    // 多取几倍再过滤：读取侧要滤掉写入侧尚未设防时落库的原始工具输出，
+                    // 按 limit 取就会滤剩不足。存量比例不高，三倍足够覆盖。
+                    .recentByKind(KIND_FINDING, nowMs, limit * INJECT_OVERFETCH_RATIO)
+            }
+                // 该条已过期却仍被判为结论形态的存量条目，不注入——它对任何后续任务
+                // 都没有可复用知识，还会占掉真结论的名额。
+                .filterNot { WorldKnowledgeLogic.isRawToolOutputConclusion(it.summary) }
+                .take(limit)
+                .map { entity -> entity.toRecalled(readContent) }
         } catch (error: Throwable) {
             // 启动注入拿不到历史结论时表现为「以前什么都没做过」，同样需要留痕。
             WorldHealth.recordDegradation("knowledge.recentFindings", error)
             emptyList()
         }
     }
+
+    /** 注入前多取几倍候选，抵消读取侧过滤掉存量垃圾条目带来的空缺。 */
+    private const val INJECT_OVERFETCH_RATIO = 3
 
     private fun WorldKnowledgeEntity.toRecalled(readContent: (String) -> String?): Recalled {
         val dependencies = WorldKnowledgeLogic.decodeDependencies(dependencies)

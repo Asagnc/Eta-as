@@ -314,7 +314,7 @@ internal class AgentLoop(
     /**
      * 本轮收尾：发布最终 transcript、做一次最终压缩、汇报统计并返回结果。
      *
-     * 自然结束与「方案提交后提前结束」共用它——两条路径的收尾必须一致，各写一份迟早会漂移。
+     * 自然结束共用它——收尾必须一致。
      */
     private fun finishRun(round: Int, content: String, roundTools: JSONArray): Result {
         publishTranscript()

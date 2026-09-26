@@ -148,7 +148,7 @@ internal object AgentFileToolCatalog {
                                     "max_chars",
                                     JSONObject()
                                         .put("type", "integer")
-                                        .put("description", "所有文件合计的最大字符数，200 到 32000，默认 16000；被截断的段会给 next_start_line。"),
+                                        .put("description", "所有文件合计的最大字符数，200 到 40000，默认 40000；预算按剩余段数分摊，被截断的段会给 next_start_line。"),
                                 )
                         )
                         .put("required", JSONArray().put("paths"))
