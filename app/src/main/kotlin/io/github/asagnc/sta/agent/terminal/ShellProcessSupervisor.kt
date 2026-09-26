@@ -333,6 +333,8 @@ internal class ShellProcessSupervisor(
         sandbox: LinuxSandboxView = LinuxSandboxView.WORKSPACE_WRITABLE,
     ): String {
         if (LinuxEnvironmentPaths.backendOf(rootfsPath) == LinuxExecutionBackend.PROOT) {
+            // PROOT 后端没有内核挂载可用，[sandbox] 的只读约束在这里无从生效，
+            // 免 root 设备上的子智能体隔离退回工具名单。这是能力边界，不是配置遗漏。
             return ProotCommandBuilder.payload(rootfsPath, command, sharedMounts, termType)
         }
         val rootfs = shellQuote(rootfsPath)
