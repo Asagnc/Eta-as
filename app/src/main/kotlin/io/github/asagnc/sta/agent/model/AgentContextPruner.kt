@@ -43,14 +43,20 @@ import org.json.JSONObject
  */
 internal object AgentContextPruner {
 
-    /** 超过这个字符数的工具结果会被截断。默认对齐 dsh 的 8192。 */
-    const val MAX_CHARS = 8192
+    /**
+     * 超过这个字符数的工具结果会被截断。
+     *
+     * 与 [io.github.asagnc.sta.agent.terminal.FileToolLimits.MAX_OUTPUT_CHARS] 取同一量级：
+     * 工具一次能返回的体量若大于进入请求视图时的上限，读到的内容会在第二层被再砍一次，
+     * 中间部分丢失，模型只能回头补读——那正是多余的步数来源。
+     */
+    const val MAX_CHARS = 40_000
 
     /** 截断后保留的头部字符数。 */
-    const val HEAD_CHARS = 4096
+    const val HEAD_CHARS = 30_000
 
     /** 截断后保留的尾部字符数；命令输出的结论与报错通常在尾部。 */
-    const val TAIL_CHARS = 1024
+    const val TAIL_CHARS = 8_000
 
     /** 历史助手推理的折叠阈值；超过就只保留头尾。 */
     const val MAX_REASONING_CHARS = 600

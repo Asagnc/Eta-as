@@ -56,7 +56,7 @@ internal object Prefs {
         /** 数值开关及其默认值。 */
         val INT_DEFAULTS: Map<String, Int> = mapOf(
             AGENT_PARALLEL_TOOL_LIMIT to 8,
-            AGENT_TOOL_RESULT_MAX_CHARS to 8192,
+            AGENT_TOOL_RESULT_MAX_CHARS to 40000,
             AGENT_CONTEXT_NOTICE_PERCENT to 60,
         )
 

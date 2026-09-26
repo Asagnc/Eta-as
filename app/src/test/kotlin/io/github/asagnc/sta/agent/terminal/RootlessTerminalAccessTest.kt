@@ -49,13 +49,16 @@ class RootlessTerminalAccessTest {
         val file = File(TerminalRuntime.userWorkspacePath, "test-read-${System.nanoTime()}")
         try {
             file.parentFile!!.mkdirs()
-            file.writeText("a".repeat(20_000))
+            // 体量从当前上限派生：上限调整后这个用例仍验证同一件事（截断时报告的偏移量），
+            // 不写死数字就不会因为常量变化而失效。
+            val size = FileToolLimits.MAX_OUTPUT_CHARS + 5_000
+            file.writeText("a".repeat(size))
             val first = JSONObject(UserFileAccess.read(file.path, 0, 200_000))
             assertTrue(first.getBoolean("truncated"))
             assertEquals(first.getString("content").length, first.getInt("bytes_read"))
             val second = JSONObject(UserFileAccess.read(file.path, first.getInt("bytes_read"), 200_000))
             assertFalse(second.getBoolean("truncated"))
-            assertEquals(20_000, first.getString("content").length + second.getString("content").length)
+            assertEquals(size, first.getString("content").length + second.getString("content").length)
         } finally { file.delete() }
     }
 

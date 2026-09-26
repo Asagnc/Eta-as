@@ -102,7 +102,8 @@ internal object AgentPlanFormat {
         if (status == APPROVED) "已采纳，执行中" else "用户尚未采纳"
 
     private fun hint(status: String): String = if (status == APPROVED) {
-        "方案已采纳，按步骤执行，进度写进任务清单；清单是进度的唯一来源，方案不再改。"
+        "方案已采纳，按步骤执行，进度写进任务清单；清单是进度的唯一来源。" +
+            "执行中发现方案与实测不符时，按实测修正方案并在回复里说明差异，不要照错的方案硬做。"
     } else {
         "方案已给出，用户还没决定是否采纳；按用户的最新指令做事即可，不要当成已批准，" +
             "也不用因为提过方案就停手。"

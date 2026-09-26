@@ -13,8 +13,13 @@ internal object FileToolLimits {
     /** 一次写入的字节上限。 */
     const val MAX_WRITE_BYTES = 512 * 1024
 
-    /** 文本类结果（读取/检索/列目录）一次最多返回多少字符。 */
-    const val MAX_OUTPUT_CHARS = 16_000
+    /**
+     * 文本类结果（读取/检索/列目录）一次最多返回多少字符。
+     *
+     * 取 40000 是为了装得下单个源码文件：本仓库最大的 AgentLoop.kt 是 33626 字符，
+     * 16000 的旧上限让它物理上读不完一个文件，模型只能分段读、再补读。
+     */
+    const val MAX_OUTPUT_CHARS = 40_000
 
     /** 写文件的同目录临时文件后缀：写完立即被 rename 顶替，失败则删掉。 */
     const val WRITE_TEMP_SUFFIX = ".sta-tmp"
