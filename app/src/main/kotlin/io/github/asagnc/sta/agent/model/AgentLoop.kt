@@ -79,12 +79,6 @@ internal class AgentLoop(
         val POLLING_TOOL_NAMES = setOf(
             "wait", "wait_for_text", "wait_for_package", "observe_screen",
         )
-
-        /** 轮次到这个数就提醒收口。 */
-        const val SOFT_ROUND_LIMIT = 40
-
-        /** 提醒后每隔这么多轮再提醒一次；只提醒一次容易被后续上下文淹没。 */
-        const val SOFT_ROUND_REMIND_INTERVAL = 20
     }
 
     private var toolCallValidator = AgentToolCallValidator(tools)
@@ -268,7 +262,6 @@ internal class AgentLoop(
             )
 
             if (toolCalls.isNotEmpty()) {
-                steerLongRun(round)
                 val decision = repeatedToolDecision(toolCalls)
                 if (decision == AgentRepeatGuard.Decision.NOTICE) steerRepeatedToolCalls(round, toolCalls)
                 val outcomes = if (decision == AgentRepeatGuard.Decision.BLOCK) {
@@ -381,21 +374,12 @@ internal class AgentLoop(
         )
     }
 
-    /** 提醒模型换策略；执行已经发生或即将被阻止时都适用。 */    private fun steerRepeatedToolCalls(round: Int, toolCalls: List<AgentModelClient.ToolCall>) {
+    /** 提醒模型换策略；到提醒档时调用，到阻断档时也同样先提醒。 */
+    private fun steerRepeatedToolCalls(round: Int, toolCalls: List<AgentModelClient.ToolCall>) {
         val names = toolCalls.joinToString("、") { it.name }
         runController.steer(
             "注意：第 $round 轮的这次工具调用与前几轮完全相同（$names），再调用一次也不会得到新信息。" +
                 "请改参数、换工具，或直接根据已有信息给出结论。",
-        )
-    }
-
-    /** 轮次偏多时提醒收口。只提醒，不终止：任务可能确实需要长链路。 */
-    private fun steerLongRun(round: Int) {
-        if (round < SOFT_ROUND_LIMIT) return
-        if ((round - SOFT_ROUND_LIMIT) % SOFT_ROUND_REMIND_INTERVAL != 0) return
-        runController.steer(
-            "本次运行已进行 $round 轮。主要目标已达成的话，请直接给出结论；" +
-                "还有未完成的部分就说明剩下什么，不要再展开新方向。",
         )
     }
 

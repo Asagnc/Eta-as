@@ -536,7 +536,9 @@ class AgentModelClientLoopTest {
             { _, _ ->
                 assistant(
                     finishReason = "tool_calls",
-                    toolCalls = listOf(toolCall("call-$index", "get_current_context", "{}")),
+                    // 参数逐轮不同：本用例检验的是「不按轮次设上限」，不是「相同调用必须反复执行」。
+                    // 相同调用会被重复阻断拦下（那是空转信号），会让这条断言测不到本来要测的性质。
+                    toolCalls = listOf(toolCall("call-$index", "get_current_context", """{"n":$index}""")),
                 )
             }
         } + listOf<(ProviderRequest, AgentRunController) -> JSONObject>(
