@@ -284,7 +284,9 @@ internal class ShellProcessSupervisor(
 
     /**
      * Linux 工具环境始终在独立 mount namespace 中启动，避免 bind mount 泄漏到 Android 全局。
-     * chroot 不是安全沙箱；它只负责提供完整 Linux userland，Android 系统操作仍应走 android 环境。
+     * chroot 不是安全沙箱：它只负责提供完整 Linux userland。Android 系统目录以递归绑定接入，
+     * 使沙箱内可直接调用 getprop、pm 这类只读查询命令；需要改系统状态或操作用户界面的操作
+     * 仍应走 android 环境。
      * [sharedMounts] 在 namespace 建立时按当前配置逐个 bind 到 rootfs 的 workspace/mounts/<name>，
      * 会话结束即随 namespace 回收，Android 侧不留需要卸载的全局挂载。
      */
@@ -327,6 +329,15 @@ internal class ShellProcessSupervisor(
             "${'$'}sta_busybox" mount -t proc proc "${'$'}sta_rootfs/proc" || exit 125
             sta_mount_required /dev "${'$'}sta_rootfs/dev" rbind
             sta_mount_optional /sys "${'$'}sta_rootfs/sys" rbind
+            # Android 系统目录接入沙箱，使 getprop、pm 这类命令可直接执行。
+            # 必须用 rbind：/apex 下每个 APK 都是独立挂载点（本机 77 个），普通 bind 不递归子挂载，
+            # chroot 里会看不到 /apex/com.android.runtime/bin/linker64，动态链接器缺失导致 exec
+            # 报 "No such file or directory"；那不是文件缺失，是解释器解析不了。
+            # 源文件系统本身是只读（erofs），因此不额外加 ro 也不会被改写。
+            # /data 不在此列：沙箱里保持读不到应用私有数据。
+            for sta_android_dir in /system /apex /linkerconfig /product /system_ext /vendor; do
+              sta_mount_optional "${'$'}sta_android_dir" "${'$'}sta_rootfs${'$'}sta_android_dir" rbind
+            done
             if [ -d /storage/emulated/0 ]; then
               sta_mount_optional /storage/emulated/0 "${'$'}sta_rootfs/storage/emulated/0" bind
             fi
