@@ -37,7 +37,7 @@ class AgentToolRequirementsTest {
         }
         assertTrue(required.isNotEmpty())
         assertTrue(required.none { it in projected.names() })
-        assertTrue(setOf("terminal", "read_file", "read_image", "observe_screen", "browser_use").all {
+        assertTrue(setOf("terminal", "run_code", "read_image", "observe_screen", "browser_use").all {
             it in projected.names()
         })
         assertEquals("[\"user\"]", projected.properties("terminal").getJSONObject("identity").getJSONArray("enum").toString())

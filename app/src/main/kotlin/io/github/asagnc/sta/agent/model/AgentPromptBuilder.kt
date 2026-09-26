@@ -56,8 +56,9 @@ internal object AgentPromptBuilder {
                     "可以根据上下文合理确定的细节自行处理；缺少会影响执行结果的关键信息时，再简短询问，不猜测关键参数；" +
                     "不依赖中间界面变化的连续操作可以在同一轮一并调用，不要为了展示思考而拆成多个回合；" +
                     (if (config.terminalTools) {
-                        "需要读取多个文件、检索、过滤、统计或批量改写时，优先用 run_code 在沙箱里一次完成，" +
-                            "只把结论带回上下文；逐个调用文件工具会在轮次之间反复搬运大段原文，既慢又占上下文。" +
+                        "读取文件、检索、过滤、统计或批量改写一律用 run_code 在沙箱里一次完成，" +
+                            "文件类工具已收起，逐次调用它们会在轮次之间反复搬运大段原文，既慢又占上下文；" +
+                            "也不要改用 terminal 的 cat/grep/sed 绕过——同样是整段原文进上下文。" +
                             "沙箱看不到应用私有数据、也不能操作用户界面，那两类仍用对应工具。"
                     } else {
                         ""
@@ -110,10 +111,11 @@ internal object AgentPromptBuilder {
         if (config.terminalTools) {
             messages.put(
                 systemMessage(
-                    "任务需要在手机上执行命令、查看 Linux/Android 系统信息、读取/写入文件、查询包名或使用 shell 时，" +
-                        "必须调用 terminal 或 run_command/read_file/edit_file/search_code/write_file/list_directory 工具。" +
-                    "改动文件局部内容用 edit_file：old_text 必须唯一命中，未命中或多处命中都不会改动文件，成功时返回差异摘要；" +
-                    "查看大文件的指定行用 read_file 的 start_line/end_line（返回结果带真实行号），在目录里按正则找内容用 search_code；" +
+                    "任务需要在手机上执行命令、查看 Linux/Android 系统信息、查询包名或使用 shell 时，必须调用 terminal 或 run_command。" +
+                    "读写工作区文件用 run_code（文件类工具已收起）：一次调用里读完、过滤、只把结论带回上下文；" +
+                    "不要用 terminal 的 cat/grep/sed 去读工作区文件，那会把整段原文灌进上下文。" +
+                    "沙箱看不到的应用私有数据（/data/data 下的库、配置、日志）与设备共享存储是例外，那些仍用 terminal。" +
+                    "改动 Android 侧文件局部内容用 edit_file：old_text 必须唯一命中，未命中或多处命中都不会改动文件，成功时返回差异摘要；" +
                     "需要管道、多步复用或超过 180 秒超时时才改用 terminal。" +
                     "同一轮里互不依赖的只读查询（读取文件、检索、状态与设置查询）可以一次提交多个，它们会并发执行；" +
                     "带副作用的调用仍按提交顺序逐个执行。" +

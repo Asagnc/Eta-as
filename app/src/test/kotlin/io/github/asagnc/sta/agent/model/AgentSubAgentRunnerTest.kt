@@ -27,7 +27,7 @@ class AgentSubAgentRunnerTest {
         )
 
         val offered = toolNames(provider.requests.first().tools)
-        assertEquals(setOf("read_file", "search_code", "list_directory"), offered)
+        assertEquals(setOf("run_code"), offered)
         val followUp = provider.requests.last().messages.toString()
         assertTrue("被禁用的工具调用要作为工具结果回写", followUp.contains("SUB_AGENT_TOOL_FORBIDDEN"))
         assertTrue(outcome.ok)
@@ -108,7 +108,7 @@ class AgentSubAgentRunnerTest {
 
         val offered = toolNames(provider.requests.first().tools)
         assertEquals(
-            setOf("read_file", "search_code", "list_directory", "write_file", "edit_file", "terminal"),
+            setOf("run_code", "write_file", "edit_file", "terminal"),
             offered,
         )
         val system = provider.requests.first().messages.getJSONObject(0).getString("content")
@@ -127,7 +127,7 @@ class AgentSubAgentRunnerTest {
             AgentSubAgentRunner.Request(role = "检索", brief = "找常量"),
         )
         assertEquals(
-            setOf("read_file", "search_code", "list_directory"),
+            setOf("run_code"),
             toolNames(provider.requests.first().tools),
         )
     }
@@ -249,6 +249,7 @@ private open class FakeProvider(
 }
 
 private fun parentTools(): JSONArray = JSONArray()
+    .put(tool("run_code"))
     .put(tool("read_file"))
     .put(tool("search_code"))
     .put(tool("list_directory"))

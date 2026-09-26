@@ -118,34 +118,31 @@
       }
     },
     {
-      "name": "read_file",
-      "description": "读取文件内容。给定 start_line/end_line 时按行返回并带真实行号，适合定点查看大文件；否则按 offset_bytes/max_bytes 读取字节。",
+      "name": "run_code",
+      "description": "在沙箱里执行代码，只把 stdout 带回上下文。适合批量读取、检索、过滤、计算这类需要在沙箱里连续多步完成、又不想把中间结果带进上下文的工作：一次调用替代多轮「读文件 → 再读 → 再算」的往返。沙箱是独立 Linux 环境，工作目录 /workspace，可见 /sdcard 与共享目录；看不到 Android 应用私有数据，也不能操作用户界面\u2014\u2014界面与设备操作仍用对应工具。只输出结论，不要把大段原文打到 stdout。",
       "parameters": {
         "type": "object",
         "properties": {
-          "path": {"type": "string"},
-          "max_chars": {
-            "description": "按行模式一次返回的最大字符数，200 到 32000，默认 16000；被截断时 truncated 为 true。仅行模式使用，字节模式看 max_bytes。",
-            "type": "integer"
+          "code": {
+            "description": "要执行的代码本体。",
+            "type": "string"
           },
-          "offset_bytes": {
-            "description": "从第几个字节开始，默认 0。",
-            "type": "integer"
+          "language": {
+            "description": "python 或 shell；默认 python。",
+            "type": "string",
+            "enum": [
+              "python",
+              "shell"
+            ]
           },
-          "start_line": {
-            "description": "按行读取的起始行号，从 1 开始；给定后忽略 offset_bytes。",
-            "type": "integer"
-          },
-          "max_bytes": {
-            "description": "最多读取字节数，1 到 262144，默认 65536。",
-            "type": "integer"
-          },
-          "end_line": {
-            "description": "按行读取的结束行号；省略表示读到文件末尾。",
-            "type": "integer"
+          "timeout_seconds": {
+            "maximum": 600,
+            "description": "超时秒数，默认 60。",
+            "type": "integer",
+            "minimum": 1
           }
         },
-        "required": ["path"]
+        "required": ["code"]
       }
     },
     {
@@ -176,61 +173,8 @@
       }
     },
     {
-      "name": "search_code",
-      "description": "在文件或目录里按正则检索内容，返回 文件:行号:内容。适合在代码库或日志目录里定位关键词，输出比在 terminal 里拼 grep 更紧凑可控。命中范围不清楚时先加 files_only=true 看分布，再对目标文件精读，比反复调整 pattern 更快。",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "path": {
-            "description": "文件或目录路径，默认 /data/local/tmp/sta。",
-            "type": "string"
-          },
-          "files_only": {
-            "description": "true 时只返回每个文件的命中行数，不返回内容：先用它看命中分布在哪些文件，再对目标文件精读。默认 false。",
-            "type": "boolean"
-          },
-          "context_lines": {
-            "description": "每条匹配附带的上下文行数，0 到 5，默认 0。",
-            "type": "integer"
-          },
-          "max_chars": {
-            "description": "返回内容的最大字符数，200 到 32000，默认 8000；被截断时 truncated 为 true。",
-            "type": "integer"
-          },
-          "pattern": {
-            "description": "扩展正则表达式（grep -E 语法），按单行内容匹配。",
-            "type": "string"
-          },
-          "glob": {
-            "description": "文件名过滤，例如 *.kt；省略表示不过滤。",
-            "type": "string"
-          },
-          "max_results": {
-            "description": "最多返回的匹配行数，1 到 500，默认 50。",
-            "type": "integer"
-          }
-        },
-        "required": ["pattern"]
-      }
-    },
-    {
-      "name": "list_directory",
-      "description": "列出 Android 目录内容。默认 /data/local/tmp/sta，输出类似 ls -l。",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "path": {"type": "string"},
-          "show_hidden": {"type": "boolean"},
-          "limit": {
-            "description": "最多返回 1 到 200 行，默认 80。",
-            "type": "integer"
-          }
-        }
-      }
-    },
-    {
       "name": "terminal",
-      "description": "Manage terminal sessions on the current device. environment=android runs Android system commands and root operations; environment=linux runs the distribution selected in Sta settings, and environment=debian runs that installed distribution directly. Apktool build is supported in the APK analysis profile: it uses the official aapt2, executed through qemu-user on ARM64. Use open_and_exec for one-shot commands. Use open to create a persistent shell session and exec with session_id for multi-step work. Use async=true without session_id for long-running independent commands, then read_async_result with job_id to stream output chunks. Use daemon_start for services that must keep running after the Agent run (listening ports, web panels, watchers): the process detaches from any command shell, logs to a file, and survives until daemon_stop or device reboot. Manage daemons with daemon_list, daemon_logs and daemon_stop by task_id. Use close to stop jobs or close sessions.",
+      "description": "Manage terminal sessions on the current device. environment=android runs Android system commands and root operations; environment=linux runs the distribution selected in Sta settings, and environment=debian runs that installed distribution directly. Apktool build is supported in the APK analysis profile: it uses the official aapt2, executed through qemu-user on ARM64. Use open_and_exec for one-shot commands. Command execution is serialized: separate calls run one after another, so when you need several independent commands in the same turn, combine them into a single shell invocation (joined with `;` or `&&`) instead of issuing one call each. Use open to create a persistent shell session and exec with session_id for multi-step work. Use async=true without session_id for long-running independent commands, then read_async_result with job_id to stream output chunks. Use daemon_start for services that must keep running after the Agent run (listening ports, web panels, watchers): the process detaches from any command shell, logs to a file, and survives until daemon_stop or device reboot. Manage daemons with daemon_list, daemon_logs and daemon_stop by task_id. Use close to stop jobs or close sessions.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -520,7 +464,7 @@
     },
     {
       "name": "task_plan",
-      "description": "维护当前任务清单。需要多个步骤才能完成的任务先用它列出计划，每开始一步把它标为 in_progress、确认完成后标为 completed；简单的一两步任务不需要清单。每次调用提交完整清单，不是增量修改。同一时间只能有一项 in_progress。",
+      "description": "维护当前任务清单。需要多个步骤才能完成的任务先用它列出计划，每开始一步把它标为 in_progress、确认完成后标为 completed；简单的一两步任务不需要清单。每次调用提交完整清单，不是增量修改；要去掉某一项就不再提交它，传空数组即清空整份清单。同一时间只能有一项 in_progress，不要从 pending 直接跳到 completed。结束这一轮之前，清单里不能留下没做完的项：要么标为 completed，要么从清单里去掉；确实要留到以后做的，在回复里说明原因。调整计划时也说明为什么改。",
       "parameters": {
         "type": "object",
         "properties": {"todos": {

@@ -243,6 +243,14 @@ class AgentSubAgentToolScopeTest {
     }
 
     @Test
+    fun `run_code 不重写参数：读路径由沙箱资源视图限定`() {
+        val json = """{"code":"print(1)","language":"python"}"""
+        val result = scope("run_code", json)
+        assertTrue("应原样放行：$result", result is AgentSubAgentToolScope.Scoped.Ok)
+        assertEquals(json, (result as AgentSubAgentToolScope.Scoped.Ok).argumentsJson)
+    }
+
+    @Test
     fun `read_files 的 paths 不是数组时明确报错`() {
         assertEquals(
             AgentSubAgentToolScope.CODE_BAD_ARGUMENTS,

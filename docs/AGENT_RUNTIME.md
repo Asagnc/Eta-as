@@ -120,7 +120,7 @@ Root 探测在 IO 线程执行：存在 `su` 时首次自动请求一次，最�
 
 `delegate` 与 `multi_perspective` 默认关闭（配置项 `agent_subagents_enabled`，由 Runtime 最终裁决），开启后模型才会看到它们。两者是同一套受限子 loop 的入口。
 
-- **集中式编排**：主 loop 是唯一编排者。子智能体不能派生新的子智能体，也不能写文件、跑命令或操作设备，只拿到 `read_file`、`search_code`、`list_directory`。
+- **集中式编排**：主 loop 是唯一编排者。子智能体不能派生新的子智能体，也不能写文件、跑命令或操作设备，只能通过 `run_code` 在只读沙箱里检索（读完、过滤、只把结论带回自己的上下文）。读取范围由挂载约束（仓库整树只读、只把自己的 worktree 绑成可写），不靠「不发某个工具」保证。
 - **独立上下文**：每个角色有自己的消息与系统提示，互相看不到对方的中间推理；`multi_perspective` 并行派生多个角色，再由主 loop 汇总对照。角色之间共享推理会让多个视角退化成同一份意见的不同措辞。
 - **只回摘要**：子智能体的工具输出留在它自己的上下文里，只回一份上限 4000 字符的摘要，主 loop 必须自行校验。
 - **预算与失败隔离**：单个子智能体最多 6 轮、上下文估算上限 30000 token，超过即停止并回报 `SUB_AGENT_BUDGET_EXCEEDED`；某个角色失败不影响其它角色，失败原因随摘要一起回填。
@@ -128,7 +128,7 @@ Root 探测在 IO 线程执行：存在 `su` 时首次自动请求一次，最�
 
 ## 凭据边界
 
-provider API key 以明文保存在 App 私有的 `databases/sta.db` 中，而 Agent 同时具备 Root 与网络工具。文件类工具（`read_file`、`read_image`、`list_directory`、`search_code`、`edit_file`、`write_file`）在调用前检查路径，命中 `databases/`、`shared_prefs/`、`files/datastore/` 或 `sta.db*` 时直接返回 `CREDENTIAL_PATH_BLOCKED`，不返回任何内容。所有本地工具结果出站前还会经过凭据形态过滤（`sk-*`、`sk-ant-*`、`AIza*`、`Authorization`／`Bearer`／`x-api-key`），命中处替换为占位文本。
+provider API key 以明文保存在 App 私有的 `databases/sta.db` 中，而 Agent 同时具备 Root 与网络工具。文件类工具（`read_image`、`write_file`、`edit_file`、`edit_files`）在调用前检查路径，命中 `databases/`、`shared_prefs/`、`files/datastore/` 或 `sta.db*` 时直接返回 `CREDENTIAL_PATH_BLOCKED`，不返回任何内容。只读检索已改由 `run_code` 承担，它的沙箱只挂载工作区与共享目录，看不到这些应用私有路径，因此不构成新的读取面。所有本地工具结果出站前还会经过凭据形态过滤（`sk-*`、`sk-ant-*`、`AIza*`、`Authorization`／`Bearer`／`x-api-key`），命中处替换为占位文本。
 
 这两层都只是降低概率，不是安全边界：终端命令不受文件工具限制，形态过滤也拦不住拆分或转码后的输出。彻底的做法是把密钥移出可读文件（Keystore），尚未实施。
 

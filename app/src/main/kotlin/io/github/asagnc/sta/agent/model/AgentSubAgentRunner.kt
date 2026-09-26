@@ -160,8 +160,6 @@ internal class AgentSubAgentRunner(
             if (writable) addAll(WRITE_TOOL_NAMES)
             if (mailboxEnabled) addAll(MAILBOX_TOOL_NAMES)
             if (webRead) add(BROWSER_TOOL_NAME)
-            // 代码执行进两档名单：危害范围由资源视图定，不再靠「不发这个工具」假设它安全。
-            add(CODE_EXECUTION_TOOL_NAME)
         }
         val tools = subAgentTools(parentTools, allowedTools, mailboxEnabled)
         // 开工前先读同伴已有的发现：不读的话，并行的意义就只剩下"各查一遍再汇总"。
@@ -562,17 +560,17 @@ internal data class DiffStat(val changedFiles: Int, val stat: String)
 /** 宿主侧工作区根：沙箱里的 /workspace 从这里挂入。挂载源必须是宿主上真实存在的路径。 */
 private const val HOST_WORKSPACE_ROOT = "/data/local/tmp/sta"
 
-/** 代码执行工具名；子智能体两档都可以用它，写权限由挂载约束。 */
-private const val CODE_EXECUTION_TOOL_NAME = AgentCodeExecutionToolCatalog.RUN_CODE
-
 /**
  * 子智能体允许使用的工具：只检索、不写文件、不碰设备。
+ *
+ * 检索走 run_code——在沙箱里读完、过滤，只把结论带回上下文，与主智能体同一套做法。
+ * 只读由内核挂载强制（[LinuxSandboxView] 的 rootReadOnly），不靠「不发这个工具」假设它安全：
+ * 已实测对只读根写入会失败并报 Read-only file system。
  *
  * 写入模式下额外放行 [WRITE_TOOL_NAMES]，但那些工具只作用于子智能体自己的 worktree
  * （由 [AgentWorktreeManager] 隔离），主工作区不会被直接改动。
  */
-internal val READ_ONLY_TOOL_NAMES =
-    setOf("read_file", "read_files", "search_code", "find_files", "list_directory")
+internal val READ_ONLY_TOOL_NAMES = setOf(AgentCodeExecutionToolCatalog.RUN_CODE)
 
 /** 写入模式下额外放行的工具。`terminal` 是子智能体自验证（编译、跑单测）的唯一途径。 */
 internal val WRITE_TOOL_NAMES = setOf("write_file", "edit_file", "edit_files", "terminal")

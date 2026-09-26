@@ -25,6 +25,13 @@ class AgentToolCatalogTest {
                 browserTools = true,
                 addedTools = BROWSER_TOOLS + TERMINAL_TOOLS,
             ),
+            ToolVariant(
+                terminalTools = true,
+                browserTools = false,
+                // 关掉代码执行：run_code 也随之不可见，只读文件工具回来。
+                addedTools = (TERMINAL_TOOLS - "run_code") + FILE_READ_TOOLS,
+                codeExecution = false,
+            ),
         )
 
         assertEquals(base.size, baseTools.size)
@@ -40,12 +47,40 @@ class AgentToolCatalogTest {
             val names = AgentToolCatalog.build(
                 terminalTools = variant.terminalTools,
                 browserTools = variant.browserTools,
+                codeExecution = variant.codeExecution,
             ).toolNames()
-            val label = "terminal=${variant.terminalTools}, browser=${variant.browserTools}"
+            val label = "terminal=${variant.terminalTools}, browser=${variant.browserTools}, " +
+                "codeExecution=${variant.codeExecution}"
 
             assertEquals("$label must not contain duplicate tools", names.size, names.toSet().size)
             assertEquals("$label must be an exact union", baseTools + variant.addedTools, names.toSet())
         }
+    }
+
+    /**
+     * 只读文件工具与 run_code 是替代关系：两者同时可见时模型会叠加使用（先用文件工具理解，
+     * 再用 run_code 计算），省不下往返。写入类不受影响——沙箱写不到应用私有目录与设备共享存储。
+     */
+    @Test
+    fun readOnlyFileToolsYieldToCodeExecutionWhileWritesStay() {
+        val withCode = AgentToolCatalog.build(terminalTools = true, browserTools = false).toolNames()
+        assertTrue("run_code" in withCode)
+        assertTrue(
+            "只读文件工具应与 run_code 互斥，实际仍可见：${FILE_READ_TOOLS.filter { it in withCode }}",
+            FILE_READ_TOOLS.none { it in withCode },
+        )
+        assertTrue(
+            "写入类工具不随代码执行收起",
+            setOf("write_file", "edit_file", "edit_files").all { it in withCode },
+        )
+
+        val withoutCode = AgentToolCatalog.build(
+            terminalTools = true,
+            browserTools = false,
+            codeExecution = false,
+        ).toolNames()
+        assertTrue("run_code" !in withoutCode)
+        assertTrue("关掉代码执行时只读文件工具要回来", FILE_READ_TOOLS.all { it in withoutCode })
     }
 
     @Test
@@ -256,22 +291,30 @@ class AgentToolCatalogTest {
         val terminalTools: Boolean,
         val browserTools: Boolean,
         val addedTools: Set<String>,
+        /** 缺省跟随 terminalTools；置 false 用来单独验证只读文件工具的回退路径。 */
+        val codeExecution: Boolean = true,
     )
 
     private companion object {
         val BROWSER_TOOLS = setOf("browser_use")
+
+        /** 终端开关打开时可见、且不随 run_code 变化的工具。 */
         val TERMINAL_TOOLS = setOf(
             "read_image",
             "terminal",
             "run_command",
             "run_code",
-            "read_file",
-            "read_files",
             "edit_file",
             "edit_files",
+            "write_file",
+        )
+
+        /** 只读文件工具：被 run_code 替代，两者不会同时可见。 */
+        val FILE_READ_TOOLS = setOf(
+            "read_file",
+            "read_files",
             "find_files",
             "search_code",
-            "write_file",
             "list_directory",
         )
     }

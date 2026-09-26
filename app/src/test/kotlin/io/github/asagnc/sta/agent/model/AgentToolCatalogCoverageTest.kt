@@ -15,8 +15,18 @@ import org.junit.Test
  * 它们测的是单元，不是链路。
  */
 class AgentToolCatalogCoverageTest {
+    /** 被 run_code 替代的只读文件工具；这里写死，让实现改动必须显式更新期望。 */
+    private val readOnlyFileTools = setOf(
+        "read_file",
+        "read_files",
+        "find_files",
+        "search_code",
+        "list_directory",
+    )
+
     private fun selection() = AgentToolCatalog.Selection(
         terminalTools = true,
+        codeExecution = true,
         browserTools = true,
         deviceDirectTools = true,
         deviceSensitiveReadTools = true,
@@ -30,6 +40,7 @@ class AgentToolCatalogCoverageTest {
 
     private fun allOn(): JSONArray = AgentToolCatalog.build(
         terminalTools = true,
+        codeExecution = true,
         browserTools = true,
         deviceDirectTools = true,
         deviceSensitiveReadTools = true,
@@ -90,5 +101,31 @@ class AgentToolCatalogCoverageTest {
             "工具要有参数 schema",
             function.getJSONObject("parameters").getJSONObject("properties").length() > 0,
         )
+    }
+
+    @Test
+    fun codeExecutionReplacesReadOnlyFileToolsForTheMainLoop() {
+        val all = names(allOn()).toSet()
+
+        assertTrue("run_code" in all)
+        assertTrue(
+            "只读文件工具应与 run_code 互斥，实际仍可见：${readOnlyFileTools.filter { it in all }}",
+            readOnlyFileTools.none { it in all },
+        )
+        assertTrue(
+            "写入类工具不随代码执行收起",
+            setOf("write_file", "edit_file", "edit_files").all { it in all },
+        )
+
+        val withoutCode = names(
+            AgentToolCatalog.build(
+                terminalTools = true,
+                browserTools = false,
+                codeExecution = false,
+                capabilities = AgentToolCapabilities(rootAvailable = true, lsposedAvailable = true),
+            ),
+        ).toSet()
+        assertTrue("关掉代码执行时只读文件工具要回来", readOnlyFileTools.all { it in withoutCode })
+        assertTrue("run_code" !in withoutCode)
     }
 }
