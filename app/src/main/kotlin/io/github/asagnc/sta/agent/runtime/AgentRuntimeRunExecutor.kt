@@ -14,6 +14,7 @@ import io.github.asagnc.sta.agent.model.SubAgentMailbox
 import io.github.asagnc.sta.agent.model.SubAgentMailboxPolicy
 import io.github.asagnc.sta.agent.model.AgentSubAgentToolScope
 import io.github.asagnc.sta.agent.model.AgentToolCatalog
+import io.github.asagnc.sta.agent.model.AgentWorkspaceManifest
 import io.github.asagnc.sta.agent.model.ProviderClientFactory
 import io.github.asagnc.sta.agent.model.AgentModelFailure
 import io.github.asagnc.sta.agent.model.AgentHttpClient
@@ -40,6 +41,7 @@ import io.github.asagnc.sta.core.safeLogType
 import io.github.asagnc.sta.data.repository.AgentMemoryRepository
 import io.github.asagnc.sta.data.world.WorldGraphStore
 import io.github.asagnc.sta.data.world.WorldTraceStore
+import java.io.File
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -411,6 +413,12 @@ internal class AgentRuntimeRunExecutor(
                 roleplayContext = roleplayContext,
                 taskPlanSnapshot = { latestTaskPlan },
                 planSnapshot = { latestPlan },
+                // 开局扫一次目录拓扑：只算一次，不随轮次重扫（重扫既慢又会让稳定前缀漂移）。
+                workspaceTreeLookup = {
+                    AgentWorkspaceManifest.render(
+                        AgentWorkspaceManifest.scan(File(WORKSPACE_ROOT)),
+                    )
+                },
                 rewriteReply = request.operation == AgentRuntimeWire.OP_REWRITE_REPLY,
                 compactOnly = request.operation == AgentRuntimeWire.OP_COMPACT,
                 compactUntilMessageId = request.compactUntilMessageId,

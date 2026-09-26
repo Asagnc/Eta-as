@@ -55,6 +55,8 @@ internal object AgentModelClient {
         taskPlanSnapshot: (() -> String?)? = null,
         /** 当前方案（submit_plan 快照）：与清单一同注入，注入的是 digest 而不是正文。 */
         planSnapshot: (() -> String?)? = null,
+        /** 工作区目录拓扑（开局扫一次）：让模型起步就知道有哪些目录，而不是逐轮摸索。 */
+        workspaceTreeLookup: (() -> String?)? = null,
         onContextSnapshot: (AgentContextSnapshot) -> Unit = {},
         onTranscript: (List<ConversationMessage>) -> Unit = {},
         runStats: AgentRunStats? = null,
@@ -161,6 +163,7 @@ internal object AgentModelClient {
         loop.failureRecorder = failureRecorder(worldContext)
         loop.learningRecall = learningRecall(worldContext)
         loop.recallLookup = recallLookup(worldContext)
+        loop.workspaceTreeLookup = workspaceTreeLookup
         val result = try {
             if (compactOnly) loop.compactOnly(compactUntilMessageId) else loop.run()
         } catch (throwable: Throwable) {

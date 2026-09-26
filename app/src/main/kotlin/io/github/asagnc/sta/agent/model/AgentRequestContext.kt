@@ -6,16 +6,17 @@ import io.github.asagnc.sta.data.world.WorldKnowledgeStore
 import java.time.ZonedDateTime
 
 /**
- * 请求尾部注入：当前时间 + 当前方案 + 当前任务清单 + 历史结论。
+ * 请求尾部注入：当前时间 + 当前方案 + 当前任务清单 + 工作区拓扑 + 历史结论。
  *
  * 都放在消息序列的**最后一条**消息上，而不是系统提示里：服务端前缀缓存按前缀匹配，
  * 时间、方案与计划每轮都会变，写进系统提示会让整段历史失去缓存命中。传进来的是本轮请求的
  * 副本，历史消息本身不会被改写。
  *
- * 四段注入各自按自己的前缀去重：同一个消息对象被重复注入时不会叠加（时钟行由
- * [AgentRequestClock] 负责剥掉，方案、计划与历史结论行在这里剥）。方案块在计划块之上——
- * 方向先于进度；历史结论排最后，它是背景而不是本次任务的要求。
- * 纯文本消息里三个块都在时钟行之上；分片消息里都插在时钟分片**之后**——时钟是按「第 0 个
+ * 五段注入各自按自己的前缀去重：同一个消息对象被重复注入时不会叠加（时钟行由
+ * [AgentRequestClock] 负责剥掉，方案、计划、拓扑与历史结论行在这里剥）。方案块在计划块之上——
+ * 方向先于进度；历史结论排最后，它是背景而不是本次任务的要求。拓扑紧跟在计划之后：它描
+ * 述环境，比历史背景更贴近当前任务，但不指示要做什么。
+ * 纯文本消息里五个块都在时钟行之上；分片消息里都插在时钟分片**之后**——时钟是按「第 0 个
  * 分片是不是自己」去重的，抢它的位置会让时钟行每轮重复注入。
  */
 internal object AgentRequestContext {
@@ -31,6 +32,7 @@ internal object AgentRequestContext {
         taskPlanJson: String?,
         planJson: String?,
         recallEntries: List<WorldKnowledgeStore.Recalled> = emptyList(),
+        workspaceTree: String? = null,
         now: ZonedDateTime = ZonedDateTime.now(),
     ) {
         // 注入只改最后一条消息，所以这里只克隆那一条：视图的其余部分与历史共享对象，
@@ -41,7 +43,7 @@ internal object AgentRequestContext {
         val last = messages.optJSONObject(index) ?: return
         messages.put(index, cloneOf(last))
         AgentRequestClock.attach(messages, now)
-        // 注入顺序：方案（这次要做什么）→ 清单（做到哪了）→ 历史结论（以前做过什么）。
+        // 注入顺序：方案（这次要做什么）→ 清单（做到哪了）→ 拓扑（环境是什么样）→ 历史结论（以前做过什么）。
         // 历史结论放最后：它是背景，不是本次任务的要求，压在方向与进度之上会误导模型。
         // 会话历史里已经出现过的结论不再注入：模型已经从工具结果里读到过它，再摆一遍只是
         // 重复占预算。用内容前缀匹配而不是 id/时间，这样会话被压缩后同一条结论会重新注入。
@@ -50,6 +52,7 @@ internal object AgentRequestContext {
             AgentPlanFormat.injectedLines(planJson, taskPlanJson, planSupersededByUser(messages))
                 ?.joinToString("\n"),
             AgentTaskPlanFormat.injectedLines(taskPlanJson)?.joinToString("\n"),
+            workspaceTree?.takeIf { it.isNotBlank() },
             AgentRecallFormat.injectedLines(
                 recallEntries,
                 now.toInstant().toEpochMilli(),
@@ -149,6 +152,8 @@ internal object AgentRequestContext {
             line.startsWith(AgentTaskPlanFormat.ITEM_PREFIX) ||
             line.startsWith(AgentPlanFormat.HEADER_PREFIX) ||
             line.startsWith(AgentPlanFormat.ITEM_PREFIX) ||
+            line.startsWith(AgentWorkspaceManifest.HEADER_PREFIX) ||
+            line.startsWith(AgentWorkspaceManifest.ITEM_PREFIX) ||
             line.startsWith(AgentRecallFormat.HEADER_PREFIX) ||
             line.startsWith(AgentRecallFormat.ITEM_PREFIX)
 }
