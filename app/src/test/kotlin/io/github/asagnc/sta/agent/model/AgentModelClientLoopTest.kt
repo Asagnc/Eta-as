@@ -568,6 +568,85 @@ class AgentModelClientLoopTest {
     }
 
     @Test
+    fun repeatedToolBatchIsNoticedThenBlocked() {
+        // 同一批签名连续提交：到提醒档先提示，到阻断档不再执行，模型必须换策略。
+        val provider = ScriptedProvider(
+            responses = List<(ProviderRequest, AgentRunController) -> JSONObject>(5) { index ->
+                { _, _ ->
+                    assistant(
+                        finishReason = "tool_calls",
+                        toolCalls = listOf(toolCall("call-$index", "get_current_context", "{}")),
+                    )
+                }
+            } + listOf<(ProviderRequest, AgentRunController) -> JSONObject>(
+                { _, _ -> assistant(content = "已换策略", finishReason = "stop") }
+            )
+        )
+        var executions = 0
+        val messages = JSONArray().put(AgentConversationCodec.userTextMessage("开始"))
+
+        val result = AgentLoop(
+            config = modelConfig(),
+            messages = messages,
+            tools = AgentToolCatalog.build(terminalTools = false, browserTools = false),
+            provider = provider,
+            toolExecutor = AgentModelClient.ToolExecutor {
+                executions += 1
+                AgentModelClient.ToolResult(JSONObject().put("ok", true).toString())
+            },
+            runController = AgentRunController(),
+            traceFormatter = AgentTraceFormatter(),
+            onEvent = {},
+        ).run()
+
+        assertEquals("已换策略", result.content)
+        // 前四批照常执行，第五批被阻断。
+        assertEquals(4, executions)
+        // 提醒以补充消息注入到下一轮请求里。
+        assertTrue(provider.requests[3].toString().contains("与前几轮完全相同"))
+        // 被阻止的调用也要有结果，否则模型看不到任何反馈，会再发一遍；结果随下一轮请求回传。
+        assertTrue(provider.requests.last().toString().contains("REPEATED_CALL_BLOCKED"))
+    }
+
+    @Test
+    fun pollingToolBatchesNeverTriggerTheRepeatedGuard() {
+        // 轮询类工具本来就会连续重复（等界面出现、再看一眼屏幕），不该被判成空转。
+        val provider = ScriptedProvider(
+            responses = List<(ProviderRequest, AgentRunController) -> JSONObject>(5) { index ->
+                { _, _ ->
+                    assistant(
+                        finishReason = "tool_calls",
+                        toolCalls = listOf(toolCall("poll-$index", "observe_screen", "{}")),
+                    )
+                }
+            } + listOf<(ProviderRequest, AgentRunController) -> JSONObject>(
+                { _, _ -> assistant(content = "完成", finishReason = "stop") }
+            )
+        )
+        var executions = 0
+        val messages = JSONArray().put(AgentConversationCodec.userTextMessage("开始"))
+
+        val result = AgentLoop(
+            config = modelConfig(),
+            messages = messages,
+            tools = AgentToolCatalog.build(terminalTools = false, browserTools = false),
+            provider = provider,
+            toolExecutor = AgentModelClient.ToolExecutor {
+                executions += 1
+                AgentModelClient.ToolResult(JSONObject().put("ok", true).toString())
+            },
+            runController = AgentRunController(),
+            traceFormatter = AgentTraceFormatter(),
+            onEvent = {},
+        ).run()
+
+        assertEquals("完成", result.content)
+        // 五批全部执行，且全程没有重复提醒。
+        assertEquals(5, executions)
+        assertFalse(provider.requests.any { it.toString().contains("与前几轮完全相同") })
+    }
+
+    @Test
     fun retryPreservesToolResultsAndImagesWithoutReplayingToolsOrFailedReasoning() {
         val requests = mutableListOf<String>()
         val sessions = mutableListOf<String>()

@@ -4,7 +4,9 @@ import io.github.asagnc.sta.data.model.CustomProviderSetting
 import io.github.asagnc.sta.data.model.Model
 import io.github.asagnc.sta.data.model.ProviderSourceTypes
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AgentModelPickerProjectorTest {
@@ -138,6 +140,63 @@ class AgentModelPickerProjectorTest {
                 locale = java.util.Locale.GERMANY,
             ),
         )
+    }
+
+    @Test
+    fun latestContextUsage_sumsCumulativeTokensAcrossEveryMeasuredRound() {
+        val messages = listOf(
+            AgentMessageUi(
+                id = "first",
+                content = "one",
+                usage = TokenUsageUi(
+                    contextTokens = 10_000,
+                    inputTokens = 12_000,
+                    outputTokens = 300,
+                    cachedTokens = 9_000,
+                ),
+            ),
+            AgentMessageUi(id = "missing", content = "two"),
+            AgentMessageUi(
+                id = "last",
+                content = "three",
+                usage = TokenUsageUi(
+                    contextTokens = 12_000,
+                    inputTokens = 13_000,
+                    outputTokens = 200,
+                    cachedTokens = 10_000,
+                ),
+            ),
+            SystemNoticeMessageUi(
+                id = "notice",
+                code = SystemNoticeCode.ContextCompaction,
+                contextTokens = 11_000,
+            ),
+        )
+
+        val usage = latestContextUsage(messages, selectedModel = null)
+
+        // 累计口径是「一共发出去多少」：同一份上下文每轮重发，窗口占用不变，累计照加。
+        assertEquals(25_000L, usage.cumulativeInputTokens)
+        assertEquals(500L, usage.cumulativeOutputTokens)
+        assertEquals(19_000L, usage.cumulativeCachedTokens)
+        assertTrue(usage.hasCumulative)
+        // 窗口口径仍是最近一次实测，与累计口径互不影响。
+        assertEquals(11_000, usage.contextTokens)
+    }
+
+    @Test
+    fun latestContextUsage_hidesCumulativeLineUntilATokenCountIsMeasured() {
+        val usage = latestContextUsage(
+            messages = listOf(
+                AgentMessageUi(id = "first", content = "one", usage = TokenUsageUi(contextTokens = 10_000)),
+            ),
+            selectedModel = null,
+        )
+
+        // 只有窗口占用、没有输入输出计数：这段会话还没发出过请求，累计行不展示。
+        assertEquals(0L, usage.cumulativeInputTokens)
+        assertEquals(0L, usage.cumulativeOutputTokens)
+        assertFalse(usage.hasCumulative)
     }
 
     private fun provider(
