@@ -28,8 +28,8 @@ class AgentToolCatalogTest {
             ToolVariant(
                 terminalTools = true,
                 browserTools = false,
-                // 关掉代码执行：run_code 也随之不可见，只读文件工具回来。
-                addedTools = (TERMINAL_TOOLS - "run_code") + FILE_READ_TOOLS,
+                // 关掉代码执行：只影响 run_code 自己。
+                addedTools = TERMINAL_TOOLS - "run_code",
                 codeExecution = false,
             ),
         )
@@ -58,16 +58,17 @@ class AgentToolCatalogTest {
     }
 
     /**
-     * 只读文件工具与 run_code 是替代关系：两者同时可见时模型会叠加使用（先用文件工具理解，
-     * 再用 run_code 计算），省不下往返。写入类不受影响——沙箱写不到应用私有目录与设备共享存储。
+     * 只读文件工具与 run_code 同时可见：隐藏只读工具会让「一次读多个文件」失去动作形状，
+     * 而 run_code 的参数是一段代码，没有「读哪些文件」这个维度。分工改由提示词规则约束。
+     * 写入类工具不随代码执行变化——沙箱写不到应用私有目录与设备共享存储。
      */
     @Test
-    fun readOnlyFileToolsYieldToCodeExecutionWhileWritesStay() {
+    fun readOnlyFileToolsStayVisibleWhileWritesStayToo() {
         val withCode = AgentToolCatalog.build(terminalTools = true, browserTools = false).toolNames()
         assertTrue("run_code" in withCode)
         assertTrue(
-            "只读文件工具应与 run_code 互斥，实际仍可见：${FILE_READ_TOOLS.filter { it in withCode }}",
-            FILE_READ_TOOLS.none { it in withCode },
+            "只读文件工具应与 run_code 同时可见，实际缺失：${FILE_READ_TOOLS.filterNot { it in withCode }}",
+            FILE_READ_TOOLS.all { it in withCode },
         )
         assertTrue(
             "写入类工具不随代码执行收起",
@@ -80,7 +81,7 @@ class AgentToolCatalogTest {
             codeExecution = false,
         ).toolNames()
         assertTrue("run_code" !in withoutCode)
-        assertTrue("关掉代码执行时只读文件工具要回来", FILE_READ_TOOLS.all { it in withoutCode })
+        assertTrue("关掉代码执行时只读文件工具仍可见", FILE_READ_TOOLS.all { it in withoutCode })
     }
 
     @Test
@@ -298,7 +299,7 @@ class AgentToolCatalogTest {
     private companion object {
         val BROWSER_TOOLS = setOf("browser_use")
 
-        /** 终端开关打开时可见、且不随 run_code 变化的工具。 */
+        /** 终端开关打开时可见的工具；只读文件工具也在内——它们不再随 run_code 变化。 */
         val TERMINAL_TOOLS = setOf(
             "read_image",
             "terminal",
@@ -307,9 +308,14 @@ class AgentToolCatalogTest {
             "edit_file",
             "edit_files",
             "write_file",
+            "read_file",
+            "read_files",
+            "find_files",
+            "search_code",
+            "list_directory",
         )
 
-        /** 只读文件工具：被 run_code 替代，两者不会同时可见。 */
+        /** 只读文件工具：与 run_code 同时可见，由提示词规则分工（多文件走 read_files）。 */
         val FILE_READ_TOOLS = setOf(
             "read_file",
             "read_files",

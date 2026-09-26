@@ -176,7 +176,7 @@ class AgentContextPrunerTest {
     }
 
     @Test
-    fun longReasoningIsFoldedToItsHeadAndTail() {
+    fun longReasoningIsFoldedToItsHeadOnly() {
         val long = "先确认目录结构，" + "再逐个读取\u3002".repeat(400) + "所以下一步读 AgentLoop"
         val message = JSONObject()
             .put("role", "assistant")
@@ -187,10 +187,11 @@ class AgentContextPrunerTest {
         val result = AgentContextPruner.prune(messages, AgentContextPruner.MAX_CHARS)
 
         val folded = result.messages.getJSONObject(0).getString("reasoning_content")
-        // 折叠保留意图（头部）与结论（尾部），丢的是中间的论证过程。
+        // 只保留意图（头部）：推理的尾部是收尾语，随历史回传会成为下一轮的续写对象，
+        // 于是「看到自己被截断的收尾语 → 接着说同一段」自我强化。丢的是草稿尾，
+        // 正式结论在 assistant content 里，不参与折叠。
         assertTrue(folded.startsWith(long.take(AgentContextPruner.REASONING_HEAD_CHARS)))
-        // 尾部预算会被省略标记挤掉一部分，所以只断言「结尾仍是原文的后缀」。
-        assertTrue(long.endsWith(folded.takeLast(50)))
+        assertFalse("尾部不得进入折叠结果", long.endsWith(folded.takeLast(50)))
         assertTrue(folded.contains("此处省略"))
         assertTrue(folded.length <= AgentContextPruner.MAX_REASONING_CHARS)
         // 历史本身不能被改写：归档里仍要保留完整推理。

@@ -64,9 +64,12 @@ internal object AgentToolCatalog {
             if (selection.terminalTools) AgentTerminalToolCatalog.appendTo(tools)
         },
         "AgentFileToolCatalog" to { tools, selection ->
-            // 只读文件工具与 run_code 互为替代：同时可见时调用会叠加而不是替代。
-            // 写入没有被替代——沙箱写不到应用私有目录与设备共享存储，因此始终装配。
-            if (selection.terminalTools && !selection.codeExecution) AgentFileToolCatalog.appendReadOnlyTo(tools)
+            // 只读文件工具与 run_code 同时装配。曾经靠隐藏只读工具来防叠加，但隐藏让
+            // 「一次读多个文件」失去了对应的动作形状：run_code 的参数是一段代码，没有
+            // 「读哪些文件」这个维度，模型要读多个文件只能自己写循环，而写循环需要它先想到
+            // ——实测同一任务 4 步与 19 步的差别就在这里。改用提示词规则约束两者分工，
+            // 工具目录在 run 内保持稳定（参照 harness 的做法，理由也是请求缓存前缀）。
+            if (selection.terminalTools) AgentFileToolCatalog.appendReadOnlyTo(tools)
             AgentFileToolCatalog.appendWriteTo(tools)
         },
         "AgentCodeExecutionToolCatalog" to { tools, selection ->

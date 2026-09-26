@@ -15,7 +15,13 @@ import org.junit.Test
  * 它们测的是单元，不是链路。
  */
 class AgentToolCatalogCoverageTest {
-    /** 被 run_code 替代的只读文件工具；这里写死，让实现改动必须显式更新期望。 */
+    /**
+     * 只读文件工具集；写死是为了让装配改动必须显式更新期望。
+     *
+     * 它们与 run_code 曾经互斥（靠隐藏防叠加），现改为同时可见、由提示词规则分工：
+     * 隐藏让「一次读多个文件」失去了对应的动作形状，而 run_code 的参数是一段代码，
+     * 没有「读哪些文件」这个维度。
+     */
     private val readOnlyFileTools = setOf(
         "read_file",
         "read_files",
@@ -104,19 +110,20 @@ class AgentToolCatalogCoverageTest {
     }
 
     @Test
-    fun codeExecutionReplacesReadOnlyFileToolsForTheMainLoop() {
+    fun readOnlyFileToolsStayVisibleAlongsideCodeExecution() {
         val all = names(allOn()).toSet()
 
         assertTrue("run_code" in all)
         assertTrue(
-            "只读文件工具应与 run_code 互斥，实际仍可见：${readOnlyFileTools.filter { it in all }}",
-            readOnlyFileTools.none { it in all },
+            "只读文件工具应与 run_code 同时可见，实际缺失：${readOnlyFileTools.filterNot { it in all }}",
+            readOnlyFileTools.all { it in all },
         )
         assertTrue(
             "写入类工具不随代码执行收起",
             setOf("write_file", "edit_file", "edit_files").all { it in all },
         )
 
+        // 关掉代码执行只影响 run_code 自己：只读文件工具的存在与否不再由它决定。
         val withoutCode = names(
             AgentToolCatalog.build(
                 terminalTools = true,
@@ -125,7 +132,7 @@ class AgentToolCatalogCoverageTest {
                 capabilities = AgentToolCapabilities(rootAvailable = true, lsposedAvailable = true),
             ),
         ).toSet()
-        assertTrue("关掉代码执行时只读文件工具要回来", readOnlyFileTools.all { it in withoutCode })
+        assertTrue("关掉代码执行时只读文件工具仍可见", readOnlyFileTools.all { it in withoutCode })
         assertTrue("run_code" !in withoutCode)
     }
 }

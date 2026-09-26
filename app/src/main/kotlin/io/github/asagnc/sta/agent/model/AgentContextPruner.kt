@@ -58,14 +58,29 @@ internal object AgentContextPruner {
     /** 截断后保留的尾部字符数；命令输出的结论与报错通常在尾部。 */
     const val TAIL_CHARS = 8_000
 
-    /** 历史助手推理的折叠阈值；超过就只保留头尾。 */
+    /**
+     * 历史助手推理的折叠阈值；超过就只保留头部。
+     *
+     * 阈值只决定“多长才折叠”，不决定折叠成什么形态。实测一次 153 条推理的长会话，
+     * 折叠前 305216 字符，而本轮输入达到 296845 token——推理是上下文的绝对大头，
+     * 保留头部就够给出“上一轮想做什么”的连贯性。
+     */
     const val MAX_REASONING_CHARS = 600
 
     /** 折叠后保留的推理头部字符数；推理开头是意图。 */
     const val REASONING_HEAD_CHARS = 400
 
-    /** 折叠后保留的推理尾部字符数；推理结论在结尾。 */
-    const val REASONING_TAIL_CHARS = 200
+    /**
+     * 折叠后保留的推理尾部字符数。
+     *
+     * **零：推理不留尾部。** 工具输出的“尾部是结论与报错”不适用于推理——推理的尾部是收尾语，
+     * 而收尾语一旦随历史回传，会成为下一轮的续写对象：模型看到自己被截断的“好。go. 输出。”
+     * 就接着说同一段，存回历史后又被保留，自我强化。实测一条 153 条推理的长会话里，38 条
+     * 含这种收尾语，且前几条正常、越到后面越密，符合逐步污染。
+     *
+     * 推理的价值在“想做什么”（开头），不在“说完没有”（结尾），丢掉尾部不损失决策信息。
+     */
+    const val REASONING_TAIL_CHARS = 0
 
     /** 中间被换掉的文本模板，%d 是省略的字符数。 */
     private const val ELLIPSIS = "\n\n[... 此处省略 %d 个字符 ...]\n\n"
@@ -148,7 +163,7 @@ internal object AgentContextPruner {
         message.optString("role") == "assistant" &&
             message.optString("reasoning_content").length > MAX_REASONING_CHARS
 
-    /** 折叠后的助手推理：头（意图）+ 省略标记 + 尾（结论）。 */
+    /** 折叠后的助手推理：只留头部（意图），不带尾部。 */
     private fun foldedReasoning(message: JSONObject): String =
         headTail(
             message.optString("reasoning_content"),
