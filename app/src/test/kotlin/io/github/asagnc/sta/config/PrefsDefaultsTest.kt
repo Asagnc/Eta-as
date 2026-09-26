@@ -26,7 +26,7 @@ class PrefsDefaultsTest {
         assertEquals(
             mapOf(
                 Prefs.Keys.AGENT_PARALLEL_TOOL_LIMIT to 8,
-                Prefs.Keys.AGENT_TOOL_RESULT_KEEP to 6,
+                Prefs.Keys.AGENT_TOOL_RESULT_MAX_CHARS to 8192,
                 Prefs.Keys.AGENT_CONTEXT_NOTICE_PERCENT to 60,
             ),
             Prefs.Keys.INT_DEFAULTS,

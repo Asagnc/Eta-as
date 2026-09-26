@@ -244,8 +244,14 @@ internal object AgentModelClient {
         val maxParallelToolCalls: Int = 4,
         /** 子智能体是否对模型可见；实际是否启用由 Prefs 的 agent_subagents_enabled 与本字段共同决定。 */
         val subAgentTools: Boolean = true,
-        /** 请求视图里保留完整内容的最新工具结果条数；0 表示只保留最后一条，负数表示不清理。 */
-        val toolResultKeep: Int = 6,
+        /**
+         * 请求视图里单个工具结果的字符上限，超过即做确定性头尾截断（见 [AgentContextPruner]）。
+         *
+         * 不用「保留最近 N 条」那种按位置划分的规则：边界会随轮次前移，
+         * 每轮都会改写一条历史中部的消息，提示缓存的前缀从该点起反复失效。
+         * 0 或负数表示不截断。
+         */
+        val toolResultMaxChars: Int = AgentContextPruner.MAX_CHARS,
         /**
          * 压缩时的额外要求，来自记忆文件里的「压缩指令」章节（对齐 Claude Code 的
          * CLAUDE.md `# Compact instructions`）；空表示只用默认摘要要求。

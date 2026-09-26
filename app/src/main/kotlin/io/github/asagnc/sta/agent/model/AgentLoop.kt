@@ -451,7 +451,7 @@ internal class AgentLoop(
      */
     private fun requestMessagesFor(roundTools: JSONArray): JSONArray {
         val projected = roleplayContext?.projectMessages(messages, roundTools)
-        val result = AgentContextPruner.prune(projected ?: messages, config.toolResultKeep)
+        val result = AgentContextPruner.prune(projected ?: messages, config.toolResultMaxChars)
         runStats?.updatePrunedToolResults(result.prunedCount)
         // 每轮请求都把当前时间、当前方案、当前任务清单与历史结论重新附到最后一条消息上：
         // 时间让模型据此判断「现在」，计划让它在压缩或跨轮之后仍然知道自己排了什么。

@@ -9,85 +9,139 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/**
+ * `AgentContextPruner` 的行为约束。
+ *
+ * 最重要的一条是 [theRequestViewIsByteStableAcrossRounds]：工具结果一旦进入历史，后续每轮
+ * 算出的内容必须逐字节相同。提示缓存按完整匹配的前缀单元生效，只要有一条历史中部的消息被
+ * 改写，从它开始往后的缓存就全部失效，那些 token 要按未命中的全价重算。
+ */
 class AgentContextPrunerTest {
 
     @Test
-    fun onlyTheMostRecentToolResultsKeepTheirFullContent() {
-        val messages = conversation(toolResults = 3)
-        val originalLastTool = messages.getJSONObject(7).getString("content")
+    fun resultsWithinTheLimitAreLeftAlone() {
+        val messages = JSONArray()
+            .put(toolResult("""{"ok":true}"""))
+            .put(toolResult("x".repeat(500)))
+            .put(toolResult("y".repeat(AgentContextPruner.MAX_CHARS)))
 
-        val result = AgentContextPruner.prune(messages, keepRecentToolResults = 1)
+        val result = AgentContextPruner.prune(messages, AgentContextPruner.MAX_CHARS)
 
-        assertEquals(2, result.prunedCount)
+        assertEquals(0, result.prunedCount)
         assertEquals(
-            AgentContextPruner.placeholder(),
-            result.messages.getJSONObject(3).getString("content"),
+            "y".repeat(AgentContextPruner.MAX_CHARS),
+            result.messages.getJSONObject(2).getString("content"),
         )
-        assertEquals(
-            AgentContextPruner.placeholder(),
-            result.messages.getJSONObject(5).getString("content"),
+    }
+
+    @Test
+    fun oversizedResultsKeepTheirHeadAndTail() {
+        val payload = "y".repeat(150_000)
+        val messages = JSONArray().put(
+            toolResult("""{"ok":true,"path":"/a.kt","content":"$payload"}"""),
         )
-        assertEquals(originalLastTool, result.messages.getJSONObject(7).getString("content"))
-        assertEquals("system", result.messages.getJSONObject(0).getString("role"))
-        assertEquals("user 输入", result.messages.getJSONObject(1).getString("content"))
-        assertTrue(result.messages.getJSONObject(2).has("tool_calls"))
+
+        val result = AgentContextPruner.prune(messages, AgentContextPruner.MAX_CHARS)
+
+        assertEquals(1, result.prunedCount)
+        val content = result.messages.getJSONObject(0).getString("content")
+        // 截断后仍是可解析的 JSON，状态字段原样保留，只有载荷被换掉。
+        val parsed = JSONObject(content)
+        assertTrue(parsed.getBoolean("ok"))
+        assertEquals("/a.kt", parsed.getString("path"))
+        val text = parsed.getString("content")
+        assertTrue(text.startsWith(payload.take(AgentContextPruner.HEAD_CHARS)))
+        assertTrue(text.endsWith(payload.takeLast(AgentContextPruner.TAIL_CHARS)))
+        assertTrue(text.contains("此处省略"))
+        assertEquals(150_000, parsed.getInt("_sta_truncated_chars"))
+        // 输出必须落在阈值内，否则下一轮会继续截，稳定性就没了。
+        assertTrue(content.length <= AgentContextPruner.MAX_CHARS)
+    }
+
+    @Test
+    fun truncationIsIdempotent() {
+        val messages = JSONArray().put(oversizedToolResult(150_000))
+        val once = AgentContextPruner.prune(messages, AgentContextPruner.MAX_CHARS).messages
+
+        val twice = AgentContextPruner.prune(once, AgentContextPruner.MAX_CHARS)
+
+        // 幂等是稳定性的前提：截断结果再截一次必须得到完全相同的字节。
+        assertEquals(0, twice.prunedCount)
+        assertEquals(once.toString(), twice.messages.toString())
+    }
+
+    @Test
+    fun theRequestViewIsByteStableAcrossRounds() {
+        val history = JSONArray()
+            .put(JSONObject().put("role", "system").put("content", "系统提示"))
+            .put(JSONObject().put("role", "user").put("content", "user 输入"))
+        repeat(4) { index ->
+            history.put(toolCallMessage(index))
+            history.put(oversizedToolResult(150_000))
+        }
+
+        val firstRound = AgentContextPruner.prune(history, AgentContextPruner.MAX_CHARS).messages
+
+        // 第二轮：又追加了一轮工具调用，历史变长，前面每一条都还在原位。
+        val grown = JSONArray(history.toString())
+        grown.put(toolCallMessage(4))
+        grown.put(oversizedToolResult(150_000))
+        val secondRound = AgentContextPruner.prune(grown, AgentContextPruner.MAX_CHARS).messages
+
+        // 第一轮视图里的全部消息都要与第二轮逐字节相同：这才是 append-only，
+        // 缓存前缀才不会在每轮被重新计费。
+        assertEquals(firstRound.length(), commonPrefixLength(firstRound, secondRound))
     }
 
     @Test
     fun pruningNeverMutatesTheStoredHistory() {
-        val messages = conversation(toolResults = 3)
+        val messages = JSONArray().put(oversizedToolResult(150_000))
         val before = messages.toString()
 
-        AgentContextPruner.prune(messages, keepRecentToolResults = 0)
+        AgentContextPruner.prune(messages, AgentContextPruner.MAX_CHARS)
 
         // 请求视图的构造不能改写历史：会话记录与归档仍然要保留完整工具结果。
         assertEquals(before, messages.toString())
-        assertFalse(messages.toString().contains("pruned"))
+        assertFalse(messages.toString().contains("此处省略"))
     }
 
     @Test
     fun untouchedMessagesAreSharedAndRewrittenOnesAreCloned() {
-        val messages = conversation(toolResults = 3)
+        val messages = JSONArray()
+            .put(JSONObject().put("role", "system").put("content", "系统提示"))
+            .put(toolResult("x".repeat(200)))
+            .put(oversizedToolResult(150_000))
 
-        val result = AgentContextPruner.prune(messages, keepRecentToolResults = 1)
+        val result = AgentContextPruner.prune(messages, AgentContextPruner.MAX_CHARS)
 
         // 只有被改写的消息需要克隆，其余共享原对象——这正是省掉整段深拷贝的地方。
         assertSame(messages.getJSONObject(0), result.messages.getJSONObject(0))
-        assertSame(messages.getJSONObject(7), result.messages.getJSONObject(7))
-        assertNotSame(messages.getJSONObject(3), result.messages.getJSONObject(3))
-    }
-
-    @Test
-    fun shortResultsAndDisabledPruningAreLeftAlone() {
-        val messages = JSONArray()
-            .put(JSONObject().put("role", "tool").put("content", """{"ok":true}"""))
-            .put(JSONObject().put("role", "tool").put("content", "x".repeat(500)))
-        val kept = AgentContextPruner.prune(messages, keepRecentToolResults = 1)
-
-        assertEquals(0, kept.prunedCount)
-        assertEquals("""{"ok":true}""", kept.messages.getJSONObject(0).getString("content"))
-
-        val second = JSONArray().put(JSONObject().put("role", "tool").put("content", "x".repeat(500)))
-        val disabled = AgentContextPruner.prune(second, keepRecentToolResults = -1)
-
-        assertEquals(0, disabled.prunedCount)
-        // 关闭清理时视图仍是独立的顶层数组（元素共享），注入逻辑才动不到历史。
-        assertNotSame(second, disabled.messages)
-        assertSame(second.getJSONObject(0), disabled.messages.getJSONObject(0))
-        assertEquals("x".repeat(500), second.getJSONObject(0).getString("content"))
+        assertSame(messages.getJSONObject(1), result.messages.getJSONObject(1))
+        assertNotSame(messages.getJSONObject(2), result.messages.getJSONObject(2))
     }
 
     @Test
     fun viewIsAlwaysAFreshTopLevelArray() {
-        val messages = conversation(toolResults = 2)
+        val messages = JSONArray().put(toolResult("x".repeat(200)))
+
+        val result = AgentContextPruner.prune(messages, AgentContextPruner.MAX_CHARS)
 
         // 顶层数组必须独立：注入逻辑会在视图上替换元素，共享顶层数组就会改到历史，
         // 而历史对象一旦被替换，按引用相等定位瞬时观察消息的删除就会失效。
-        val result = AgentContextPruner.prune(messages, keepRecentToolResults = 99)
-
         assertEquals(0, result.prunedCount)
         assertNotSame(messages, result.messages)
         assertSame(messages.getJSONObject(0), result.messages.getJSONObject(0))
+    }
+
+    @Test
+    fun disabledTruncationLeavesEverythingAlone() {
+        val messages = JSONArray().put(oversizedToolResult(150_000))
+
+        val disabled = AgentContextPruner.prune(messages, maxChars = -1)
+
+        assertEquals(0, disabled.prunedCount)
+        assertNotSame(messages, disabled.messages)
+        assertSame(messages.getJSONObject(0), disabled.messages.getJSONObject(0))
     }
 
     @Test
@@ -102,62 +156,56 @@ class AgentContextPrunerTest {
             .put(JSONObject().put("role", "system").put("content", "提示"))
             .put(transient)
 
-        val result = AgentContextPruner.prune(messages, keepRecentToolResults = 99)
+        val result = AgentContextPruner.prune(messages, AgentContextPruner.MAX_CHARS)
 
         assertNotSame(transient, result.messages.getJSONObject(1))
         assertSame(messages.getJSONObject(0), result.messages.getJSONObject(0))
     }
 
     @Test
-    fun resultThatAloneExceedsTheProtectionBudgetIsNotProtected() {
-        // 保护区从尾部往前累加，越线即停：一条 150k 字符（约 50k token）的结果自己就跨过了
-        // 40k 预算，越线时它已经不在保护区内，因此仍会被裁。
-        // 这是原有语义（旧实现同样是先累加、越线 break、再入集合），不是本次改动引入的；
-        // 实践中最近的若干条结果由 keepRecentToolResults 兜住，受影响的只是更早的大结果。
-        val messages = JSONArray()
-            .put(JSONObject().put("role", "tool").put("content", "y".repeat(150_000)))
+    fun nonStringContentIsLeftAlone() {
+        // 分片数组（文本 + 图片）不参与截断：截断会切坏图片数据。
+        val parts = JSONArray()
+            .put(JSONObject().put("type", "text").put("text", "y".repeat(150_000)))
+        val messages = JSONArray().put(JSONObject().put("role", "tool").put("content", parts))
 
-        val result = AgentContextPruner.prune(messages, keepRecentToolResults = 0)
+        val result = AgentContextPruner.prune(messages, AgentContextPruner.MAX_CHARS)
 
-        assertEquals(1, result.prunedCount)
-        assertEquals(
-            AgentContextPruner.placeholder(),
-            result.messages.getJSONObject(0).getString("content"),
-        )
+        assertEquals(0, result.prunedCount)
+        assertSame(messages.getJSONObject(0), result.messages.getJSONObject(0))
     }
 
     @Test
-    fun resultsInsideProtectedTokensAreLeftAlone() {
-        // 少量、较新的结果全部落在保护区内，一条都不裁。
-        val messages = JSONArray()
-            .put(JSONObject().put("role", "tool").put("content", "y".repeat(300)))
-            .put(JSONObject().put("role", "tool").put("content", "z".repeat(300)))
+    fun tinyLimitsStillRespectTheBudget() {
+        // 阈值小到连省略标记都放不下时也必须守住长度上限，否则下一轮会继续截，稳定性又没了。
+        val messages = JSONArray().put(oversizedToolResult(150_000))
 
-        val result = AgentContextPruner.prune(messages, keepRecentToolResults = 0)
+        val result = AgentContextPruner.prune(messages, maxChars = 20)
 
-        assertEquals(0, result.prunedCount)
-        assertEquals("y".repeat(300), result.messages.getJSONObject(0).getString("content"))
+        assertTrue(result.messages.getJSONObject(0).getString("content").length <= 20)
     }
 
-    private fun conversation(toolResults: Int): JSONArray = JSONArray().also { messages ->
-        messages
-            .put(JSONObject().put("role", "system").put("content", "系统提示"))
-            .put(JSONObject().put("role", "user").put("content", "user 输入"))
-        repeat(toolResults) { index ->
-            messages.put(
-                JSONObject()
-                    .put("role", "assistant")
-                    .put("content", "")
-                    .put("tool_calls", JSONArray().put(JSONObject().put("id", "call-$index"))),
-            )
-            messages.put(
-                JSONObject()
-                    .put("role", "tool")
-                    .put("tool_call_id", "call-$index")
-                    // 保护区按 token 划分（最近 40k token 内的工具结果不裁剪），
-                    // 内容要足够大才能落到保护区之外，否则一条也裁不掉。
-                    .put("content", "工具结果 ${index + 1}：" + "y".repeat(150_000)),
-            )
+    private fun commonPrefixLength(first: JSONArray, second: JSONArray): Int {
+        var index = 0
+        while (
+            index < first.length() && index < second.length() &&
+            first.get(index).toString() == second.get(index).toString()
+        ) {
+            index++
         }
+        return index
     }
+
+    private fun toolResult(content: String): JSONObject = JSONObject()
+        .put("role", "tool")
+        .put("tool_call_id", "call")
+        .put("content", content)
+
+    private fun oversizedToolResult(chars: Int): JSONObject =
+        toolResult("""{"ok":true,"content":"${"y".repeat(chars)}"}""")
+
+    private fun toolCallMessage(index: Int): JSONObject = JSONObject()
+        .put("role", "assistant")
+        .put("content", "")
+        .put("tool_calls", JSONArray().put(JSONObject().put("id", "call-$index")))
 }

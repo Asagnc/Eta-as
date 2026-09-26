@@ -34,8 +34,8 @@ internal object Prefs {
         const val AGENT_THINKING_ENABLED = "agent_thinking_enabled"
         /** 子智能体开关，默认开启（见 BOOLEAN_DEFAULTS）；关闭后模型就看不到 delegate。 */
         const val AGENT_SUBAGENTS_ENABLED = "agent_subagents_enabled"
-        /** 请求视图里保留完整内容的最新工具结果条数。 */
-        const val AGENT_TOOL_RESULT_KEEP = "agent_tool_result_keep"
+        /** 请求视图里单个工具结果的字符上限；超过即做确定性截断（见 AgentContextPruner）。 */
+        const val AGENT_TOOL_RESULT_MAX_CHARS = "agent_tool_result_max_chars"
         /** 上下文占用提示的触发百分比，设为 0 即关闭该策略（用于对照实验）。 */
         const val AGENT_CONTEXT_NOTICE_PERCENT = "agent_context_notice_percent"
         /** 同批只读工具的并发上限；默认值与运行时的并发配置项一致。 */
@@ -56,7 +56,7 @@ internal object Prefs {
         /** 数值开关及其默认值。 */
         val INT_DEFAULTS: Map<String, Int> = mapOf(
             AGENT_PARALLEL_TOOL_LIMIT to 8,
-            AGENT_TOOL_RESULT_KEEP to 6,
+            AGENT_TOOL_RESULT_MAX_CHARS to 8192,
             AGENT_CONTEXT_NOTICE_PERCENT to 60,
         )
 

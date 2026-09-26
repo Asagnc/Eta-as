@@ -22,8 +22,8 @@ internal object AgentRuntimePolicy {
         val subAgents: Boolean = false,
         /** 同批只读工具的并发上限，取值由偏好决定，实际执行时仍会夹到允许区间。 */
         val maxParallelToolCalls: Int = Prefs.Keys.INT_DEFAULTS.getValue(Prefs.Keys.AGENT_PARALLEL_TOOL_LIMIT),
-        /** 请求视图保留完整内容的最新工具结果条数。 */
-        val toolResultKeep: Int = Prefs.Keys.INT_DEFAULTS.getValue(Prefs.Keys.AGENT_TOOL_RESULT_KEEP),
+        /** 请求视图里单个工具结果的字符上限，超过即做确定性截断。 */
+        val toolResultMaxChars: Int = Prefs.Keys.INT_DEFAULTS.getValue(Prefs.Keys.AGENT_TOOL_RESULT_MAX_CHARS),
         /** 上下文占用提示的百分比阈值，0 表示关闭。 */
         val contextNoticePercent: Int = Prefs.Keys.INT_DEFAULTS.getValue(Prefs.Keys.AGENT_CONTEXT_NOTICE_PERCENT),
     )
@@ -40,7 +40,7 @@ internal object AgentRuntimePolicy {
             thinking = preferences.allowed(Prefs.Keys.AGENT_THINKING_ENABLED),
             subAgents = preferences.allowed(Prefs.Keys.AGENT_SUBAGENTS_ENABLED),
             maxParallelToolCalls = preferences.intValue(Prefs.Keys.AGENT_PARALLEL_TOOL_LIMIT),
-            toolResultKeep = preferences.intValue(Prefs.Keys.AGENT_TOOL_RESULT_KEEP),
+            toolResultMaxChars = preferences.intValue(Prefs.Keys.AGENT_TOOL_RESULT_MAX_CHARS),
             contextNoticePercent = preferences.intValue(Prefs.Keys.AGENT_CONTEXT_NOTICE_PERCENT),
         )
 
@@ -60,7 +60,7 @@ internal object AgentRuntimePolicy {
             deviceSensitiveActionTools =
                 config.deviceSensitiveActionTools && permissions.deviceSensitiveActionTools,
             maxParallelToolCalls = permissions.maxParallelToolCalls,
-            toolResultKeep = permissions.toolResultKeep,
+            toolResultMaxChars = permissions.toolResultMaxChars,
             contextNoticePercent = permissions.contextNoticePercent,
             subAgentTools = config.subAgentTools && permissions.subAgents,
             thinkingEnabled = thinkingEnabled,
