@@ -176,6 +176,26 @@ class AgentContextPrunerTest {
     }
 
     @Test
+    fun historicalReasoningIsClearedFromTheViewButKeptInHistory() {
+        val messages = JSONArray().put(
+            JSONObject()
+                .put("role", "assistant")
+                .put("content", "结论")
+                .put("reasoning_content", "先读文件、再对比，最后得出结论"),
+        )
+
+        val result = AgentContextPruner.prune(messages, AgentContextPruner.MAX_CHARS)
+
+        // 视图里不再回传历史推理：它随轮次累积，是上下文里最大的一块。
+        assertEquals("", result.messages.getJSONObject(0).getString("reasoning_content"))
+        // 历史本身不能被改写：会话记录与归档仍要保留推理原文。
+        assertEquals(
+            "先读文件、再对比，最后得出结论",
+            messages.getJSONObject(0).getString("reasoning_content"),
+        )
+    }
+
+    @Test
     fun tinyLimitsStillRespectTheBudget() {
         // 阈值小到连省略标记都放不下时也必须守住长度上限，否则下一轮会继续截，稳定性又没了。
         val messages = JSONArray().put(oversizedToolResult(150_000))

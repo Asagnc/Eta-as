@@ -122,6 +122,9 @@ internal class AgentContextBudget(
         const val RECENT_RATIO = 0.20
         const val MAX_OVERFLOW_ATTEMPTS = 3
 
+        /** 请求视图会置空的字段（见 `AgentContextPruner`），估算时不计入。 */
+        private const val REASONING_KEY = "reasoning_content"
+
         fun textTokens(text: String): Int {
             var ascii = 0
             var other = 0
@@ -163,19 +166,19 @@ internal class AgentContextBudget(
          * 单条消息的 token 估算。
          *
          * 与 [textTokens] 共用同一套折算口径：ASCII 每 3 字符约 1 token，非 ASCII 每字符 1 token；
-         * 图片分片按固定值计。区别只在于**不构造中间 JSON**——`protectedIndexes` 会对每条消息
-         * 调用它，先序列化再估算等于为了估算多跑一遍序列化。
+         * 图片分片按固定值计。区别只在于**不构造中间 JSON**——每轮估算都要遍历全部消息，
+         * 先序列化再估算等于为了估算多跑一遍序列化。
          *
-         * 口径必须与 [rawEstimate] 一致：它决定保护区的边界，算少了会把模型正在用的
-         * 工具结果裁掉。
+         * 历史助手的推理不计入：请求视图会把它置空（见 `AgentContextPruner`），估算与统计
+         * 必须同口径，否则进度条和压缩判断会按一个根本发不出去的规模来算。
          */
         fun messageTokens(message: JSONObject): Int {
             val counter = CharCounter()
             message.keys().forEach { key ->
-                if (key != "content") {
-                    counter.add(key)
-                    counter.add(valueText(message.opt(key)))
-                }
+                if (key == "content") return@forEach
+                if (key == REASONING_KEY) return@forEach
+                counter.add(key)
+                counter.add(valueText(message.opt(key)))
             }
             var imageTokens = 0
             val parts = message.optJSONArray("content")

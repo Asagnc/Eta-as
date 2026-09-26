@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 工具结果的确定性截断。
+ * 请求视图的确定性投影：工具结果按长度截断，历史助手推理归一。
  *
  * ## 为什么必须「确定性」
  *
@@ -20,9 +20,17 @@ import org.json.JSONObject
  * 尾 [TAIL_CHARS]」。于是每条结果只剩两种稳定形态（完整 / 截断），
  * 不再有「今天完整、明天被抹掉」的中间态。
  *
+ * ## 历史推理为什么要丢掉
+ *
+ * thinking 模式下回传的 reasoning_content 会随轮次不断累积：实测一次 30 轮的会话里，
+ * 「历史」占 335k 上下文的 54%，其中大部分是各轮推理草稿，而工具调用与结果本身只占小头。
+ * 实测确认（带 tools 的请求）历史里 assistant 的 reasoning_content 置为空串仍被接受，
+ * 所以这里统一归一——只取决于内容本身，与轮次、位置无关，前缀因此保持稳定。
+ * 代价是模型看不到自己过去的推理草稿，推理链要靠 content 与 tool_calls 重建。
+ *
  * ## 其它约束
  *
- * - 只作用于请求视图：会话记录与归档仍保留完整结果。
+ * - 只作用于请求视图：会话记录与归档仍保留完整的工具结果与推理。
  * - [truncate] 必须幂等：输出长度不超过阈值，否则下一轮会继续截，稳定性又没了。
  * - content 为分片数组（图片等）或瞬时观察消息不参与截断。
  */
@@ -56,54 +64,69 @@ internal object AgentContextPruner {
     /**
      * 返回请求视图：把超过 [maxChars] 字符的工具结果截断。
      *
-     * [maxChars] 小于等于 0 表示不截断，此时直接返回原数组的浅拷贝（调用方不应改写它）。
+     * [maxChars] 小于等于 0 表示不截断工具结果；历史推理的归一与它无关，始终执行。
      *
      * 返回值是新数组，但**只有被改写的消息是克隆的**：其余消息对象与入参共享，因为
      * 调用方 [AgentLoop.requestMessagesFor] 之后只会改最后一条消息，而它由
      * [AgentRequestContext.attach] 单独克隆。
      */
     fun prune(messages: JSONArray, maxChars: Int): PruneResult {
-        if (maxChars <= 0) return PruneResult(copyShallow(messages), 0)
-        val rewritten = rewrittenContents(messages, maxChars)
         val result = JSONArray()
+        var truncatedCount = 0
         for (index in 0 until messages.length()) {
             val message = messages.optJSONObject(index)
             if (message == null) {
                 result.put(messages.opt(index))
                 continue
             }
-            val replacement = rewritten[index]
-            if (replacement != null) {
-                // 只有这一条需要改写：浅拷贝字段后替换 content，其余消息保持共享。
-                val copy = JSONObject()
-                message.keys().forEach { key -> copy.put(key, message.get(key)) }
-                copy.put("content", replacement)
-                result.put(copy)
-            } else if (isTransient(message)) {
+            val truncated = truncatedContent(message, maxChars)
+            if (truncated != null) {
+                result.put(copyWith(message, "content", truncated))
+                truncatedCount++
+                continue
+            }
+            if (hasReportedReasoning(message)) {
+                result.put(copyWith(message, "reasoning_content", ""))
+                continue
+            }
+            if (isTransient(message)) {
                 // 瞬时观察（工具截图）不能共享：它在下一轮会被从历史里按引用摘掉
                 // （见 AgentLoop.discardPendingToolImageMessage），视图若持有同一个对象，
                 // 截图就会在请求里多留一轮。克隆一份让视图与历史彻底解耦。
                 result.put(cloneOf(message))
-            } else {
-                result.put(message)
+                continue
             }
+            result.put(message)
         }
-        return PruneResult(result, rewritten.size)
+        return PruneResult(result, truncatedCount)
     }
 
-    /** 逐条算出需要改写的工具结果，键是消息下标。判据只看内容长度，与位置无关。 */
-    private fun rewrittenContents(messages: JSONArray, maxChars: Int): Map<Int, String> {
-        val result = mutableMapOf<Int, String>()
-        for (index in 0 until messages.length()) {
-            val message = messages.optJSONObject(index) ?: continue
-            if (message.optString("role") != "tool") continue
-            if (isTransient(message)) continue
-            val content = message.opt("content")
-            if (content !is String) continue
-            val truncated = truncate(content, maxChars) ?: continue
-            result[index] = truncated
-        }
-        return result
+    /** 需要截断的工具结果内容；不满足条件时返回 null。判据只看内容长度，与位置无关。 */
+    private fun truncatedContent(message: JSONObject, maxChars: Int): String? {
+        if (maxChars <= 0) return null
+        if (message.optString("role") != "tool") return null
+        if (isTransient(message)) return null
+        val content = message.opt("content")
+        if (content !is String) return null
+        return truncate(content, maxChars)
+    }
+
+    /**
+     * 该条是否带着要丢弃的助手推理。
+     *
+     * 只看内容本身，不看它在历史里的位置：位置相关的规则会随轮次移动，
+     * 每轮改写一条历史中部的消息，缓存前缀就跟着失效。
+     */
+    private fun hasReportedReasoning(message: JSONObject): Boolean =
+        message.optString("role") == "assistant" &&
+            message.optString("reasoning_content").isNotEmpty()
+
+    /** 浅拷贝一条消息并改写其中一个字段；其余字段的值对象仍与入参共享。 */
+    private fun copyWith(message: JSONObject, key: String, value: Any): JSONObject {
+        val copy = JSONObject()
+        message.keys().forEach { field -> copy.put(field, message.get(field)) }
+        copy.put(key, value)
+        return copy
     }
 
     /**
@@ -153,16 +176,6 @@ internal object AgentContextPruner {
         val head = minOf(HEAD_CHARS, budget)
         val tail = minOf(TAIL_CHARS, budget - head)
         return text.take(head) + marker + text.takeLast(tail)
-    }
-
-    /**
-     * 顶层浅拷贝：元素仍与入参共享，但数组本身是新的。
-     *
-     * 视图必须是独立的顶层数组，注入逻辑才能在它上面替换元素而不动到历史
-     * ——历史对象一旦被替换，`AgentLoop` 里按引用相等定位瞬时观察消息的删除就会失效。
-     */
-    private fun copyShallow(messages: JSONArray): JSONArray = JSONArray().also { copy ->
-        for (index in 0 until messages.length()) copy.put(messages.opt(index))
     }
 
     /**
