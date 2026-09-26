@@ -60,6 +60,16 @@ internal object AgentWorkspaceManifest {
          * 取不到（非 Kotlin 源文件或读取失败）的文件不出现这个映射里，不是错误。
          */
         val symbols: Map<String, List<String>> = emptyMap(),
+        /**
+         * 文件名 → 行数。
+         *
+         * 与 [symbols] 解决的是同一个问题的两半：类型名回答「这个文件管什么」，行数回答
+         * 「该先读哪个」。缺了规模，模型得自己额外跑一次扫描才知道哪个文件大；实测有一次
+         * 四步完成的运行就是先扫了规模再精读，而另一次十九步的运行没有，逐文件小段小段爬。
+         *
+         * 只统计文本类文件；二进制或不认识的扩展名不进这个映射。
+         */
+        val lineCounts: Map<String, Int> = emptyMap(),
     )
 
     /**
@@ -78,12 +88,12 @@ internal object AgentWorkspaceManifest {
             val (dir, path) = queue.removeFirst()
             val children = dir.listFiles() ?: continue
             val names = children.filter { it.isFile }.map { it.name }.sorted()
+            val facts = names.mapNotNull { name -> fileFacts(File(dir, name))?.let { name to it } }.toMap()
             found += Dir(
                 path = path,
                 files = names,
-                symbols = names.mapNotNull { name ->
-                    topLevelSymbols(File(dir, name))?.let { name to it }
-                }.toMap(),
+                symbols = facts.mapNotNull { (name, fact) -> fact.symbols?.let { name to it } }.toMap(),
+                lineCounts = facts.mapNotNull { (name, fact) -> fact.lineCount?.let { name to it } }.toMap(),
             )
             children.asSequence()
                 .filter { it.isDirectory && it.name !in SKIPPED_DIRS }
@@ -94,20 +104,43 @@ internal object AgentWorkspaceManifest {
     }
 
     /**
-     * 一个 Kotlin 文件声明的顶层类型名；不是 Kotlin 文件、读取失败、或没有类型声明时返回 null。
+     * 一个文件的两种线索：行数与顶层类型名；不是文本类文件、或读取失败时返回 null。
+     *
+     * 一次读取同时算出两者：清单在 run 开局扫一次全部文件，为一行行数再读一遍是不必要的开销。
+     */
+    private data class FileFacts(val lineCount: Int?, val symbols: List<String>?)
+
+    private fun fileFacts(file: File): FileFacts? {
+        if (TEXT_FILE_EXTENSIONS.none { file.name.endsWith(it) }) return null
+        val text = runCatching { file.readText() }.getOrNull() ?: return null
+        val symbols = if (file.name.endsWith(".kt") || file.name.endsWith(".kts")) {
+            topLevelSymbolsIn(text)
+        } else {
+            null
+        }
+        // 行数与逐行读取一致：末尾换行不算新的一行，空文件是 0 行。
+        val lineCount = if (text.isEmpty()) 0 else text.count { it == '\n' } + if (text.endsWith("\n")) 0 else 1
+        return FileFacts(lineCount.takeIf { it > 0 }, symbols)
+    }
+
+    /** 清单统计行数的文件类型；其余不进清单的行数映射（二进制文件读不出行）。 */
+    private val TEXT_FILE_EXTENSIONS = listOf(
+        ".kt", ".kts", ".md", ".py", ".json", ".yml", ".yaml", ".toml", ".xml", ".gradle",
+    )
+
+    /**
+     * Kotlin 源码文本里的顶层类型名；没有类型声明时返回 null。
      *
      * 只取类型声明，不取成员函数：类型名用于判断「这个文件管什么」，细节仍由模型自己读。
      * 正则不买行首缩进，因此嵌套声明天然被排除——顶层声明在 Kotlin 里不缩进。
      */
-    private fun topLevelSymbols(file: File): List<String>? {
-        if (!file.name.endsWith(".kt")) return null
-        val text = runCatching { file.readText() }.getOrNull() ?: return null
+    private fun topLevelSymbolsIn(text: String): List<String>? {
         val names = LinkedHashSet<String>()
         for (match in TYPE_DECLARATION.findAll(text)) {
             names += match.groupValues[1]
             if (names.size >= MAX_SYMBOLS_PER_FILE) break
         }
-        // 没有类型声明的 Kotlin 文件同样不进映射：渲染退化成「只有文件名」，不写空后缀。
+        // 没有类型声明的 Kotlin 文件同样不进映射：渲染退化成「只有文件名与行数」。
         return names.toList().takeIf { it.isNotEmpty() }
     }
 
@@ -141,10 +174,12 @@ internal object AgentWorkspaceManifest {
             lines += "$ITEM_PREFIX${dir.path.ifEmpty { "." }}/"
             shown.forEach { name ->
                 val symbols = dir.symbols[name]
+                val lineCount = dir.lineCounts[name]
+                val label = if (lineCount != null) "$name ($lineCount 行)" else name
                 lines += if (symbols.isNullOrEmpty()) {
-                    "$ITEM_PREFIX  $name"
+                    "$ITEM_PREFIX  $label"
                 } else {
-                    "$ITEM_PREFIX  $name — ${symbols.joinToString(", ")}"
+                    "$ITEM_PREFIX  $label — ${symbols.joinToString(", ")}"
                 }
             }
         }
