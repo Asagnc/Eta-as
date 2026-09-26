@@ -69,6 +69,22 @@ internal class AgentLoop(
         const val MAX_PARALLEL_TOOL_CALLS_LIMIT = 8
 
         /** 上下文提示阈值与工具结果保留条数都是运行时配置（见 ModelConfig），不在循环里硬编码。 */
+
+        /**
+         * 可能被合法连续调用的轮询类工具。
+         *
+         * 等待与观察本来就会重复（等界面出现、再看一眼屏幕），对它们做重复阻断会直接
+         * 打断正常流程，所以这几类不参与重复判定。
+         */
+        val POLLING_TOOL_NAMES = setOf(
+            "wait", "wait_for_text", "wait_for_package", "observe_screen",
+        )
+
+        /** 轮次到这个数就提醒收口。 */
+        const val SOFT_ROUND_LIMIT = 40
+
+        /** 提醒后每隔这么多轮再提醒一次；只提醒一次容易被后续上下文淹没。 */
+        const val SOFT_ROUND_REMIND_INTERVAL = 20
     }
 
     private var toolCallValidator = AgentToolCallValidator(tools)
@@ -252,7 +268,14 @@ internal class AgentLoop(
             )
 
             if (toolCalls.isNotEmpty()) {
-                val outcomes = executeToolCalls(round, providerResponse.stopReason, toolCalls)
+                steerLongRun(round)
+                val decision = repeatedToolDecision(toolCalls)
+                if (decision == AgentRepeatGuard.Decision.NOTICE) steerRepeatedToolCalls(round, toolCalls)
+                val outcomes = if (decision == AgentRepeatGuard.Decision.BLOCK) {
+                    blockedToolOutcomes(toolCalls)
+                } else {
+                    executeToolCalls(round, providerResponse.stopReason, toolCalls)
+                }
                 val notice = contextPressureNotice(roundTools)
                 val nudges = failureNudges(outcomes)
                 outcomes.forEachIndexed { index, outcome ->
@@ -272,7 +295,6 @@ internal class AgentLoop(
                 publishTranscript()
                 appendToolImages(round, outcomes)
                 publishTranscript()
-                noticeRepeatedToolCalls(round, toolCalls)
                 compactOnRequest(outcomes, roundTools)
                 round += 1
                 continue
@@ -323,18 +345,57 @@ internal class AgentLoop(
     }
 
     /**
-     * 连续重复的同一批调用不会带来新信息，只会把上下文越堆越高。这里补一句提醒让模型换策略，
-     * 但不阻止执行：轮询类工具（等待、观察）本来就可能被连续调用。
+     * 判定这批调用要不要介入。
+     *
+     * 整批签名完全相同才算重复：模型换一个参数就是新尝试，不该被当成空转。
+     * 纯轮询批次直接放行，理由见 [POLLING_TOOL_NAMES]。
      */
-    private fun noticeRepeatedToolCalls(round: Int, toolCalls: List<AgentModelClient.ToolCall>) {
+    private fun repeatedToolDecision(toolCalls: List<AgentModelClient.ToolCall>): AgentRepeatGuard.Decision {
+        if (toolCalls.all { it.name in POLLING_TOOL_NAMES }) return AgentRepeatGuard.Decision.CONTINUE
         val signature = toolCalls.joinToString("|") { call ->
             call.name + ":" + call.argumentsJson.trim()
         }
-        if (!repeatGuard.observe(signature)) return
+        return repeatGuard.observe(signature)
+    }
+
+    /**
+     * 被阻止的调用也要回一条结果：模型看不到任何反馈就会把同一批调用再发一次，
+     * 阻止本身就没意义了。提示语写清「已阻止」与下一步该怎么做。
+     */
+    private fun blockedToolOutcomes(
+        toolCalls: List<AgentModelClient.ToolCall>,
+    ): List<ToolOutcome> = toolCalls.map { call ->
+        ToolOutcome(
+            call = call,
+            result = AgentModelClient.ToolResult(
+                content = JSONObject()
+                    .put("ok", false)
+                    .put("code", "REPEATED_CALL_BLOCKED")
+                    .put(
+                        "message",
+                        "这批调用与前几轮完全相同，已阻止执行：重复调用不会得到新信息。" +
+                            "请改参数、换工具，或直接根据已有信息给出结论。",
+                    )
+                    .toString(),
+            ),
+        )
+    }
+
+    /** 提醒模型换策略；执行已经发生或即将被阻止时都适用。 */    private fun steerRepeatedToolCalls(round: Int, toolCalls: List<AgentModelClient.ToolCall>) {
         val names = toolCalls.joinToString("、") { it.name }
         runController.steer(
             "注意：第 $round 轮的这次工具调用与前几轮完全相同（$names），再调用一次也不会得到新信息。" +
                 "请改参数、换工具，或直接根据已有信息给出结论。",
+        )
+    }
+
+    /** 轮次偏多时提醒收口。只提醒，不终止：任务可能确实需要长链路。 */
+    private fun steerLongRun(round: Int) {
+        if (round < SOFT_ROUND_LIMIT) return
+        if ((round - SOFT_ROUND_LIMIT) % SOFT_ROUND_REMIND_INTERVAL != 0) return
+        runController.steer(
+            "本次运行已进行 $round 轮。主要目标已达成的话，请直接给出结论；" +
+                "还有未完成的部分就说明剩下什么，不要再展开新方向。",
         )
     }
 
