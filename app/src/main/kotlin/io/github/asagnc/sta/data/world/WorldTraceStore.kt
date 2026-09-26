@@ -112,7 +112,8 @@ internal object WorldTraceStore {
                 // 「查不到」型的空集结论不入库：它没有可复用的知识，写进去只会让它在后续每轮
                 // 被当作历史结论注入（实测一条 1900 字的「无法给出结论」报告每轮都在吃注意力预算）。
                 if (parsed.conclusion.isNotBlank() &&
-                    !WorldKnowledgeLogic.isInconclusiveConclusion(parsed.conclusion)
+                    !WorldKnowledgeLogic.isInconclusiveConclusion(parsed.conclusion) &&
+                    !WorldKnowledgeLogic.isRawToolOutputConclusion(parsed.conclusion)
                 ) {
                     // 取实际落库 id 而不是自己算的签名：同签名内容未变时不写新行，
                     // 此时库里存在的是**旧行**，边必须连到它身上，否则图上的端点会

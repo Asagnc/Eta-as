@@ -234,6 +234,41 @@ class WorldKnowledgeLogicTest {
         assertFalse(WorldKnowledgeLogic.isInconclusiveConclusion(useful))
     }
 
+    @Test
+    fun detectsRawToolOutputMasqueradingAsConclusion() {
+        // 执行方偶尔把工具结果原样交回当结论。这类文本因为写入最新，会在启动注入里
+        // 占掉名额、把真结论挤出去，所以入库前要挡住。样本取自观测库里的真实条目。
+        assertTrue(
+            WorldKnowledgeLogic.isRawToolOutputConclusion(
+                "命令1: ok=true exit_code=0 stdout前400字符=Sta-src\naudit_dup.txt\naudit_files.txt",
+            ),
+        )
+        assertTrue(
+            WorldKnowledgeLogic.isRawToolOutputConclusion(
+                "命令1: ok=false exit_code=1 stderr=touch: cannot touch '/workspace/x': Read-only file system",
+            ),
+        )
+        // 带空格与全角冒号的变体同样命中。
+        assertTrue(WorldKnowledgeLogic.isRawToolOutputConclusion("命令 2：ok=true exit_code=0 stdout=\"\""))
+    }
+
+    @Test
+    fun keepsRealConclusionsThatMentionCommands() {
+        // 真结论也会引用命令与调用链，但不会以「命令N:」加退出码的流水账开头。
+        assertFalse(
+            WorldKnowledgeLogic.isRawToolOutputConclusion(
+                "调用链是 runCode/runLinuxCommandRaw → terminalController.execRaw → RootShellTerminalController",
+            ),
+        )
+        assertFalse(
+            WorldKnowledgeLogic.isRawToolOutputConclusion(
+                "已定位到上下文组装的完整链路：AgentPromptBuilder.buildSystemMessages 组装常驻 system 段。",
+            ),
+        )
+        // 只有开头特征、没有退出码字段时不算：可能是模型在复述命令。
+        assertFalse(WorldKnowledgeLogic.isRawToolOutputConclusion("命令1: 这一串回显看起来像目录列表，实际是审计产物。"))
+    }
+
     private companion object {
         const val ROOT = "/data/local/tmp/sta"
     }

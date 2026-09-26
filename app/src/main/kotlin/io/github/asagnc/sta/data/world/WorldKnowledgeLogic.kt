@@ -59,6 +59,32 @@ internal object WorldKnowledgeLogic {
     }
 
     /**
+     * 原始工具输出冒充结论的判定。
+     *
+     * 执行方偶发把工具结果原样当结论交回，实测形如
+     * `命令1: ok=true exit_code=0 stdout前400字符=...`。这类文本没有可复用知识，却因为
+     * 写入时间最新而在启动注入时占掉名额，把真结论挤出去——比「查不到」型空集更差：
+     * 空集至少告诉了模型「这条路不通」，而它只是一段目录列表。
+     *
+     * 只看开头：真结论也会引用命令输出（如「调用链是 runCommandRaw → ...」），
+     * 但不会一上来就是 `命令N:` 加退出码的流水账，所以两个特征同时命中才算。
+     * 与空集判定同一种取向：宁可漏判（照旧入库），也不要误杀正常结论。
+     */
+    fun isRawToolOutputConclusion(conclusion: String): Boolean {
+        val head = conclusion.replace(Regex("\\s+"), " ").trim().take(RAW_TOOL_OUTPUT_HEAD_CHARS)
+        return RAW_TOOL_OUTPUT_PREFIX.containsMatchIn(head) && head.contains(RAW_TOOL_OUTPUT_MARKER)
+    }
+
+    /** `命令1:` / `命令 1：` 这类结果流水账的开头。 */
+    private val RAW_TOOL_OUTPUT_PREFIX = Regex("^命令\\s*\\d+\\s*[:：]")
+
+    /** 退出码字段：与开头特征同时命中才判为原始输出。 */
+    private const val RAW_TOOL_OUTPUT_MARKER = "exit_code="
+
+    /** 原始输出的判定范围；比空集判定宽一些，因为流水账开头可能带一层缩进或序号。 */
+    private const val RAW_TOOL_OUTPUT_HEAD_CHARS = 160
+
+    /**
      * 把依赖列表编码成 JSON 数组。
      *
      * 空列表编码成空串而不是 `[]`：数据库里空串代表"没有依赖"，读回时不用区分
