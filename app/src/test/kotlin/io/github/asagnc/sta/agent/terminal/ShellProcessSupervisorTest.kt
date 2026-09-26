@@ -76,10 +76,11 @@ class ShellProcessSupervisorTest {
             sandbox = LinuxSandboxView("/data/local/tmp/sta", rootReadOnly = true),
         )
 
-        // 只读视图整棵以 rbind,ro 挂入：写权限由内核拒绝，与模型手上有什么工具无关。
-        assertTrue(readOnly.contains("\$sta_rootfs/workspace\" rbind,ro"))
+        // 只读必须两步：先按可写绑定，再 remount,ro,bind；一步写 rbind,ro 会被内核忽略。
+        assertTrue(readOnly.contains("remount,ro,bind"))
         // Android 形态是同一份数据的另一个入口，必须一起只读，否则换个路径写法就绕过去了。
-        assertTrue(readOnly.contains("\$sta_rootfs/data/local/tmp\" rbind,ro"))
+        assertTrue(readOnly.contains("\$sta_rootfs/workspace\" remount,ro,bind"))
+        assertTrue(readOnly.contains("\$sta_rootfs/data/local/tmp\" remount,ro,bind"))
     }
 
     @Test
@@ -96,8 +97,8 @@ class ShellProcessSupervisorTest {
             ),
         )
 
-        // 仓库不可改、自己的 worktree 可写：可写子智能体的隔离形状由挂载决定。
-        assertTrue(worktree.contains("\$sta_rootfs/workspace\" rbind,ro"))
+        // 仓库不可改（remount 只读）、自己的 worktree 随后 bind 进来仍然可写。
+        assertTrue(worktree.contains("\$sta_rootfs/workspace\" remount,ro,bind"))
         assertTrue(worktree.contains("\$sta_rootfs/data/local/tmp/sta/sta-worktree-a\" rbind"))
     }
 

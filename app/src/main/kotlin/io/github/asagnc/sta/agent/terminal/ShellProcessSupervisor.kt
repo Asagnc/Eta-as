@@ -339,10 +339,15 @@ internal class ShellProcessSupervisor(
         val mode = if (command == null) "session" else "command"
         val payload = shellQuote(command.orEmpty())
         val sandboxRoot = shellQuote(sandbox.rootPath)
-        val mountOptions = if (sandbox.rootReadOnly) "rbind,ro" else "bind"
-        // Android 形态与 Linux 形态是同一份数据的两个入口：只读视图两处都得只读，
-        // 否则换个路径写法就绕过了 /workspace 上的约束。
-        val androidOptions = if (sandbox.rootReadOnly) "rbind,ro" else "bind"
+        // bind 的只读必须分两步：一步写 rbind,ro 时内核会忽略 ro（本机 f2fs 实测写入仍成功）。
+        // 先按可写绑定，只读视图随后 remount,ro,bind——两个入口都要，只约束一个的话
+        // 换个路径写法就绕过去了。
+        val readOnlyRemounts = if (sandbox.rootReadOnly) {
+            "sta_mount_required /data/local/tmp \"${'$'}sta_rootfs/data/local/tmp\" remount,ro,bind\n" +
+                "sta_mount_required $sandboxRoot \"${'$'}sta_rootfs/workspace\" remount,ro,bind"
+        } else {
+            ""
+        }
         // 只读视图下把可写子树重挂回可写：路径来自内部构造，不含空白与引号。
         val writableRemounts = sandbox.writableSubPaths.joinToString("\n") { path ->
             "sta_mount_required $path \"${'$'}sta_rootfs$path\" rbind"
@@ -387,14 +392,16 @@ internal class ShellProcessSupervisor(
               sta_mount_optional /storage/emulated/0 "${'$'}sta_rootfs/storage/emulated/0" bind
             fi
             [ -d /data/local/tmp ] || exit 125
-            sta_mount_required /data/local/tmp "${'$'}sta_rootfs/data/local/tmp" $androidOptions
-            # 沙箱根按资源视图挂载：只读视图整棵 rbind,ro，可写子树随后重挂回可写。
+            sta_mount_required /data/local/tmp "${'$'}sta_rootfs/data/local/tmp" bind
+            # 沙箱根按资源视图挂载：先可写绑定，只读档随后 remount 只读；
+            # 可写子智能体再把 worktree 子树绑进来（内核实测：只读根下的新 bind 仍可写）。
             if [ -d $sandboxRoot ]; then
-              sta_mount_required $sandboxRoot "${'$'}sta_rootfs/workspace" $mountOptions
+              sta_mount_required $sandboxRoot "${'$'}sta_rootfs/workspace" bind
             else
               "${'$'}sta_busybox" mkdir -p $sandboxRoot 2>/dev/null || true
-              sta_mount_required $sandboxRoot "${'$'}sta_rootfs/workspace" $mountOptions
+              sta_mount_required $sandboxRoot "${'$'}sta_rootfs/workspace" bind
             fi
+            $readOnlyRemounts
             $writableRemounts
         """.trimIndent()
         val innerScriptTail = """
