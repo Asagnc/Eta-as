@@ -413,11 +413,9 @@ internal class AgentRuntimeRunExecutor(
                 roleplayContext = roleplayContext,
                 taskPlanSnapshot = { latestTaskPlan },
                 planSnapshot = { latestPlan },
-                // 开局扫一次目录拓扑：只算一次，不随轮次重扫（重扫既慢又会让稳定前缀漂移）。
-                workspaceTreeLookup = {
-                    AgentWorkspaceManifest.render(
-                        AgentWorkspaceManifest.scan(File(WORKSPACE_ROOT)),
-                    )
+                // 开局扫一次工作区清单：只算一次，供系统提示的缓存前缀用（见 AgentWorkspaceManifest）。
+                workspaceManifestLookup = {
+                    AgentWorkspaceManifest.render(AgentWorkspaceManifest.scan(File(WORKSPACE_ROOT)))
                 },
                 rewriteReply = request.operation == AgentRuntimeWire.OP_REWRITE_REPLY,
                 compactOnly = request.operation == AgentRuntimeWire.OP_COMPACT,

@@ -55,8 +55,13 @@ internal object AgentModelClient {
         taskPlanSnapshot: (() -> String?)? = null,
         /** 当前方案（submit_plan 快照）：与清单一同注入，注入的是 digest 而不是正文。 */
         planSnapshot: (() -> String?)? = null,
-        /** 工作区目录拓扑（开局扫一次）：让模型起步就知道有哪些目录，而不是逐轮摸索。 */
-        workspaceTreeLookup: (() -> String?)? = null,
+        /**
+         * 工作区文件清单（开局扫一次，进系统提示的稳定前缀）。
+         *
+         * 写成回调而不是直接传字符串：只在真的要发请求时才需要它，而扫描是唯一一次目录 IO；
+         * 同时两个重建系统提示的位置（开局、root 权限变化）必须拿到**同一份**文本，否则缓存前缀漂移。
+         */
+        workspaceManifestLookup: (() -> String?)? = null,
         onContextSnapshot: (AgentContextSnapshot) -> Unit = {},
         onTranscript: (List<ConversationMessage>) -> Unit = {},
         runStats: AgentRunStats? = null,
@@ -69,6 +74,8 @@ internal object AgentModelClient {
     ): ModelResponse.Text {
         config.validate()
         val initialCapabilities = capabilitiesProvider()
+        // 清单整个 run 内不变，求值一次后复用：它进系统提示做缓存前缀，内容漂移会毁掉命中。
+        val workspaceManifest = lazy { workspaceManifestLookup?.invoke() }
         val messages = AgentPromptBuilder.buildInitialMessages(
             config,
             prompt,
@@ -78,6 +85,7 @@ internal object AgentModelClient {
             memoryContext,
             rootAvailable = initialCapabilities.rootAvailable,
             roleplayContext = roleplayContext,
+            workspaceManifest = workspaceManifest.value,
         )
         if (rewriteReply) {
             messages.put(messages.length() - 1, AgentConversationCodec.userTextMessage(
@@ -151,6 +159,7 @@ internal object AgentModelClient {
                 if (capabilities.rootAvailable != promptRootAvailable) {
                     val systemMessages = AgentPromptBuilder.buildSystemMessages(
                         config, skillContext, memoryContext, capabilities.rootAvailable, roleplayContext,
+                        workspaceManifest = workspaceManifest.value,
                     )
                     for (index in 0 until systemMessages.length()) {
                         messages.put(index, systemMessages.getJSONObject(index))
@@ -163,7 +172,6 @@ internal object AgentModelClient {
         loop.failureRecorder = failureRecorder(worldContext)
         loop.learningRecall = learningRecall(worldContext)
         loop.recallLookup = recallLookup(worldContext)
-        loop.workspaceTreeLookup = workspaceTreeLookup
         val result = try {
             if (compactOnly) loop.compactOnly(compactUntilMessageId) else loop.run()
         } catch (throwable: Throwable) {

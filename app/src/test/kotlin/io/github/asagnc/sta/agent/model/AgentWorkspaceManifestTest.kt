@@ -13,64 +13,66 @@ class AgentWorkspaceManifestTest {
     val temporaryFolder = TemporaryFolder()
 
     @Test
-    fun rendersHeaderThenIndentedDirectoriesWithDirectFileCounts() {
+    fun rendersWholePathDirectoryLinesWithFilesIndentedBelow() {
         val text = AgentWorkspaceManifest.render(
             listOf(
-                AgentWorkspaceManifest.Dir("", 2),
-                AgentWorkspaceManifest.Dir("app", 3),
-                AgentWorkspaceManifest.Dir("app/src", 0),
-                AgentWorkspaceManifest.Dir("docs", 1),
+                AgentWorkspaceManifest.Dir("", listOf("README.md")),
+                AgentWorkspaceManifest.Dir("app", listOf("A.kt", "B.kt")),
+                AgentWorkspaceManifest.Dir("app/src", listOf("C.kt")),
             ),
         )!!
 
         val lines = text.lines()
         assertTrue(lines[0], lines[0].startsWith(AgentWorkspaceManifest.HEADER_PREFIX))
         assertTrue(lines[0], lines[0].contains("根为 ${AgentWorkspaceManifest.SANDBOX_ROOT}"))
-        assertEquals("$ITEM_PREFIX. (2)", lines[1])
-        assertEquals("$ITEM_PREFIX  app/ (3)", lines[2])
-        assertEquals("$ITEM_PREFIX    src/ (0)", lines[3])
-        assertEquals("$ITEM_PREFIX  docs/ (1)", lines[4])
+        assertTrue(lines[0], lines[0].contains("3 个目录"))
+        assertTrue(lines[0], lines[0].contains("4 个文件"))
+        // 目录行给完整相对路径，文件名只给基名——模型拼接即得，不需要按缩进重建路径。
+        assertEquals("$ITEM_PREFIX./", lines[1])
+        assertEquals("$ITEM_PREFIX  README.md", lines[2])
+        assertEquals("${ITEM_PREFIX}app/", lines[3])
+        assertEquals("$ITEM_PREFIX  A.kt", lines[4])
+        assertEquals("$ITEM_PREFIX  B.kt", lines[5])
+        assertEquals("${ITEM_PREFIX}app/src/", lines[6])
+        assertEquals("$ITEM_PREFIX  C.kt", lines[7])
     }
 
     @Test
     fun rendersDeterministicallyRegardlessOfInputOrder() {
         val a = listOf(
-            AgentWorkspaceManifest.Dir("docs", 1),
-            AgentWorkspaceManifest.Dir("", 2),
-            AgentWorkspaceManifest.Dir("app/src", 0),
-            AgentWorkspaceManifest.Dir("app", 3),
+            AgentWorkspaceManifest.Dir("docs", listOf("guide.md")),
+            AgentWorkspaceManifest.Dir("", listOf("README.md")),
+            AgentWorkspaceManifest.Dir("app", listOf("A.kt")),
         )
-        val b = a.reversed()
 
         assertEquals(
             AgentWorkspaceManifest.render(a),
-            AgentWorkspaceManifest.render(b),
+            AgentWorkspaceManifest.render(a.reversed()),
         )
     }
 
     @Test
-    fun emptyTopologyRendersNothing() {
+    fun emptyManifestRendersNothing() {
         assertNull(AgentWorkspaceManifest.render(emptyList()))
     }
 
     @Test
-    fun reportsOmittedCountInsteadOfSilentlyTruncating() {
-        val many = (1..AgentWorkspaceManifest.MAX_DIRS + 7).map {
-            AgentWorkspaceManifest.Dir("pkg$it", it)
-        }
+    fun reportsOmittedFileCountInsteadOfSilentlyTruncating() {
+        val many = listOf(
+            AgentWorkspaceManifest.Dir("pkg", (1..AgentWorkspaceManifest.MAX_FILES + 5).map { "F$it.kt" }),
+        )
 
         val lines = AgentWorkspaceManifest.render(many)!!.lines()
 
-        assertEquals(AgentWorkspaceManifest.MAX_DIRS + 2, lines.size)
-        assertTrue(lines.last(), lines.last().contains("其余 7 个目录略"))
+        assertTrue(lines.last(), lines.last().contains("其余 5 个文件略"))
     }
 
     @Test
-    fun scanSkipsBuildNoiseAndCountsOnlyDirectFiles() {
+    fun scanSkipsBuildNoiseAndListsDirectFilesSorted() {
         val root = temporaryFolder.newFolder("workspace")
         File(root, "app").mkdirs()
-        File(root, "app/A.kt").writeText("a")
         File(root, "app/B.kt").writeText("b")
+        File(root, "app/A.kt").writeText("a")
         File(root, "app/src").mkdirs()
         File(root, "app/src/C.kt").writeText("c")
         File(root, "build").mkdirs()
@@ -81,9 +83,9 @@ class AgentWorkspaceManifestTest {
         val dirs = AgentWorkspaceManifest.scan(root).associateBy { it.path }
 
         assertEquals(setOf("", "app", "app/src"), dirs.keys)
-        assertEquals("根目录只数直接子文件", 1, dirs[""]?.fileCount)
-        assertEquals("不递归累计子目录里的文件", 2, dirs["app"]?.fileCount)
-        assertEquals(1, dirs["app/src"]?.fileCount)
+        assertEquals(listOf("README.md"), dirs[""]?.files)
+        assertEquals("文件名排序，且只列直接子文件", listOf("A.kt", "B.kt"), dirs["app"]?.files)
+        assertEquals(listOf("C.kt"), dirs["app/src"]?.files)
     }
 
     @Test
@@ -92,7 +94,6 @@ class AgentWorkspaceManifestTest {
     }
 
     private companion object {
-        /** 与条目前缀相同，单独取个短名让上面的行断言读起来不至于被长常量名淹没。 */
         val ITEM_PREFIX = AgentWorkspaceManifest.ITEM_PREFIX
     }
 }

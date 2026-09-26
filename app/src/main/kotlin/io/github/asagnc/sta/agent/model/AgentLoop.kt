@@ -125,29 +125,6 @@ internal class AgentLoop(
     private val recallSnapshot: List<WorldKnowledgeStore.Recalled>
         get() = recallCache ?: (recallLookup?.invoke() ?: emptyList()).also { recallCache = it }
 
-    /**
-     * 扫一次工作区目录拓扑，用于随请求注入（默认为空）。
-     *
-     * 与 [recallLookup] 同一形状：`AgentLoop` 只做流程编排，目录 IO 归宿主，单测里能换成假实现。
-     *
-     * 惰性且**只求值一次**：拓扑描述的是环境，同一 run 内不会变；而 [requestMessagesFor] 每轮
-     * 都跑，每轮重扫既慢又可能让内容漂移——拓扑属于稳定前缀，逐字节变了会毁掉请求前缀缓存。
-     */
-    var workspaceTreeLookup: (() -> String?)? = null
-
-    /** [workspaceTreeLookup] 的缓存；[workspaceTreeLoaded] 区分「没查过」与「查过但没有」。 */
-    private var workspaceTreeCache: String? = null
-    private var workspaceTreeLoaded = false
-
-    private val workspaceTreeSnapshot: String?
-        get() {
-            if (!workspaceTreeLoaded) {
-                workspaceTreeCache = workspaceTreeLookup?.invoke()
-                workspaceTreeLoaded = true
-            }
-            return workspaceTreeCache
-        }
-
     fun contextSnapshot(): AgentContextSnapshot? = context.snapshot()
 
     private fun appendMessage(message: JSONObject) {
@@ -533,7 +510,6 @@ internal class AgentLoop(
             taskPlanSnapshot?.invoke(),
             planSnapshot?.invoke(),
             recallEntries = recallSnapshot,
-            workspaceTree = workspaceTreeSnapshot,
         )
         // 统计的是真正发出去的那份视图：attach 写进去的时间与计划也算在内。
         runStats?.updateRequestComposition(AgentContextBudget.compositionOf(result.messages, roundTools))

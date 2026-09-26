@@ -17,8 +17,11 @@ internal object AgentPromptBuilder {
         memoryContext: AgentMemoryContext = AgentMemoryContext.DISABLED,
         rootAvailable: Boolean = false,
         roleplayContext: RoleplayRunContext? = null,
+        workspaceManifest: String? = null,
     ): JSONArray {
-        val messages = buildSystemMessages(config, skillContext, memoryContext, rootAvailable, roleplayContext)
+        val messages = buildSystemMessages(
+            config, skillContext, memoryContext, rootAvailable, roleplayContext, workspaceManifest,
+        )
         history.forEach { item ->
             runCatching { AgentConversationCodec.toJsonObject(item) }.getOrNull()?.let(messages::put)
         }
@@ -32,6 +35,11 @@ internal object AgentPromptBuilder {
         memoryContext: AgentMemoryContext,
         rootAvailable: Boolean,
         roleplayContext: RoleplayRunContext? = null,
+        /**
+         * 工作区文件清单。整个 run 内逐字节不变，是本段里唯一「大但稳定」的内容，因而可以
+         * 吃前缀缓存；放在最后一条系统消息，既不挤开前面那些每轮都需要的指令，又离用户消息最近。
+         */
+        workspaceManifest: String? = null,
     ): JSONArray {
         val messages = JSONArray()
         if (roleplayContext == null && config.systemPrompt.isNotBlank()) {
@@ -59,9 +67,8 @@ internal object AgentPromptBuilder {
                         "读取文件、检索、过滤、统计或批量改写一律用 run_code 在沙箱里一次完成，" +
                             "文件类工具已收起，逐次调用它们会在轮次之间反复搬运大段原文，既慢又占上下文；" +
                             "也不要改用 terminal 的 cat/grep/sed 绕过——同样是整段原文进上下文。" +
-                            "开局会给出工作区目录拓扑（目录 + 每目录直接子文件数）：据此定位到目标目录，" +
-                                "然后一次调用把该目录下需要的文件全部读完并输出摘要，不要在轮次之间逐个摸索；" +
-                                "拓扑只到目录级，具体有哪些文件用 run_code 一次列出；" +
+                            "开局会在系统提示里给出工作区全部文件的清单（目录路径 + 文件名）：据此直接定位，" +
+                                "一次调用把相关文件全部读完并输出摘要，不要在轮次之间逐个摸索；" +
                                 "需要看多个文件时，第一次调用就把相关文件全部读入并输出摘要" +
                             "（例如 for p in [...]: print(p, len(open(p).read()))），不要一次只读一个；" +
                             "一次只读一个会让步数随文件数线性增长，而步数越多，最终用掉多少步越不可预测。" +
@@ -169,6 +176,7 @@ internal object AgentPromptBuilder {
         roleplayContext?.personaMessage()?.let(messages::put)
         buildMemorySystemMessage(memoryContext, writable = roleplayContext == null)?.let(messages::put)
         buildSkillSystemMessage(skillContext)?.let(messages::put)
+        workspaceManifest?.takeIf { it.isNotBlank() }?.let { messages.put(systemMessage(it)) }
         return messages
     }
 
