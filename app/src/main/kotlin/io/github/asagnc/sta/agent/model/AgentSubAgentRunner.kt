@@ -142,12 +142,14 @@ internal class AgentSubAgentRunner(
         // 资源视图与工具名单是两件事：名单决定模型看得见哪些入口，视图决定它能碰到哪些树。
         // 缺一不可——只放名单，换条路径就绕过去了；只给视图，模型手里没有能干活的工作据。
         val sandbox = when {
-            workspace == null -> LinuxSandboxView(WORKSPACE_IN_SANDBOX, rootReadOnly = true)
+            workspace == null -> LinuxSandboxView(HOST_WORKSPACE_ROOT, rootReadOnly = true)
             else -> LinuxSandboxView(
-                WORKSPACE_IN_SANDBOX,
+                rootPath = HOST_WORKSPACE_ROOT,
                 rootReadOnly = true,
-                // worktree 与仓库同级，作为子树重挂成可写；仓库仍然改不了。
-                writableSubPaths = listOf(workspace.worktreePath),
+                // worktree 在 Linux 环境里写作 /workspace/...，挂载源必须是宿主上真实存在的路径。
+                writableSubPaths = listOf(
+                    AgentSubAgentToolScope.androidForm(workspace.worktreePath),
+                ),
             )
         }
         val mailboxRunId = request.mailboxRunId.trim()
@@ -557,8 +559,8 @@ private fun restrictBrowserTool(tool: JSONObject): JSONObject {
 /** worktree 改动统计。 */
 internal data class DiffStat(val changedFiles: Int, val stat: String)
 
-/** 子智能体沙箱里的工作区根：宿主工作区以只读挂到这里，可写子树另行重挂。 */
-private const val WORKSPACE_IN_SANDBOX = "/workspace"
+/** 宿主侧工作区根：沙箱里的 /workspace 从这里挂入。挂载源必须是宿主上真实存在的路径。 */
+private const val HOST_WORKSPACE_ROOT = "/data/local/tmp/sta"
 
 /** 代码执行工具名；子智能体两档都可以用它，写权限由挂载约束。 */
 private const val CODE_EXECUTION_TOOL_NAME = AgentCodeExecutionToolCatalog.RUN_CODE

@@ -2,6 +2,7 @@ package io.github.asagnc.sta.agent.model
 
 import io.github.asagnc.sta.agent.runtime.AgentEvent
 import io.github.asagnc.sta.agent.runtime.AgentRunController
+import io.github.asagnc.sta.agent.terminal.LinuxSandboxView
 import java.util.Collections
 import org.json.JSONArray
 import org.json.JSONObject
@@ -132,6 +133,45 @@ class AgentSubAgentRunnerTest {
     }
 
     @Test
+    fun readModeMountsTheHostWorkspaceReadOnly() {
+        val provider = FakeProvider(mutableListOf(finalMessage("查到了")))
+        var sandbox: LinuxSandboxView? = null
+
+        runner(provider, mutableListOf(), onSandbox = { sandbox = it }).run(
+            AgentSubAgentRunner.Request(role = "检索", brief = "找常量"),
+        )
+
+        // 挂载源必须是宿主上真实存在的路径；/workspace 只是沙箱内的名字，宿主上没有它。
+        assertEquals("/data/local/tmp/sta", sandbox?.rootPath)
+        assertEquals(true, sandbox?.rootReadOnly)
+        assertEquals(emptyList<String>(), sandbox?.writableSubPaths)
+    }
+
+    @Test
+    fun writeModeKeepsTheRepoReadOnlyAndOnlyRemountsTheWorktree() {
+        val provider = FakeProvider(mutableListOf(finalMessage("改完了")))
+        var sandbox: LinuxSandboxView? = null
+
+        val outcome = runner(
+            provider = provider,
+            events = mutableListOf(),
+            worktreeShell = { "1 file changed" },
+            onSandbox = { sandbox = it },
+        ).run(
+            AgentSubAgentRunner.Request(
+                role = "实现",
+                brief = "改点东西",
+                workspace = SubAgentWorkspace("/workspace/Sta-src", "/workspace/sta-worktree-x"),
+            ),
+        )
+
+        assertTrue(outcome.ok)
+        // 仓库不可改、只有自己的隔离工作区可写，且可写子树已转成宿主形态。
+        assertEquals(true, sandbox?.rootReadOnly)
+        assertEquals(listOf("/data/local/tmp/sta/sta-worktree-x"), sandbox?.writableSubPaths)
+    }
+
+    @Test
     fun writeModeWithoutDiffOutputStillSucceeds() {
         // 取不到 diff 不算失败：摘要是主产出，diff 只是给主 loop 的合并线索。
         val provider = FakeProvider(mutableListOf(finalMessage("结论")))
@@ -151,6 +191,7 @@ class AgentSubAgentRunnerTest {
         provider: AgentProviderClient,
         events: MutableList<AgentEvent>,
         tokenBudget: Int = 30_000,
+        onSandbox: ((LinuxSandboxView) -> Unit)? = null,
         worktreeShell: ((String) -> String)? = null,
     ): AgentSubAgentRunner = AgentSubAgentRunner(
         config = AgentModelClient.ModelConfig(
@@ -163,7 +204,8 @@ class AgentSubAgentRunnerTest {
         runController = AgentRunController(),
         onEvent = { event -> events += event },
         parentTools = parentTools(),
-        toolExecutorFor = { allowed, _, _ ->
+        toolExecutorFor = { allowed, _, sandbox ->
+            onSandbox?.invoke(sandbox)
             AgentModelClient.ToolExecutor { call ->
                 AgentModelClient.ToolResult(
                     JSONObject()

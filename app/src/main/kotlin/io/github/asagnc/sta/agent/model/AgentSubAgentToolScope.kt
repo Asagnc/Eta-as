@@ -199,7 +199,7 @@ internal object AgentSubAgentToolScope {
     }
 
     /** `/workspace/...` 在 Android 侧是 `/data/local/tmp/sta/...`，两种形态互认。 */
-    private fun androidForm(path: String): String {
+    internal fun androidForm(path: String): String {
         val normalized = normalize(path)
         return if (normalized == LINUX_WORKSPACE) ANDROID_WORKSPACE
         else if (normalized.startsWith("$LINUX_WORKSPACE/")) {
