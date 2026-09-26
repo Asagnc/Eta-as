@@ -72,7 +72,13 @@ internal object AgentPromptBuilder {
                                 "需要看多个文件时，第一次调用就把相关文件全部读入并输出摘要" +
                             "（例如 for p in [...]: print(p, len(open(p).read()))），不要一次只读一个；" +
                             "一次只读一个会让步数随文件数线性增长，而步数越多，最终用掉多少步越不可预测。" +
-                            "沙箱看不到应用私有数据、也不能操作用户界面，那两类仍用对应工具。"
+                            "沙箱是 Linux 环境；Android 系统目录是否可见取决于设备与执行后端" +
+                            "（root 后端挂 /system，免 root 后端不挂），所以先探测再用：" +
+                            "ls /system/bin/getprop 存在就把 /system/bin 追加进 PATH，" +
+                            "此时 getprop、dumpsys、cmd、settings、screencap、input 可用；不存在则只有 Linux 命令。" +
+                            "短信、相册、联系人、通话等 provider 数据一律用对应的设备工具或 terminal 获取，" +
+                            "不要在沙箱里试 content（它依赖 app_process）。" +
+                            "沙箱看不到 /data/data、也不能操作用户界面，那两类仍用对应工具。"
                     } else {
                         ""
                     }) +
