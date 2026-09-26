@@ -109,21 +109,17 @@ internal object WorldTraceStore {
                 // 委派的结论同时进知识库：轨迹回答「那次看了什么」（现场，不注入），
                 // 知识条目回答「这件事的结论是什么」（可注入、可校验）。两者用 run id 关联，
                 // 所以能从一条结论回溯到产生它的那次委派。
-                // 「查不到」型的空集结论不入库：它没有可复用的知识，写进去只会让它在后续每轮
-                // 被当作历史结论注入（实测一条 1900 字的「无法给出结论」报告每轮都在吃注意力预算）。
-                if (parsed.conclusion.isNotBlank() &&
-                    !WorldKnowledgeLogic.isInconclusiveConclusion(parsed.conclusion) &&
-                    !WorldKnowledgeLogic.isRawToolOutputConclusion(parsed.conclusion)
-                ) {
-                    // 取实际落库 id 而不是自己算的签名：同签名内容未变时不写新行，
-                    // 此时库里存在的是**旧行**，边必须连到它身上，否则图上的端点会
-                    // 指向一条数据库里不存在的记录，那部分连接在聚类时静默消失。
-                    val observationId = WorldKnowledgeStore.write(
+                // 入库前先收敛成有界的 summary（见 WorldKnowledgeLogic.reusableSummary）：
+                // 交白卷与工具输出流水账没有可复用知识，整份报告则会挤占后续每轮的注意力预算
+                // （实测有近 4000 字的一条）。判为不可复用时仍保留完整轨迹，只是不进知识条目。
+                val summary = WorldKnowledgeLogic.reusableSummary(parsed.conclusion)
+                if (summary != null) {
+                    WorldKnowledgeStore.write(
                         context,
                         WorldKnowledgeStore.Entry(
                             kind = KIND_FINDING,
                             signature = findingSignature(node),
-                            summary = parsed.conclusion,
+                            summary = summary,
                             evidence = parsed.evidence.joinToString("\n") { it.raw },
                             uncertainty = parsed.uncertainty.joinToString("\n"),
                             originRun = node.runId,
@@ -146,24 +142,6 @@ internal object WorldTraceStore {
                             createdAt = node.endedAt,
                         ),
                     )
-                    // 一条新的观测同时入图：抽实体、与窗口内的既有观测建确定性边。
-                    // 放在知识条目写入之后而不是之前，因为建边要读既有观测（含刚写这条
-                    // 之前的全部），顺序反了会把自己和「还不存在的自己」比较。
-                    //
-                    // 整段仍在这个 try 里：建图失败会走 WorldHealth 留痕，不影响委派结果。
-                    // observationId 为空说明这条没真正落库（被裁剪或写失败），此时不建边。
-                    if (observationId.isNotBlank()) {
-                        WorldGraphStore.ingest(
-                            context = context,
-                            observationId = observationId,
-                            conclusion = parsed.conclusion,
-                            evidence = parsed.evidence.joinToString("\n") { it.raw },
-                            uncertainty = parsed.uncertainty.joinToString("\n"),
-                            scope = node.workspaceRoot,
-                            workspaceRoot = node.workspaceRoot,
-                            nowMs = node.endedAt,
-                        )
-                    }
                 }
             }
         } catch (error: Throwable) {

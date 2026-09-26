@@ -10,6 +10,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
  * Sta 的观测层。
@@ -99,6 +101,32 @@ internal interface WorldKnowledgeDao {
             "ORDER BY created_at DESC LIMIT :limit",
     )
     suspend fun recentByKind(kind: String, now: Long, limit: Int): List<WorldKnowledgeEntity>
+
+    /** 某类未过期条目的条数，供注入端报数（只回一个整数，不搬运正文）。 */
+    @Query(
+        "SELECT COUNT(*) FROM world_knowledge WHERE kind = :kind AND (expires_at = 0 OR expires_at > :now)",
+    )
+    suspend fun countByKind(kind: String, now: Long): Int
+
+    /** 某类未过期条目中最近一条的创建时刻；没有条目时返回 0。 */
+    @Query(
+        "SELECT COALESCE(MAX(created_at), 0) FROM world_knowledge " +
+            "WHERE kind = :kind AND (expires_at = 0 OR expires_at > :now)",
+    )
+    suspend fun newestAtByKind(kind: String, now: Long): Long
+
+    /**
+     * 结论超出长度上限的条目 id。
+     *
+     * 长度判据能写进 SQL，因此这一类可以一把捞出来；其余判据（交白卷、工具输出流水账）
+     * 是关键词匹配，SQL 表达不了，由调用方按读取结果逐条判定。
+     */
+    @Query("SELECT id FROM world_knowledge WHERE length(summary) > :maxChars")
+    suspend fun overLengthIds(maxChars: Int): List<String>
+
+    /** 按 id 批量删除。 */
+    @Query("DELETE FROM world_knowledge WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<String>)
 
     /**
      * 取最近的条目（不限种类、不过滤过期）。
@@ -241,116 +269,11 @@ internal data class TraceOverflowRow(
     @ColumnInfo(name = "content_path") val contentPath: String,
 )
 
-/**
- * 图里的一个节点（实体）。
- *
- * 观测条目是「一次行动留下的记录」，实体是「这次行动涉及的东西」——文件、符号、
- * 概念。把两者分开的理由是：同一条观测会涉及多个实体，同一个实体会被多条观测涉及，
- * 这个多对多关系正是「聚类」得以发生的地方。
- *
- * [kind] 只有三种取值：
- * - `file`：代码文件路径，从证据的 `路径:行号` 直接提取，**确定性**。
- * - `symbol`：代码标识符（类名、函数名、常量名），从结论与证据文本里识别，**确定性**。
- * - `concept`：语义概念，由 LLM 抽取，**有成本且可能不准**，所以单独一类而不是混进前两种。
- *
- * 前两种不花一分钱、不会幻觉，是图的主要骨架；第三种只在补断点时用。这个划分直接
- * 决定了整套聚类的成本与可信度，不是分类癖。
- */
-@Entity(
-    tableName = "world_entity",
-    indices = [
-        Index(value = ["kind", "name"], unique = true),
-        Index(value = ["updated_at"]),
-    ],
-)
-internal data class WorldEntityRow(
-    @PrimaryKey @ColumnInfo(name = "id") val id: String,
-    @ColumnInfo(name = "kind") val kind: String,
-    /** 实体名：文件路径、符号名或概念名。 */
-    @ColumnInfo(name = "name") val name: String,
-    /** 所属空间坐标，与知识条目同一口径。 */
-    @ColumnInfo(name = "scope") val scope: String,
-    @ColumnInfo(name = "created_at") val createdAt: Long,
-    @ColumnInfo(name = "updated_at") val updatedAt: Long,
-)
-
-/**
- * 图里的一条边。
- *
- * [layer] 记录这条边**是怎么来的**，取值 `file` / `symbol` / `keyword` / `semantic`。
- * 这个字段是整套设计的可解释性基础：「这两个东西为什么被聚成一类」必须能回答，
- * 否则聚类结果无法被信任，也无法在出错时定位是哪一层出的问题。
- *
- * [weight] 表示连接强度：共享的实体越多、关键词重叠越多，权重越高。同一对节点之间
- * 可能同时存在多层边（既共享文件又共享符号），入库时按 `(src,dst,layer)` 去重合并，
- * 排序时把权重相加。
- */
-@Entity(
-    tableName = "world_edge",
-    indices = [
-        Index(value = ["src_id"]),
-        Index(value = ["dst_id"]),
-        Index(value = ["layer"]),
-        Index(value = ["src_id", "dst_id", "layer"], unique = true),
-    ],
-)
-internal data class WorldEdgeRow(
-    @PrimaryKey @ColumnInfo(name = "id") val id: String,
-    @ColumnInfo(name = "src_id") val srcId: String,
-    @ColumnInfo(name = "dst_id") val dstId: String,
-    @ColumnInfo(name = "layer") val layer: String,
-    @ColumnInfo(name = "weight") val weight: Double,
-    @ColumnInfo(name = "created_at") val createdAt: Long,
-)
-
-@Dao
-internal interface WorldEntityDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(rows: List<WorldEntityRow>)
-
-    @Query("SELECT * FROM world_entity WHERE kind = :kind AND name = :name LIMIT 1")
-    suspend fun find(kind: String, name: String): WorldEntityRow?
-
-    @Query("SELECT * FROM world_entity ORDER BY updated_at DESC LIMIT :limit")
-    suspend fun recent(limit: Int): List<WorldEntityRow>
-
-    @Query("SELECT COUNT(*) FROM world_entity")
-    suspend fun count(): Int
-
-    @Query(
-        "DELETE FROM world_entity WHERE id NOT IN " +
-            "(SELECT id FROM world_entity ORDER BY updated_at DESC LIMIT :keep)",
-    )
-    suspend fun trim(keep: Int)
-}
-
-@Dao
-internal interface WorldEdgeDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(rows: List<WorldEdgeRow>)
-
-    @Query("SELECT * FROM world_edge WHERE src_id = :id OR dst_id = :id")
-    suspend fun touching(id: String): List<WorldEdgeRow>
-
-    @Query("SELECT * FROM world_edge WHERE id = :id LIMIT 1")
-    suspend fun find(id: String): WorldEdgeRow?
-
-    @Query("SELECT COUNT(*) FROM world_edge")
-    suspend fun count(): Int
-
-    @Query(
-        "DELETE FROM world_edge WHERE id NOT IN " +
-            "(SELECT id FROM world_edge ORDER BY created_at DESC LIMIT :keep)",
-    )
-    suspend fun trim(keep: Int)
-}
 
 @Database(
     entities = [
         WorldKnowledgeEntity::class,
         WorldTraceEntity::class,
-        WorldEntityRow::class,
-        WorldEdgeRow::class,
     ],
     version = WorldDatabase.VERSION,
     exportSchema = false,
@@ -360,22 +283,33 @@ internal abstract class WorldDatabase : RoomDatabase() {
 
     abstract fun traceDao(): WorldTraceDao
 
-    abstract fun entityDao(): WorldEntityDao
-
-    abstract fun edgeDao(): WorldEdgeDao
-
     companion object {
         /**
-         * schema 版本。与主库无关：版本不匹配时本库直接重建，不写迁移。
+         * schema 版本。
          *
          * 2：新增 world_trace（子智能体委派树）。
          * 3：world_trace 增加 conclusion / evidence / uncertainty，摘要按三段格式拆开存，
          *    证据行与不确定项因此可查询，不必把摘要当自由文本重新解析。
          * 4：新增空间维度——knowledge / trace 增加 scope 坐标；新增 world_entity（实体）
-         *    与 world_edge（分层的边）两张表，让「哪些工作记录在讲同一件事」可查询。
+         *    与 world_edge（分层的边）两张表。
+         * 5：删除 world_entity 与 world_edge——建图没有任何读取方，属实只写不读。
          */
-        const val VERSION = 4
+        const val VERSION = 5
 
         const val FILE_NAME = "world.db"
+
+        /**
+         * 4 → 5 的迁移。
+         *
+         * 必须显式写出来：本库对未知版本走 `fallbackToDestructiveMigration`，那条路径会
+         * 重建整库，而 world_trace 存的是历次委派的现场，属于要保留的记录，不能因为
+         * 删两张只写不读的表就一起丢掉。
+         */
+        val MIGRATION_4_5: Migration = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS world_entity")
+                db.execSQL("DROP TABLE IF EXISTS world_edge")
+            }
+        }
     }
 }

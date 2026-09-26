@@ -24,7 +24,7 @@ class AgentRecallFormatTest {
             now,
         )!!
 
-        assertEquals("${AgentRecallFormat.HEADER_PREFIX}（观测库里已有的结论，需要细节时用 world_recall 检索）：", lines.first())
+        assertEquals("${AgentRecallFormat.HEADER_PREFIX}（观测库里可复用的结论，此处只列标题，正文按需检索）：", lines.first())
         assertTrue(lines[1].startsWith(AgentRecallFormat.ITEM_PREFIX))
         assertTrue(lines[1].contains("30 分钟前"))
         assertTrue(lines[1].contains("观测库已独立成库"))
@@ -70,7 +70,7 @@ class AgentRecallFormatTest {
         val lines = AgentRecallFormat.injectedLines(entries, now)!!
 
         val injected = lines.count { it.startsWith(AgentRecallFormat.ITEM_PREFIX) }
-        // 3 条结论 + 1 行提示
+        // 上限条标题 + 1 行提示
         assertEquals(AgentRecallFormat.MAX_ENTRIES + 1, injected)
     }
 
@@ -94,14 +94,32 @@ class AgentRecallFormatTest {
     }
 
     @Test
-    fun capsSingleSummaryLength() {
-        // 写库侧的 summary 本该是一句话，但子智能体可能把整份报告塞进去（实测一条 1900 字）。
-        // 注入侧必须兜底截断，否则一条历史结论每轮都吃掉上千字的注意力预算。
-        val lines = AgentRecallFormat.injectedLines(listOf(entry(summary = "结".repeat(900))), now)!!
+    fun injectsTitlesInsteadOfFullConclusions() {
+        // 注入带正文就等于把存量数据无条件摆到模型面前：一条 4000 字的报告即使被截断，
+        // 也仍然占着上千字的注意力预算。标题是单行的，总量有界，正文交给 world_recall。
+        // 用「可复用但长于标题上限」的样本：超过入库上限的条目根本进不了库，那是写入侧的事。
+        val long = "结".repeat(100) + "。后续细节不应出现在注入里"
+        val lines = AgentRecallFormat.injectedLines(listOf(entry(summary = long)), now)!!
 
         val item = lines.first { it.startsWith(AgentRecallFormat.ITEM_PREFIX) }
-        assertTrue(item.contains("已截断"))
-        assertTrue(item.length < AgentRecallFormat.MAX_SUMMARY_CHARS + 100)
+        // 标题收在长度上限附近，且完整正文没有跟进来。
+        assertTrue(item.endsWith("…"))
+        assertTrue(item.length <= WorldKnowledgeLogic.MAX_TITLE_CHARS + 20)
+        assertTrue(!item.contains("后续细节不应出现在注入里"))
+        assertTrue(lines.last().contains("world_recall"))
+    }
+
+    @Test
+    fun skipsUnusableStoredEntries() {
+        // 形态不可复用的存量条目（工具输出流水账、整份报告）既不该注入正文，也不该占标题位。
+        val raw = "命令1: ok=true exit_code=0 stdout前400字符=" + "x".repeat(400)
+        val lines = AgentRecallFormat.injectedLines(
+            listOf(entry(summary = raw), entry(summary = "可用结论")),
+            now,
+        )!!
+
+        assertTrue(lines.none { it.contains("命令1:") })
+        assertTrue(lines.any { it.contains("可用结论") })
     }
 
     @Test

@@ -56,6 +56,9 @@ internal object WorldKnowledgeStore {
                     }
                     dao.deleteExpired(System.currentTimeMillis())
                     dao.trim(KEEP_ENTRIES)
+                    // 顺手回收修复之前入库的不可复用条目：它们读不出来（见 [search] 与
+                    // `AgentRecallFormat`），占着的却是保留名额。
+                    purgeUnusableWithin(dao)
                     // 已有旧行且内容未变时，旧行仍在（未被 trim 掉的），照常返回它的 id；
                     // 但若刚才的 trim 把它裁掉了，返回空串以免图上留下悬空引用。
                     if (dao.exists(targetId) > 0) targetId else ""
@@ -112,6 +115,83 @@ internal object WorldKnowledgeStore {
     internal fun closeForTests() {
         WorldDatabaseProvider.closeForTests()
     }
+
+    /**
+     * 把坐标未知的历史条目回填成当前工作区根。
+     *
+     * 空间坐标从无到有后，历史条目的 scope 是空串，而空串在检索里按「最远」处理，
+     * 所有旧结论会因此排在后面。幂等：只更新 `scope = ''` 的行，第二次调用影响 0 行，
+     * 所以在 run 启动路径上直接调用是安全的，不需要额外的「已回填」标记位。
+     */
+    fun backfillScope(context: Context?, scope: String) {
+        if (context == null || scope.isBlank()) return
+        try {
+            runBlocking(Dispatchers.IO) {
+                val db = WorldDatabaseProvider.get(context)
+                db.withTransaction {
+                    db.knowledgeDao().backfillScope(scope)
+                    db.traceDao().backfillScope(scope)
+                }
+            }
+        } catch (error: Throwable) {
+            WorldHealth.recordDegradation("knowledge.backfillScope", error)
+        }
+    }
+
+    /**
+     * 观测库的可注入概览：可复用结论与失败教训各多少条、最近一条结论多久之前。
+     *
+     * 注入端只报这几个数，不搬运结论正文——「世界里有这些东西」是模型需要知道的，
+     * 具体内容交给它自己按需检索。只发两条 COUNT，不实体化任何条目。
+     */
+    data class Stats(
+        val findings: Int,
+        val failures: Int,
+        val newestFindingAtMs: Long,
+    ) {
+        val isEmpty: Boolean get() = findings == 0 && failures == 0
+    }
+
+    fun stats(context: Context?, nowMs: Long = System.currentTimeMillis()): Stats {
+        if (context == null) return Stats(0, 0, 0L)
+        return try {
+            runBlocking(Dispatchers.IO) {
+                val dao = WorldDatabaseProvider.get(context).knowledgeDao()
+                Stats(
+                    findings = dao.countByKind(KIND_FINDING, nowMs),
+                    failures = dao.countByKind(KIND_FAILURE, nowMs),
+                    newestFindingAtMs = dao.newestAtByKind(KIND_FINDING, nowMs),
+                )
+            }
+        } catch (error: Throwable) {
+            // 报不出数时按「没有数据」处理，但必须留痕：否则「世界是空的」会被当成真的空。
+            WorldHealth.recordDegradation("knowledge.stats", error)
+            Stats(0, 0, 0L)
+        }
+    }
+
+    /**
+     * 清除形态不可复用的存量条目，返回删除条数。
+     *
+     * 写入侧只拦得住新数据，而修复之前入库的条目（整份报告、工具输出流水账、交白卷）
+     * 会一直留在库里占着保留名额。这里据同一套判据回收，由 [write] 在它已有的写事务里
+     * 顺带调用，不必等下一次 App 启动。
+     */
+    private suspend fun purgeUnusableWithin(dao: WorldKnowledgeDao): Int {
+        val overLength = dao.overLengthIds(WorldKnowledgeLogic.MAX_SUMMARY_CHARS)
+        if (overLength.isNotEmpty()) dao.deleteByIds(overLength)
+        val unusable = dao.recentAny(PURGE_SCAN_LIMIT)
+            .filterNot { WorldKnowledgeLogic.isUsableStoredSummary(it.summary) }
+            .map { it.id }
+        if (unusable.isNotEmpty()) dao.deleteByIds(unusable)
+        return overLength.size + unusable.size
+    }
+
+    /** 一次清除扫描的条目上限；照保留上限取即可，库里不会多于这个量级。 */
+    private const val PURGE_SCAN_LIMIT = KEEP_ENTRIES
+
+    /** 观测库里失败教训的种类标记，与 [AgentModelClient] 写入时一致。 */
+    const val KIND_FAILURE = "failure"
 
     /** 写入时用的条目；字段与 [WorldKnowledgeEntity] 一一对应。 */
     data class Entry(
@@ -200,7 +280,11 @@ internal object WorldKnowledgeStore {
             val candidates = runBlocking(Dispatchers.IO) {
                 WorldDatabaseProvider.get(context).knowledgeDao()
                     .search(nowMs, pattern, window)
-            }.map { entity -> entity.toRecalled(readContent) }
+            }
+                // 形态不可复用的存量条目不出现在检索结果里：它没有可复用的知识，返回它
+                // 只会让模型把一段工具输出当成结论。写入侧已拦新数据，这里兜住存量。
+                .filter { WorldKnowledgeLogic.isUsableStoredSummary(it.summary) }
+                .map { entity -> entity.toRecalled(readContent) }
             rank(candidates, query, currentScope, nowMs).take(limit)
         } catch (error: Throwable) {
             // 返回空列表与「真的没查到」无法区分，必须留痕。

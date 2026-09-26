@@ -226,8 +226,8 @@ class WorldScoreTest {
     @Test
     fun `中文查询按二元切分`() {
         val terms = WorldScore.termsOf("空间维度")
-        // 与 WorldEdgeBuilder.keywordsOf 同一套切分口径，两处若不一致，
-        // 「建边时认为相关的」与「检索时认为相关的」会是两套标准。
+        // 与实体抽取的切分口径一致，两处若不一致，
+        // 「写入时认为相关的」与「检索时认为相关的」会是两套标准。
         assertTrue(terms.contains("空间"))
         assertTrue(terms.contains("间维"))
         assertTrue(terms.contains("维度"))

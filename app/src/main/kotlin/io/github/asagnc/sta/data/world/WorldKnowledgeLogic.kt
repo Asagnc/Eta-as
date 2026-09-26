@@ -33,29 +33,120 @@ internal object WorldKnowledgeLogic {
     /**
      * 「查不到」型的结论标记：结论一开头就声明自己没查出来。
      *
-     * 这类结论没有可复用的知识，却会被当作历史结论每轮注入——实测一条 1900 字的
-     * 「无法给出结论……我也没有联网工具……」报告，每轮都在吃掉上千字的注意力预算，
-     * 而它对任何后续任务都没有价值。判定只看**开头一段**：结论里顺带提到「无法核实」
-     * 属正常（那是它诚实标注边界），只有一上来就交白卷才算空集。
+     * 这类结论没有可复用的知识，却会被当作历史结论每轮注入——实测一条 229 字、开头
+     * 就写「我没有任何联网检索能力……无法回答」的报告，每轮都在吃掉注意力预算，
+     * 而它对任何后续任务都没有价值。
+     *
+     * 只收「自述能力缺失」这一类措辞，刻意不收两个看起来更直接的词：
+     * 「无法给出结论」在有产出的报告里被用作覆盖范围的声明（实测「未读完的 58 个文件
+     * 无法给出结论」紧跟在一组确证发现之后），收它会误杀整条真结论；
+     * 「没有联网工具」/「无联网工具」是泛化说法，边界用例正是靠它出现在第 113 个字符处
+     * 验证「开头之外的提及不该判空集」，收它会把那条边界一起推翻。
      *
      * 用关键词而不是语义判定：宁可漏判（照旧入库），也不要误杀正常结论。
      */
     private val INCONCLUSIVE_MARKERS = listOf(
-        "无法给出结论",
-        "无法得出结论",
         "无法回答",
-        "没有联网工具",
-        "无联网工具",
+        "无法核实",
+        "未能确认",
+        "未能核实",
+        "无法访问",
+        "无法联网",
         "不具备联网",
+        "联网检索能力",
+        "没有可用的联网工具",
+        "没有可用的浏览器",
+        "没有可用的网络",
+        "本地无网络",
     )
 
-    /** 结论开头多少个字符内命中标记才算空集。 */
-    private const val INCONCLUSIVE_HEAD_CHARS = 80
+    /**
+     * 结论开头多少个字符内命中标记才算空集。
+     *
+     * 取 120 而不是更短的窗口：这类报告常在交白卷之前先列一遍自己有哪些工具，
+     * 那串工具名本身就占掉近百字符（实测「无法回答」出现在第 97 个字符）。
+     */
+    private const val INCONCLUSIVE_HEAD_CHARS = 120
+
+    /**
+     * 极短结论的判定长度：整段话就这么长且带否定词时，它除了一句「没查出来」没有别的信息。
+     *
+     * 这一条是为了覆盖不出现于标记表里的简短措辞（如「无法得出结论。」），而不必为此
+     * 把「无法给出结论」也列进去——那个词在有产出的报告里被用作覆盖范围的声明
+     * （实测「未读完的 58 个文件无法给出结论」紧跟在一组确证发现之后），当成空集标记会误杀。
+     */
+    private const val BARE_DISCLAIMER_CHARS = 30
+
+    private val BARE_DISCLAIMER_NEGATIONS = listOf("无法", "未能", "不能", "没有", "不具备")
 
     /** 这条结论是不是「查不到」型的空集结论（不该入库）。 */
     fun isInconclusiveConclusion(conclusion: String): Boolean {
-        val head = conclusion.replace(Regex("\\s+"), " ").trim().take(INCONCLUSIVE_HEAD_CHARS)
+        val flat = oneLine(conclusion)
+        if (flat.isEmpty()) return true
+        if (flat.length <= BARE_DISCLAIMER_CHARS &&
+            BARE_DISCLAIMER_NEGATIONS.any { flat.contains(it) }
+        ) {
+            return true
+        }
+        val head = flat.take(INCONCLUSIVE_HEAD_CHARS)
         return INCONCLUSIVE_MARKERS.any { head.contains(it) }
+    }
+
+    /** 入库 summary 的字符上限。 */
+    const val MAX_SUMMARY_CHARS = 240
+
+    /**
+     * 把一条委派结论整理成可入库的 summary；不可复用时返回 null。
+     *
+     * 写库侧必须在这里收敛，因为子智能体交回的文本形态并不受控：格式不合规时
+     * [AgentSubAgentSummary.parse] 会把整份报告当结论（实测有近 4000 字的），
+     * 而它一旦入库就会被当作历史结论反复注入。这里的取向是**截断而不是丢弃**：
+     * 长报告的首段通常就是它的结论句，保留有界的一段仍可被检索到，整份原文仍完整留在
+     * 委派轨迹里。只有确实不含可复用信息的形态（交白卷、工具输出流水账）才判为不可复用。
+     */
+    fun reusableSummary(conclusion: String): String? {
+        val flat = oneLine(conclusion)
+        if (flat.isEmpty()) return null
+        if (isInconclusiveConclusion(flat)) return null
+        if (isRawToolOutputConclusion(flat)) return null
+        if (flat.length <= MAX_SUMMARY_CHARS) return flat
+        return flat.take(MAX_SUMMARY_CHARS - 1) + "…"
+    }
+
+    /**
+     * 存量条目是否仍算可复用。
+     *
+     * 读回来的条目要再过一遍写入侧那套判据，因为长度上限与标记表都是后加的，修复之前
+     * 入库的条目（整份报告、工具输出流水账、交白卷）仍在库里。它们不该出现在注入或
+     * 检索结果里，只应由清除路径回收。
+     */
+    fun isUsableStoredSummary(summary: String): Boolean {
+        val flat = oneLine(summary)
+        if (flat.isEmpty() || flat.length > MAX_SUMMARY_CHARS) return false
+        if (isInconclusiveConclusion(flat)) return false
+        return !isRawToolOutputConclusion(flat)
+    }
+
+    /** 注入时给单条结论的标题长度上限。 */
+    const val MAX_TITLE_CHARS = 60
+
+    /** 句末标点：标题在第一个句末处收住，避免把一个从句当作完整标题。 */
+    private const val TITLE_TERMINATORS = "。！？"
+
+    /**
+     * 结论的短标题。
+     *
+     * 注入只用它，完整 summary 仍存库、由 `world_recall` 按需取回：这样「世界里有这些
+     * 结论」对模型可见，而每轮注入的体量不随结论长短变化。只按句末标点切分，
+     * 不按英文句点——工具名与文件路径里都有 `.`，按它切会切出半截词。
+     */
+    fun titleOf(summary: String): String {
+        val flat = oneLine(summary)
+        if (flat.length <= MAX_TITLE_CHARS) return flat
+        val head = flat.take(MAX_TITLE_CHARS)
+        val end = head.indexOfFirst { it in TITLE_TERMINATORS }
+        // 终止符落在首字符时不予采信：那更可能是标题前的一个残余标点。
+        return if (end >= 1) head.take(end + 1) else head.take(MAX_TITLE_CHARS - 1) + "…"
     }
 
     /**
@@ -71,8 +162,8 @@ internal object WorldKnowledgeLogic {
      * 与空集判定同一种取向：宁可漏判（照旧入库），也不要误杀正常结论。
      */
     fun isRawToolOutputConclusion(conclusion: String): Boolean {
-        val head = conclusion.replace(Regex("\\s+"), " ").trim().take(RAW_TOOL_OUTPUT_HEAD_CHARS)
-        return RAW_TOOL_OUTPUT_PREFIX.containsMatchIn(head) && head.contains(RAW_TOOL_OUTPUT_MARKER)
+        val flat = oneLine(conclusion)
+        return RAW_TOOL_OUTPUT_PREFIX.containsMatchIn(flat) && flat.contains(RAW_TOOL_OUTPUT_MARKER)
     }
 
     /** `命令1:` / `命令 1：` 这类结果流水账的开头。 */
@@ -80,9 +171,6 @@ internal object WorldKnowledgeLogic {
 
     /** 退出码字段：与开头特征同时命中才判为原始输出。 */
     private const val RAW_TOOL_OUTPUT_MARKER = "exit_code="
-
-    /** 原始输出的判定范围；比空集判定宽一些，因为流水账开头可能带一层缩进或序号。 */
-    private const val RAW_TOOL_OUTPUT_HEAD_CHARS = 160
 
     /**
      * 把依赖列表编码成 JSON 数组。

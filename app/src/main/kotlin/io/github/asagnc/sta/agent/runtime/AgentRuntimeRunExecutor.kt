@@ -39,7 +39,7 @@ import io.github.asagnc.sta.agent.tool.ToolExecutionDecision
 import io.github.asagnc.sta.core.AndroidAgentLogger
 import io.github.asagnc.sta.core.safeLogType
 import io.github.asagnc.sta.data.repository.AgentMemoryRepository
-import io.github.asagnc.sta.data.world.WorldGraphStore
+import io.github.asagnc.sta.data.world.WorldKnowledgeStore
 import io.github.asagnc.sta.data.world.WorldTraceStore
 import java.io.File
 import kotlinx.coroutines.runBlocking
@@ -88,7 +88,7 @@ internal class AgentRuntimeRunExecutor(
         // 空间坐标从无到有后，历史观测的 scope 是空串；每次 run 启动时做一次幂等回填
         // （只更新 scope 为空的行，第二次影响 0 行）。放在这里而不是启动页，是因为
         // run 启动点已经保证了 appContext 可用，且观测库本来就在这条路径上被使用。
-        WorldGraphStore.backfillScope(appContext, WORKSPACE_ROOT)
+        WorldKnowledgeStore.backfillScope(appContext, WORKSPACE_ROOT)
         val archivedEvents = mutableListOf<AgentEvent>()
         var toolExecutor: AutoCloseable? = null
         var localTools: AgentLocalTools? = null

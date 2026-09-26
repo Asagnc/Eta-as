@@ -171,7 +171,7 @@ internal object WorldScore {
      * 关键命中度：命中词数与查询词数的比值，天然落在 [0,1]。
      *
      * 用比值而不是命中个数：后者会让长文本天然得分高（它的词多），而长文本并不因此
-     * 更相关。这与 [WorldEdgeBuilder] 用 Jaccard 而非共享个数的理由相同。
+     * 更相关。这与建边时用 Jaccard 而非共享个数的理由相同。
      */
     fun relevanceOf(hits: Int, queryTerms: Int): Double {
         if (queryTerms <= 0) return 0.0
@@ -205,9 +205,8 @@ internal object WorldScore {
     /**
      * 把查询串切成检索词。
      *
-     * 与 [WorldEdgeBuilder.keywordsOf] 同一套切分口径（英文按分隔符、中文按二元），
-     * 理由是两处若不一致，「建边时认为相关的」与「检索时认为相关的」就会是两套标准，
-     * 聚类结果与检索结果会对不上。
+     * 与实体抽取的切分口径一致（英文按分隔符、中文按二元），
+     * 理由是两处若不一致，「写入时认为相关的」与「检索时认为相关的」就会是两套标准。
      */
     fun termsOf(query: String): List<String> {
         if (query.isBlank()) return emptyList()

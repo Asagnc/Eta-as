@@ -227,9 +227,9 @@ class WorldKnowledgeLogicTest {
 
     @Test
     fun onlyChecksTheOpeningForInconclusiveMarkers() {
-        // 判定只看开头一段：结论里顺带提到「没有联网工具」属正常（那是诚实标注边界），
-        // 不能因此把一条有用的结论整条丢掉。
-        val useful = "结论：" + "证据见源码与单测。".repeat(12) + "当时没有联网工具，外部做法未核对。"
+        // 判定只看开头一段：结论里顺带提到「无法核实」属正常（那是诚实标注边界），
+        // 不能因此把一条有用的结论整条丢掉。填充到让标记落在窗口之外。
+        val useful = "结论：" + "证据见源码与单测。".repeat(15) + "部分说法无法核实。"
 
         assertFalse(WorldKnowledgeLogic.isInconclusiveConclusion(useful))
     }
