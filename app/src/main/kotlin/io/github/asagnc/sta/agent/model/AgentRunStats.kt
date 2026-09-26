@@ -60,7 +60,7 @@ internal class AgentRunStats {
     }
 
     /**
-     * 最近一次请求视图里被压成占位的工具结果条数。
+     * 最近一次请求视图里被截断的工具结果条数（超过长度上限、已换成头尾折叠的那批）。
      * 注意是覆盖而不是累加：同一个结果在后续每一轮都会被重新统计，累加会把数字放大成没有意义的值。
      */
     fun updatePrunedToolResults(count: Int) {
