@@ -43,9 +43,23 @@ internal data class AgentContextUsageUi(
     val contextTokens: Int?,
     val contextWindow: Int?,
     val estimated: Boolean = false,
+    /**
+     * 本会话累计输入与输出 token。
+     *
+     * 与 [contextTokens] 的口径完全不同：后者是「最近一次请求占了多少窗口」，这里是
+     * 「一共发出去多少」。两者差异可以很大——同一份上下文每轮重发一次，窗口占用不变，
+     * 累计输入却在成倍增长；只看窗口占用会误以为 token 没怎么消耗。
+     */
+    val cumulativeInputTokens: Long = 0,
+    val cumulativeOutputTokens: Long = 0,
+    val cumulativeCachedTokens: Long = 0,
 ) {
     val progress: Float?
         get() = contextUsageProgress(contextTokens, contextWindow)
+
+    /** 累计口径只展示确实发生过的消耗；整个会话还没发过请求时为空。 */
+    val hasCumulative: Boolean
+        get() = cumulativeInputTokens > 0 || cumulativeOutputTokens > 0
 }
 
 internal object AgentModelPickerProjector {
@@ -128,7 +142,24 @@ internal fun latestContextUsage(
     // 窗口优先用运行期实测值：模型声明的窗口可能远大于服务端实际允许的规模，
     // 只按声明值算会让进度条永远到不了压缩触发线。
     val window = windowHint ?: selectedModel?.contextWindow
-    return AgentContextUsageUi(lastUsage?.first, window, lastUsage?.second ?: false)
+    // 累计口径把每条带用量的事件相加：窗口占用看不出重复发送，累计能。
+    var input = 0L
+    var output = 0L
+    var cached = 0L
+    messages.forEach { message ->
+        val usage = (message as? AgentMessageUi)?.usage ?: return@forEach
+        input += (usage.inputTokens ?: 0).toLong()
+        output += (usage.outputTokens ?: 0).toLong()
+        cached += (usage.cachedTokens ?: 0).toLong()
+    }
+    return AgentContextUsageUi(
+        contextTokens = lastUsage?.first,
+        contextWindow = window,
+        estimated = lastUsage?.second ?: false,
+        cumulativeInputTokens = input,
+        cumulativeOutputTokens = output,
+        cumulativeCachedTokens = cached,
+    )
 }
 
 internal fun contextUsageProgress(contextTokens: Int?, contextWindow: Int?): Float? {

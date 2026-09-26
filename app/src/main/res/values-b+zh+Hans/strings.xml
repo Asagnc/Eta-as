@@ -832,6 +832,7 @@
   <string name="context_compact_action">压缩上下文</string>
   <string name="context_compact_until_here">压缩到此为止</string>
   <string name="context_usage_description">上下文用量：%1$s</string>
+  <string name="context_usage_cumulative">本次已发 %1$s 输入 · %2$s 输出</string>
   <string name="memory_budget_summary">每轮最多注入 %1$s 字符，详细内容由模型按需读取</string>
   <string name="memory_over_limit">已超过 1 MiB 上限，请删减</string>
   <string name="memory_unsaved_changes">未保存的更改</string>

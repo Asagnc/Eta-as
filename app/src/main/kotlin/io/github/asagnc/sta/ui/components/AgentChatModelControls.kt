@@ -44,6 +44,7 @@ import io.github.asagnc.sta.R
 import io.github.asagnc.sta.ui.model.AgentContextUsageUi
 import io.github.asagnc.sta.ui.model.AgentModelOptionUi
 import io.github.asagnc.sta.ui.model.AgentModelPickerUiState
+import io.github.asagnc.sta.ui.model.formatCompactTokenCount
 import io.github.asagnc.sta.ui.model.defaultExpandedModelProviderIds
 import io.github.asagnc.sta.ui.model.formatContextUsage
 import io.github.asagnc.sta.ui.theme.StaColors
@@ -291,6 +292,18 @@ internal fun AgentContextUsageButton(
         usage.contextTokens == null -> stringResource(R.string.context_usage_after_response)
         else -> stringResource(R.string.context_usage_previous_response, summary)
     }
+    // 累计口径：窗口占用看不出同一份上下文被重发多少次，累计输入能。
+    // 格式化函数按 Int 设计（窗口规模量级），累计值用 Long 统计以防溢出，展示前夹一次上限。
+    fun compactCount(value: Long): Int = value.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+    val detailWithCumulative = if (usage.hasCumulative) {
+        detail + "\n" + stringResource(
+            R.string.context_usage_cumulative,
+            formatCompactTokenCount(compactCount(usage.cumulativeInputTokens), locale),
+            formatCompactTokenCount(compactCount(usage.cumulativeOutputTokens), locale),
+        )
+    } else {
+        detail
+    }
     val usageDescription = stringResource(
         R.string.context_usage_description,
         summary.replace('\n', ' '),
@@ -328,7 +341,7 @@ internal fun AgentContextUsageButton(
                 colors = tooltipColors,
             ) {
                 Text(
-                    text = detail,
+                    text = detailWithCumulative,
                     color = tooltipColors.contentColor,
                     style = MiuixTheme.textStyles.body2,
                 )

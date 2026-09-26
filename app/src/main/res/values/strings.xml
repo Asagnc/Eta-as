@@ -843,6 +843,7 @@
   <string name="context_usage_after_response">Measured after the first response</string>
   <string name="context_usage_previous_response">%1$s\nMeasured last turn</string>
   <string name="context_usage_description">Context usage: %1$s</string>
+  <string name="context_usage_cumulative">Sent %1$s in · %2$s out this session</string>
   <string name="memory_budget_summary">Inject up to %1$s characters per turn. The model reads detailed content as needed</string>
   <string name="memory_over_limit">Over the 1 MiB limit. Remove some content</string>
   <string name="memory_unsaved_changes">Unsaved changes</string>
