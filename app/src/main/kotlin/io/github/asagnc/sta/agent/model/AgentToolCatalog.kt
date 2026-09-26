@@ -61,6 +61,10 @@ internal object AgentToolCatalog {
         "AgentTerminalToolCatalog" to { tools, selection ->
             if (selection.terminalTools) AgentTerminalToolCatalog.appendTo(tools)
         },
+        "AgentCodeExecutionToolCatalog" to { tools, selection ->
+            // 与终端工具同一道权限：都能在沙箱里执行任意命令，不新增权限面。
+            if (selection.terminalTools) AgentCodeExecutionToolCatalog.appendTo(tools)
+        },
     )
 
     fun build(

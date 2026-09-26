@@ -264,6 +264,7 @@ class AgentToolCatalogTest {
             "read_image",
             "terminal",
             "run_command",
+            "run_code",
             "read_file",
             "read_files",
             "edit_file",

@@ -11,6 +11,7 @@ import io.github.asagnc.sta.agent.device.DeviceControlUnavailableException
 import io.github.asagnc.sta.agent.device.RootAccess
 import io.github.asagnc.sta.agent.device.RootShellDeviceController
 import io.github.asagnc.sta.agent.device.BoundedRootCommandExecutor
+import io.github.asagnc.sta.agent.model.AgentCodeExecutionToolCatalog
 import io.github.asagnc.sta.agent.model.AgentMemoryWritePayload
 import io.github.asagnc.sta.agent.model.AgentModelClient
 import io.github.asagnc.sta.agent.model.AgentRunStatsToolCatalog
@@ -201,6 +202,52 @@ internal class AgentLocalTools(
         )
     }
 
+    /**
+     * 在沙箱里执行代码，只把 stdout 与 stderr 带回上下文。
+     *
+     * 与 `terminal` 的区别在意图：终端是「跑一条命令看结果」，这里是「在沙箱里完成一段处理，
+     * 只把结论带回来」。批量读取、过滤、计算都在沙箱内结束，避免把大段原文灌进上下文，
+     * 一次调用即可替代多轮「读文件 → 再读 → 再算」的往返。
+     */
+    private fun runCode(args: JSONObject): String {
+        val code = args.optString("code")
+        if (code.isBlank()) throw InvalidToolArgumentException("code 不能为空")
+        val language = args.optString("language").ifBlank { "python" }
+        val timeoutSeconds = args.optInt("timeout_seconds", DEFAULT_CODE_TIMEOUT_SECONDS)
+            .coerceIn(1, MAX_CODE_TIMEOUT_SECONDS)
+        val command = when (language) {
+            "shell" -> "cd $CODE_WORKSPACE_DIR && $code"
+            "python" ->
+                "cd $CODE_WORKSPACE_DIR && python3 - <<'$CODE_HEREDOC_TAG'\n$code\n$CODE_HEREDOC_TAG"
+            else -> throw InvalidToolArgumentException("language 只能是 python 或 shell")
+        }
+        val result = runLinuxCommandRaw(command, timeoutSeconds)
+        if (language == "python" && result.exitCode == SHELL_COMMAND_NOT_FOUND) {
+            return errorResult(
+                code = "PYTHON_UNAVAILABLE",
+                message = "沙箱里没有 python3；请改用 language=shell，或先在 Linux 工具环境安装 Python",
+            )
+        }
+        return JSONObject()
+            .put("ok", result.exitCode == 0)
+            .put("exit_code", result.exitCode)
+            .put("stdout", result.stdout.take(FileToolLimits.MAX_OUTPUT_CHARS))
+            .put("stderr", result.stderr.take(FileToolLimits.MAX_ERROR_CHARS))
+            .toString()
+    }
+
+    /** 沙箱默认工作目录；与 Linux 环境约定的工作目录一致。 */
+    private val CODE_WORKSPACE_DIR = "/workspace"
+
+    private val DEFAULT_CODE_TIMEOUT_SECONDS = 60
+    private val MAX_CODE_TIMEOUT_SECONDS = 600
+
+    /** heredoc 结束标记；用带项目前缀的固定串，避免与代码内容撞行。 */
+    private val CODE_HEREDOC_TAG = "STA_RUN_CODE_EOF"
+
+    /** shell 找不到命令时的退出码（python3 缺失即此值）。 */
+    private val SHELL_COMMAND_NOT_FOUND = 127
+
     private val publishedObservation = AtomicReference(PublishedObservation())
     private val runAvailableSkillIds = runAvailableSkillIds
         .mapTo(mutableSetOf(), SkillParser::normalizeSkillLookup)
@@ -285,6 +332,7 @@ internal class AgentLocalTools(
                 "edit_file" -> textResult(terminalTool { editFile(args) })
                 "edit_files" -> textResult(terminalTool { editFiles(args) })
                 "search_code" -> textResult(terminalTool { searchCode(args) })
+                AgentCodeExecutionToolCatalog.RUN_CODE -> textResult(terminalTool { runCode(args) })
                 "list_directory" -> textResult(terminalTool { listDirectory(args) })
                 "find_files" -> textResult(terminalTool { findFiles(args) })
                 "task_plan" -> textResult(taskPlan(args))

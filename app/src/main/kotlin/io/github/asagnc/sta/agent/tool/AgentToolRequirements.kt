@@ -80,6 +80,8 @@ internal object AgentToolRequirements {
             RootRequirement.PARTIAL,
             "press_key", "run_command", "write_file", "edit_file", "edit_files", "read_image",
             "skills_run",
+            // 与 run_command 同类：能跑任意代码，因此不并发，避开多个执行同时改工作区。
+            "run_code",
         )
         registerParallelSafe(
             RootRequirement.PARTIAL,

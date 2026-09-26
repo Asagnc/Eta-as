@@ -14,6 +14,7 @@ internal class AgentTraceFormatter {
             "run_command" -> "执行命令 · Android · root"
             "write_file" -> summarizeTextLength("写入文件", toolCall.argumentsJson, "content")
             "read_file" -> "读取文件"
+            "run_code" -> "执行代码"
             "read_files" -> "批量读取文件"
             "list_directory" -> "列出目录"
             "edit_file" -> "编辑文件"
