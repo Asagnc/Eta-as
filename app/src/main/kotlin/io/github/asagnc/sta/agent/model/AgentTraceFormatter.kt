@@ -14,7 +14,7 @@ internal class AgentTraceFormatter {
             "run_command" -> "执行命令 · Android · root"
             "write_file" -> summarizeTextLength("写入文件", toolCall.argumentsJson, "content")
             "read_file" -> "读取文件"
-            "run_code" -> "执行代码"
+            "run_code" -> summarizeCodeArguments(toolCall.argumentsJson)
             "read_files" -> "批量读取文件"
             "list_directory" -> "列出目录"
             "edit_file" -> "编辑文件"
@@ -148,6 +148,33 @@ internal class AgentTraceFormatter {
             val chars = JSONObject(argumentsJson).optString(key).length
             "$label · $chars 字符"
         }.getOrDefault(label)
+
+    /**
+     * 代码执行的摘要：语言 + 首行 + 长度。
+     *
+     * 首行看得出意图（import 还是 subprocess），长度看得出规模；只写「执行代码」
+     * 则卡片与落库的摘要都看不出这一步到底在干什么，事后无法复盘。
+     */
+    private fun summarizeCodeArguments(argumentsJson: String): String =
+        runCatching {
+            val arguments = JSONObject(argumentsJson)
+            val code = arguments.optString("code")
+            val language = when (val raw = arguments.optString("language")) {
+                "" -> "python"
+                "python" -> "Python"
+                "shell" -> "Shell"
+                else -> raw
+            }
+            val head = sanitizeSummaryValue(
+                code.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty(),
+                MAX_QUERY_SUMMARY_CHARS,
+            )
+            if (head.isBlank()) {
+                "执行代码 · $language · ${code.length} 字符"
+            } else {
+                "执行代码 · $language · $head · ${code.length} 字符"
+            }
+        }.getOrDefault("执行代码")
 
     /** 搜索关键词是用户自己发起的查询，直接展示；仍做单行化与长度截断。 */
     private fun summarizeQueryArguments(label: String, argumentsJson: String): String =
