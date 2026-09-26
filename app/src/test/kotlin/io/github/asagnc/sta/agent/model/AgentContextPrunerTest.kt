@@ -176,23 +176,52 @@ class AgentContextPrunerTest {
     }
 
     @Test
-    fun historicalReasoningIsClearedFromTheViewButKeptInHistory() {
-        val messages = JSONArray().put(
-            JSONObject()
-                .put("role", "assistant")
-                .put("content", "结论")
-                .put("reasoning_content", "先读文件、再对比，最后得出结论"),
-        )
+    fun longReasoningIsFoldedToItsHeadAndTail() {
+        val long = "先确认目录结构，" + "再逐个读取\u3002".repeat(400) + "所以下一步读 AgentLoop"
+        val message = JSONObject()
+            .put("role", "assistant")
+            .put("content", "结论")
+            .put("reasoning_content", long)
+        val messages = JSONArray().put(message)
 
         val result = AgentContextPruner.prune(messages, AgentContextPruner.MAX_CHARS)
 
-        // 视图里不再回传历史推理：它随轮次累积，是上下文里最大的一块。
-        assertEquals("", result.messages.getJSONObject(0).getString("reasoning_content"))
-        // 历史本身不能被改写：会话记录与归档仍要保留推理原文。
-        assertEquals(
-            "先读文件、再对比，最后得出结论",
-            messages.getJSONObject(0).getString("reasoning_content"),
+        val folded = result.messages.getJSONObject(0).getString("reasoning_content")
+        // 折叠保留意图（头部）与结论（尾部），丢的是中间的论证过程。
+        assertTrue(folded.startsWith(long.take(AgentContextPruner.REASONING_HEAD_CHARS)))
+        // 尾部预算会被省略标记挤掉一部分，所以只断言「结尾仍是原文的后缀」。
+        assertTrue(long.endsWith(folded.takeLast(50)))
+        assertTrue(folded.contains("此处省略"))
+        assertTrue(folded.length <= AgentContextPruner.MAX_REASONING_CHARS)
+        // 历史本身不能被改写：归档里仍要保留完整推理。
+        assertEquals(long, message.getString("reasoning_content"))
+    }
+
+    @Test
+    fun shortReasoningIsLeftAloneAndFoldingIsIdempotent() {
+        val short = "一句话的推理"
+        val shortMessages = JSONArray().put(
+            JSONObject().put("role", "assistant").put("content", "结论")
+                .put("reasoning_content", short),
         )
+
+        val untouched = AgentContextPruner.prune(shortMessages, AgentContextPruner.MAX_CHARS)
+
+        // 没超过阈值就不动：折叠也要幂等，否则每轮都会重算成不同字节。
+        assertSame(shortMessages.getJSONObject(0), untouched.messages.getJSONObject(0))
+
+        val long = "头" + "中间过程。".repeat(300) + "尾"
+        val once = AgentContextPruner.prune(
+            JSONArray().put(
+                JSONObject().put("role", "assistant").put("content", "结论")
+                    .put("reasoning_content", long),
+            ),
+            AgentContextPruner.MAX_CHARS,
+        ).messages
+        val twice = AgentContextPruner.prune(once, AgentContextPruner.MAX_CHARS)
+
+        assertEquals(0, twice.prunedCount)
+        assertEquals(once.toString(), twice.messages.toString())
     }
 
     @Test
