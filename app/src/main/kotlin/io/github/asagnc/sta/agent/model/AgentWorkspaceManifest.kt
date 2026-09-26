@@ -47,7 +47,20 @@ internal object AgentWorkspaceManifest {
      *
      * 只要直接子文件，不做递归累计：文件紧跟在所属目录下，路径拼接关系才不会产生歧义。
      */
-    data class Dir(val path: String, val files: List<String>)
+    data class Dir(
+        val path: String,
+        val files: List<String>,
+        /**
+         * 文件名 → 该文件声明的顶层类型名。
+         *
+         * 只有文件名时，模型只看得到「有哪些文件」，不知道每个文件管什么，于是只能读一个、
+         * 看内容、才知道缺什么、再读下一个——步数随文件数线性增长。类型名把「这个文件管什么」
+         * 补上，模型能一次挑对要读的文件。
+         *
+         * 取不到（非 Kotlin 源文件或读取失败）的文件不出现这个映射里，不是错误。
+         */
+        val symbols: Map<String, List<String>> = emptyMap(),
+    )
 
     /**
      * 扫出目录与文件清单。都以 `listFiles()` 的实际结果为准，不做猜测。
@@ -64,9 +77,13 @@ internal object AgentWorkspaceManifest {
         while (queue.isNotEmpty()) {
             val (dir, path) = queue.removeFirst()
             val children = dir.listFiles() ?: continue
+            val names = children.filter { it.isFile }.map { it.name }.sorted()
             found += Dir(
                 path = path,
-                files = children.filter { it.isFile }.map { it.name }.sorted(),
+                files = names,
+                symbols = names.mapNotNull { name ->
+                    topLevelSymbols(File(dir, name))?.let { name to it }
+                }.toMap(),
             )
             children.asSequence()
                 .filter { it.isDirectory && it.name !in SKIPPED_DIRS }
@@ -75,6 +92,34 @@ internal object AgentWorkspaceManifest {
         }
         return found
     }
+
+    /**
+     * 一个 Kotlin 文件声明的顶层类型名；不是 Kotlin 文件、读取失败、或没有类型声明时返回 null。
+     *
+     * 只取类型声明，不取成员函数：类型名用于判断「这个文件管什么」，细节仍由模型自己读。
+     * 正则不买行首缩进，因此嵌套声明天然被排除——顶层声明在 Kotlin 里不缩进。
+     */
+    private fun topLevelSymbols(file: File): List<String>? {
+        if (!file.name.endsWith(".kt")) return null
+        val text = runCatching { file.readText() }.getOrNull() ?: return null
+        val names = LinkedHashSet<String>()
+        for (match in TYPE_DECLARATION.findAll(text)) {
+            names += match.groupValues[1]
+            if (names.size >= MAX_SYMBOLS_PER_FILE) break
+        }
+        // 没有类型声明的 Kotlin 文件同样不进映射：渲染退化成「只有文件名」，不写空后缀。
+        return names.toList().takeIf { it.isNotEmpty() }
+    }
+
+    /** 顶层类型声明：行首（无缩进）+ 可选修饰符 + 可选 data/enum + class/object/interface。 */
+    private val TYPE_DECLARATION = Regex(
+        """^(?:(?:internal|public|open|abstract|sealed|private|external)\s+)*""" +
+            """(?:data\s+)?(?:enum\s+)?(?:class|object|interface)\s+([A-Za-z_][A-Za-z0-9_]*)""",
+        RegexOption.MULTILINE,
+    )
+
+    /** 单个文件最多列出的类型名；超出不列，只影响可读性，不影响定位。 */
+    private const val MAX_SYMBOLS_PER_FILE = 6
 
     /**
      * 渲染成清单文本；没有任何目录时返回 null。
@@ -94,7 +139,14 @@ internal object AgentWorkspaceManifest {
             omitted += dir.files.size - shown.size
             budget -= shown.size
             lines += "$ITEM_PREFIX${dir.path.ifEmpty { "." }}/"
-            shown.forEach { lines += "$ITEM_PREFIX  $it" }
+            shown.forEach { name ->
+                val symbols = dir.symbols[name]
+                lines += if (symbols.isNullOrEmpty()) {
+                    "$ITEM_PREFIX  $name"
+                } else {
+                    "$ITEM_PREFIX  $name — ${symbols.joinToString(", ")}"
+                }
+            }
         }
         val header = "$HEADER_PREFIX（根为 $root，${sorted.size} 个目录、" +
             "${sorted.sumOf { it.files.size }} 个文件，缩进两格的文件属于上一行的目录）："

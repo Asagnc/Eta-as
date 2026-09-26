@@ -93,6 +93,66 @@ class AgentWorkspaceManifestTest {
         assertEquals(emptyList<AgentWorkspaceManifest.Dir>(), AgentWorkspaceManifest.scan(File("/definitely/missing")))
     }
 
+    @Test
+    fun rendersTypeNamesAfterFileNameOnlyWhenPresent() {
+        val text = AgentWorkspaceManifest.render(
+            listOf(
+                AgentWorkspaceManifest.Dir(
+                    path = "app",
+                    files = listOf("A.kt", "notes.md", "B.kt"),
+                    symbols = mapOf("A.kt" to listOf("Foo", "Bar")),
+                ),
+            ),
+        )!!
+
+        val lines = text.lines()
+        // lines[0] 是表头，lines[1] 是目录行，文件行从 lines[2] 开始。
+        assertEquals("$ITEM_PREFIX  A.kt — Foo, Bar", lines[2])
+        // 没有类型名（非 Kotlin 文件或读取失败）的文件保持原样，不留空的后缀。
+        assertEquals("$ITEM_PREFIX  notes.md", lines[3])
+        assertEquals("$ITEM_PREFIX  B.kt", lines[4])
+    }
+
+    @Test
+    fun scanExtractsTopLevelTypesFromKotlinFilesOnly() {
+        val root = temporaryFolder.newFolder("symbols")
+        File(root, "A.kt").writeText(
+            "package x\n" +
+                "\n" +
+                "internal object Alpha\n" +
+                "\n" +
+                "class Beta\n" +
+                "\n" +
+                "sealed interface Contract\n" +
+                "\n" +
+                "data class Gamma(val a: Int)\n" +
+                "\n" +
+                "fun helper() = 1\n" +
+                "\n" +
+                "class Outer {\n" +
+                "    class Nested\n" +
+                "}\n",
+        )
+        File(root, "note.md").writeText("class NotAKotlin\n")
+
+        val symbols = AgentWorkspaceManifest.scan(root).single().symbols
+
+        // 只取类型声明：顶层 fun 不算，缩进的嵌套类不算。
+        assertEquals(listOf("Alpha", "Beta", "Contract", "Gamma", "Outer"), symbols["A.kt"])
+        // 非 Kotlin 文件不进映射，渲染时退化为只有文件名。
+        assertNull(symbols["note.md"])
+    }
+
+    @Test
+    fun rendersDeterministicallyWithSymbols() {
+        val a = listOf(
+            AgentWorkspaceManifest.Dir("z", listOf("Z.kt"), mapOf("Z.kt" to listOf("Zed"))),
+            AgentWorkspaceManifest.Dir("", listOf("R.kt"), mapOf("R.kt" to listOf("Rex"))),
+        )
+
+        assertEquals(AgentWorkspaceManifest.render(a), AgentWorkspaceManifest.render(a.reversed()))
+    }
+
     private companion object {
         val ITEM_PREFIX = AgentWorkspaceManifest.ITEM_PREFIX
     }
